@@ -1,0 +1,10 @@
+func={
+    "print":"alert",
+    "input":"prompt",
+    "get_by_id":"document.getElementById",
+    "get_by_tag":"document.getElementsByTagName",
+    "get_by_class":"document.getElementsByClassName"
+}
+method={
+    "len":".length"
+}
