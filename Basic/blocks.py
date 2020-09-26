@@ -1,18 +1,3 @@
-#    This file is part of Python-Universal-Trnslator.
-#
-#    Python-Universal-Trnslator is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-#
-#    Python-Universal-Trnslator is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with Python-Universal-Trnslator.  If not, see <https://www.gnu.org/licenses/>.
-
 import _ast
 from Basic import basic_element
 
@@ -51,11 +36,18 @@ def _else(tree):
         crawler(tree)
         print("}")
 
+def function(tree):
+    param=basic_element.arg(tree.args.args)
+    print(f"function {tree.name}{str(param)}{{")
+    crawler(tree.body)
+    print("}")
+
 blocks={_ast.Assign:assign,
     _ast.Expr:expr,
     _ast.If:_if,
     _ast.While:_while,
-    _ast.For:_for
+    _ast.For:_for,
+    _ast.FunctionDef:function
 }
 
 def crawler(body):
