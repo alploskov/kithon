@@ -1,4 +1,4 @@
-# Python-Univesal-Translator
+# Python-Universal-Translator
 Cейчас поддерживается только js.
 Запуск на GNU/Linux:
 `python core.py file > end_file`
