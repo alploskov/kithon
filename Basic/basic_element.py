@@ -14,16 +14,23 @@ signs={_ast.Add:"+",
     _ast.GtE:">=",
     _ast.LtE:"<=",
     _ast.And:"&",
-    _ast.Or:"|"
+    _ast.Or:"|",
+    _ast.BitAnd:"&",
+    _ast.BitOr:"|"
 }
 
 def bin_op(tree):
     """Math operation"""
-    return parser(tree.left)+signs.get(type(tree.op))+parser(tree.right)
+    return f"{parser(tree.left)} {signs.get(type(tree.op))} {parser(tree.right)}"
 
 def bool_op(tree):
     """Logic operation"""
-    return parser(tree.left)+signs.get(type(tree.op))+parser(tree.right)
+    el=""
+    for i in tree.values[:-1]:
+        el+=parser(i)+" "
+        el+=signs.get(type(tree.op))+" "
+    el+=parser(tree.values[-1])
+    return el
 
 def compare(tree):
     ret=parser(tree.left)
@@ -66,11 +73,13 @@ def data_struct(tree):
         ret=[]
         for i in tree.elts:
             ret.append(parser(i))
-        return str(ret)
+        is_tuple=""
+        if t==_ast.Tuple:
+            is_tuple=""
+        return is_tuple+str(ret)
 
     elif t==_ast.Dict:
         pass
-    pass
 
 def arg(tree):
     args=[i.arg for i in tree]
@@ -78,6 +87,7 @@ def arg(tree):
 
 operation={_ast.Call:function_call,
     _ast.BinOp:bin_op,
+    _ast.BoolOp:bool_op,
     _ast.Compare:compare,
     _ast.List:data_struct,
     _ast.Dict:data_struct,

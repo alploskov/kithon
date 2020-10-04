@@ -38,7 +38,9 @@ def _else(tree):
 
 def function(tree):
     param=basic_element.arg(tree.args.args)
-    print(f"function {tree.name}{str(param)}{{")
+    a="'"
+    b=""
+    print(f"function {tree.name}{str(param).replace(a, b)}{{")
     crawler(tree.body)
     print("}")
 
