@@ -40,6 +40,8 @@ def compare(tree):
     return ret
 
 def attribute(tree):
+    if tree.attr in function_analog.method:
+        return tree.value.id+function_analog.method.get(tree.attr)
     return f"{tree.value.id}.{tree.attr}"
 
 def function_call(tree):
