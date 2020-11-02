@@ -1,8 +1,9 @@
 import _ast
 #from Lib import *
 from Basic.execution_environment_api import function_analog, api
-
-
+from Basic.conf import configurator
+config=configurator.conf_get("Basic/conf/js.cc")
+space=" "
 signs={_ast.Add:"+",
     _ast.Mult:"*",
     _ast.Sub:"-",
@@ -13,48 +14,51 @@ signs={_ast.Add:"+",
     _ast.Lt:"<",
     _ast.GtE:">=",
     _ast.LtE:"<=",
-    _ast.And:"&",
+    _ast.And:"&&",
     _ast.Or:"|",
     _ast.BitAnd:"&",
     _ast.BitOr:"|"
 }
 
+def get_sign(op):
+    return signs.get(type(op))
+
 def bin_op(tree):
     """Math operation"""
-    return f"{parser(tree.left)} {signs.get(type(tree.op))} {parser(tree.right)}"
+    left=parser(tree.left)
+    right=parser(tree.right)
+    sign=signs.get(type(tree.op))
+    return eval(config.get("bin_op"))
 
 def bool_op(tree):
     """Logic operation"""
-    el=""
-    for i in tree.values[:-1]:
-        el+=parser(i)+" "
-        el+=signs.get(type(tree.op))+" "
-    el+=parser(tree.values[-1])
-    return el
+    op=get_sign(tree.op)
+    els=list(map(parser, tree.values))
+    first_el=els[0]
+    other_el=els[1:]
+    return eval(config.get("bool_op"))
 
 def compare(tree):
-    ret=parser(tree.left)
-    for i in range(len(tree.ops)):
-        ret+=signs.get(type(tree.ops[i]))
-        ret+=parser(tree.comparators[i])
-    return ret
+    """Compare operation"""
+    other_el=list(map(parser, tree.comparators))
+    first_el=parser(tree.left)
+    ops=list(map(get_sign, tree.ops))
+    return eval(config.get("comp"))
 
 def attribute(tree):
+    attr_name=tree.attr
     if tree.attr in function_analog.method:
-        return tree.value.id+function_analog.method.get(tree.attr)
-    return f"{tree.value.id}.{tree.attr}"
+        attr_name=function_analog.method.get(attr_name)
+    _class=tree.value.id
+    return eval(config.get("attr"))
 
 def function_call(tree):
     if type(tree.func)==_ast.Attribute:
         name=attribute(tree.func)
     else:
         name=tree.func.id
-    arg=""
-    if len(tree.args)>0:
-        for i in tree.args[:-1]:
-            arg+=parser(i)+", "
-        arg+=parser(tree.args[-1])
 
+    arg=args(tree.args)
     if name in function_analog.func:
         name=function_analog.func.get(name)
         return f"{name}({arg})"
@@ -64,10 +68,9 @@ def function_call(tree):
 
     elif name in dir(api):
         return eval(f"api.{name}({arg})")
+
     else:
         return f"{name}({arg})"
-
-
 
 def data_struct(tree):
     t=type(tree)
@@ -83,9 +86,8 @@ def data_struct(tree):
     elif t==_ast.Dict:
         pass
 
-def arg(tree):
-    args=[i.arg for i in tree]
-    return tuple(args)
+def args(tree):
+    return ", ".join(list(map(parser, tree)))
 
 operation={_ast.Call:function_call,
     _ast.BinOp:bin_op,
@@ -107,6 +109,9 @@ def parser(param):
         if type(val)==str:
             return "\""+val+"\""
         return str(val)
+
+    elif _type==_ast.arg:
+        return param.arg
 
     else:
         return operation.get(_type)(param)

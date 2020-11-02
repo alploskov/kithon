@@ -37,19 +37,23 @@ def _else(tree):
         print("}")
 
 def function(tree):
-    param=basic_element.arg(tree.args.args)
+    param=basic_element.args(tree.args.args)
     a="'"
     b=""
-    print(f"function {tree.name}{str(param).replace(a, b)}{{")
+    print(f"function {tree.name}({param}){{")
     crawler(tree.body)
     print("}")
+
+def ret(expression):
+    print("return "+basic_element.parser(expression.value))
 
 blocks={_ast.Assign:assign,
     _ast.Expr:expr,
     _ast.If:_if,
     _ast.While:_while,
     _ast.For:_for,
-    _ast.FunctionDef:function
+    _ast.FunctionDef:function,
+    _ast.Return:ret
 }
 
 def crawler(body):
