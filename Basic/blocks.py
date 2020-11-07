@@ -1,61 +1,66 @@
 import _ast
 from Basic import basic_element
+from Basic.conf import configurator
 
+
+config=configurator.conf_get("Basic/conf/js.cc")
 
 def expr(expression):
-    print(basic_element.parser(expression.value)+";")
+    return basic_element.parser(expression.value)+";"
 
 def assign(expression):
-    print(f"{basic_element.parser(expression.targets[0])} = {basic_element.parser(expression.value)};")
+    source=basic_element.parser(expression.value)
+    to=basic_element.parser(expression.targets[0])
+    return eval(config.get("assign"))
 
 def _if(tree):
-    print("if("+str(basic_element.parser(tree.test))+"){")
-    crawler(tree.body)
-    print("}")
-    if tree.orelse!=[]:
-        _else(tree.orelse)
+    condition=basic_element.parser(tree.test)
+    body=statement_block(tree.body)
+    els=""
+    if tree.orelse != []:
+        els=_else(tree.orelse)
+    return eval(config.get("if"))
 
 def _while(tree):
-    print("while("+str(basic_element.parser(tree.test))+"){")
-    crawler(tree.body)
-    print("}")
+    condition=basic_element.parser(tree.test)
+    body=statement_block(tree.body)
+    els=""
+    if tree.orelse != []:
+        els=_else(tree.orelse)
+    return eval(config.get("while"))
 
 def _for(tree):
     print(basic_element.data_struct(tree.iter)+".forEach(function("+basic_element.parser(tree.target)+"){")
     crawler(tree.body)
-
     print("});", end="")
 
 def _else(tree):
-    print("else", end="")
-    if type(tree[0])==_ast.If:
-        print(" ", end="")
-        _if(tree[0])
-    else:
-        print("{")
-        crawler(tree)
-        print("}")
+    return eval(config.get("els"))
 
-def function(tree):
+def define_function(tree):
     param=basic_element.args(tree.args.args)
-    a="'"
-    b=""
-    print(f"function {tree.name}({param}){{")
-    crawler(tree.body)
-    print("}")
+    name=tree.name
+    body=statement_block(tree.body)
+    return eval(config.get("def_func"))
 
 def ret(expression):
     print("return "+basic_element.parser(expression.value))
+
+def statement_block(body):
+    return "{\n" + "".join(list(map(block_parser, body))) + "}"
 
 blocks={_ast.Assign:assign,
     _ast.Expr:expr,
     _ast.If:_if,
     _ast.While:_while,
     _ast.For:_for,
-    _ast.FunctionDef:function,
+    _ast.FunctionDef:define_function,
     _ast.Return:ret
 }
 
+def block_parser(st):
+    return blocks.get(type(st))(st)+"\n"
+
 def crawler(body):
     for i in body:
-        blocks.get(type(i))(i)
+        print(block_parser(i), end="")

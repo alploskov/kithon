@@ -1,6 +1,5 @@
 import _ast
-#from Lib import *
-from Basic.execution_environment_api import function_analog, api
+from Basic.execution_environment_api import function_analog, macros
 from Basic.conf import configurator
 config=configurator.conf_get("Basic/conf/js.cc")
 space=" "
@@ -66,8 +65,8 @@ def function_call(tree):
     elif name in function_analog.method:
         return parser(tree.args[0])+function_analog.method.get(name)
 
-    elif name in dir(api):
-        return eval(f"api.{name}({arg})")
+    elif name in dir(macros):
+        return eval(f"macros.{name}({arg})")
 
     else:
         return f"{name}({arg})"
