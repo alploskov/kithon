@@ -3,10 +3,7 @@ import ast
 import os
 import importlib
 
-
-translator = importlib.import_module(f"transPYler.translators.{os.getenv('translator_name')}")
-
-
+signs = {}
 def get_sign(op):
     return translator.signs.get(type(op))
 
@@ -15,23 +12,23 @@ def bin_op(tree, handler):
     """Math operation"""
     left = parser(tree.left)
     right = parser(tree.right)
-    sign = signs.get(type(tree.op))
-    return handler(left, right, sign)
+    op = signs.get(type(tree.op))
+    return handler(left, right, op)
 
 
 def bool_op(tree, handler):
     """Logic operation"""
     els = list(map(parser, tree.values))
-    sign = get_sign(tree.op)
-    return {"elements":els, "sign":sign}
+    op = get_sign(tree.op)
+    return handler(els, op)
 
 
 def compare(tree, handler):
     """Compare operation"""
-    other_el = list(map(parser, tree.comparators))
-    first_el = parser(tree.left)
+    els = parser(tree.left)
+    els += list(map(parser, tree.comparators))
     ops = list(map(get_sign, tree.ops))
-    return eval(config.get("comp"))
+    return handler(els, ops)
 
 
 def attribute(tree, handler):
@@ -81,32 +78,31 @@ def _list(tree, handler):
         pass
 
 
-def args(tree):
+def args(tree, handler):
     return ", ".join(list(map(parser, tree)))
 
+def name(tree, handler):
+    name = tree.id
+    return handler(name)
+
+def const(tree, handler):
+    val = tree.value
+    if type(val) == str:
+        return "\"" + val + "\""
+    return handler(str(val))
 
 operation = {_ast.Call: function_call,
              _ast.BinOp: bin_op,
              _ast.BoolOp: bool_op,
              _ast.Compare: compare,
-             _ast.List: data_struct,
-             _ast.Dict: data_struct,
-             _ast.Tuple: data_struct,
-             _ast.Attribute: attribute
+             _ast.List: _list,
+             _ast.Attribute: attribute,
+             _ast.Name: name,
+             _ast.Constant: const
 }
 
+expr_handlers = {}
 
 def parser(param):
     _type = type(param)
-    if _type == _ast.Name:
-        name=param.id
-        return name
-
-    elif _type == _ast.Constant:
-        val = param.value
-        if type(val) == str:
-            return "\"" + val + "\""
-        return str(val)
-
-    else:
-        return operation.get(_type)(param, translator.handle_expr.get(_type))
+    return operation.get(_type)(param, expr_handlers.get(_type))

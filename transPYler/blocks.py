@@ -2,14 +2,15 @@ import _ast
 from transPYler import expressions
 
 
-def expr(expression):
-    return expressions.parser(expression.value) + ";"
+def expr(expression, handler):
+    value = expressions.parser(expression.value)
+    return handler(value)
 
 
-def assign(expression):
-    source = expressions.parser(expression.value)
-    to = expressions.parser(expression.targets[0])
-    return f"{to}= {source};"
+def assign(expression, handler):
+    value = expressions.parser(expression.value)
+    var = expressions.parser(expression.targets[0])
+    return handler(var, value) 
 
 
 def _if(tree):
@@ -64,11 +65,13 @@ blocks = {_ast.Assign: assign,
           _ast.Return: ret
 }
 
+blocks_handlers = {}
 
 def block_parser(st):
-    return blocks.get(type(st))(st) + "\n"
+    _type = type(st)
+    return blocks.get(_type)(st, blocks_handlers.get(_type))
 
 
 def crawler(body):
     for i in body:
-        print(block_parser(i), end="")
+        print(block_parser(i))
