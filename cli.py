@@ -15,5 +15,4 @@ expressions.signs = tools.dentification_signs(translator.signs)
 expressions.expr_handlers = translator.expr_handlers
 blocks.blocks_handlers = translator.blocks_handlers
 code=open(args.file, 'r').read()
-
 blocks.crawler(ast.parse(code).body)
