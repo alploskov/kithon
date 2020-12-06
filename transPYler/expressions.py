@@ -3,7 +3,9 @@ import ast
 import os
 import importlib
 
+
 signs = {}
+
 def get_sign(op):
     return translator.signs.get(type(op))
 
@@ -15,13 +17,11 @@ def bin_op(tree, handler):
     op = signs.get(type(tree.op))
     return handler(left, right, op)
 
-
 def bool_op(tree, handler):
     """Logic operation"""
     els = list(map(parser, tree.values))
     op = get_sign(tree.op)
     return handler(els, op)
-
 
 def compare(tree, handler):
     """Compare operation"""
@@ -30,38 +30,46 @@ def compare(tree, handler):
     ops = list(map(get_sign, tree.ops))
     return handler(els, ops)
 
+function_analog_method = {}
+function_analog_func = {}
+
+def args(tree, handler):
+    return handler(list(map(parser, tree)))
+
+def arg(tree, handler):
+    _type = parser(tree.annotation)
+    name =  tree.arg
+    return handler(name, _type)
 
 def attribute(tree, handler):
     attr_name = tree.attr
-    if tree.attr in translator.function_analog.method:
-        attr_name = translator.function_analog.method.get(attr_name)
+    if tree.attr in function_analog_method:
+        attr_name = function_analog_method.get(attr_name)
     obj = parser(tree.value)
-    return eval(config.get("attr"))
-
+    return handler(obj, attr_name)
 
 def function_call(tree, handler):
     if type(tree.func) == _ast.Attribute:
-        name = attribute(tree.func)
+        name = attribute(tree.func)        # if called function is method of any class that name will be an attribute of the class
     else:
-        name = parser(tree.func)
+        name = tree.func.id
         
-    arg = args(tree.args)
+    arg = args(tree.args, expr_handlers.get("args"))   
 
-    if name in translator.function_analog.func:
-        name = translator.function_analog.func.get(name)
+    if name in function_analog_func:
+        name = function_analog_func.get(name)
 
-    elif name in translator.function_analog.method:
+    elif name in function_analog_method:
         val = tree.args[0]
-        name = attribute(ast.Attribute(value=val, attr=name))
+        name = attribute(ast.Attribute(value=val, attr=name), expr_handlers.get(_ast.Attribute))   # func -> attribute
+
         if len(tree.args)<=1:
             return name
         arg = args(tree.args[1:])
 
-    elif name in translator.macros:
-        return eval(f"{translator.macros.get(name)}({arg})")
+    return handler(name, arg)
 
-    return eval('f"{name}({arg})"')
-
+    
 
 def _list(tree, handler):
     t = type(tree)
@@ -77,10 +85,6 @@ def _list(tree, handler):
     elif t == _ast.Dict:
         pass
 
-
-def args(tree, handler):
-    return ", ".join(list(map(parser, tree)))
-
 def name(tree, handler):
     name = tree.id
     return handler(name)
@@ -91,6 +95,7 @@ def const(tree, handler):
         return "\"" + val + "\""
     return handler(str(val))
 
+
 operation = {_ast.Call: function_call,
              _ast.BinOp: bin_op,
              _ast.BoolOp: bool_op,
@@ -98,7 +103,8 @@ operation = {_ast.Call: function_call,
              _ast.List: _list,
              _ast.Attribute: attribute,
              _ast.Name: name,
-             _ast.Constant: const
+             _ast.Constant: const,
+             _ast.arg: arg
 }
 
 expr_handlers = {}
