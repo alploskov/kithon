@@ -7,25 +7,24 @@ import importlib
 signs = {}
 
 def get_sign(op):
-    return translator.signs.get(type(op))
-
-
+    return signs.get(type(op))
+    
 def bin_op(tree, handler):
     """Math operation"""
     left = parser(tree.left)
     right = parser(tree.right)
-    op = signs.get(type(tree.op))
+    op = get_sign(tree.op)
     return handler(left, right, op)
 
 def bool_op(tree, handler):
     """Logic operation"""
     els = list(map(parser, tree.values))
-    op = get_sign(tree.op)
+    op = get_sign(op) 
     return handler(els, op)
 
 def compare(tree, handler):
     """Compare operation"""
-    els = parser(tree.left)
+    els = [parser(tree.left)]
     els += list(map(parser, tree.comparators))
     ops = list(map(get_sign, tree.ops))
     return handler(els, ops)

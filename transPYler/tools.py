@@ -1,10 +1,17 @@
 import ast
+import _ast
 from transPYler import expressions, blocks
+
 
 def dentification_signs(signs):
     finished = {}
     for i in signs:
-        sign_type = type(ast.parse(f"a{i}b").body[0].value.op)
+        op = ast.parse(f"a {i} b").body[0].value
+        op_type = type(op)
+        if op_type == _ast.BinOp or op_type == _ast.BoolOp:
+            sign_type = type(op.op)
+        else:
+            sign_type = type(op.ops[0])    
         finished.update({sign_type: signs.get(i)})
     return finished
 

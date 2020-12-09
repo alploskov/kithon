@@ -6,8 +6,9 @@ from transPYler import blocks, tools
 
 parser = argparse.ArgumentParser(description='Python to other language')
 parser.add_argument("file", type=str, help="Python file")
-parser.add_argument("-c", "--config", type=str, help="Name translator file in translators")
-parser.add_argument("-o", "--output", type=str, default=f"1.js", help=f"Output file default: 1.js")
+parser.add_argument("-c", "--config", type = str, default="js", help="Name translator file in translators")
+parser.add_argument("-o", "--output", type = str, default="1.js", help="Output file default: 1.js")
+parser.add_argument("-co", "--console", type = bool, default="1.js", help="Output/not output in console")
 args = parser.parse_args()
 
 translator = importlib.import_module(f"translators.{args.config}")

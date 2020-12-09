@@ -1,34 +1,33 @@
 import _ast
-from transPYler import expressions
-
+from transPYler.expressions import parser
 
 def expr(expression, handler):
-    value = expressions.parser(expression.value)
+    value = parser(expression.value)
     return handler(value)
 
 
 def assign(expression, handler):
-    value = expressions.parser(expression.value)
-    var = expressions.parser(expression.targets[0])
+    value = parser(expression.value)
+    var = parser(expression.targets[0])
     return handler(var, value) 
 
 
-def _if(tree):
-    condition = basic_element.parser(tree.test)
-    body = statement_block(tree.body)
+def _if(tree, handler):
+    condition = parser(tree.test)
+    body = statement_block(tree.body, blocks_handlers.get("statement_block"))
     els = ""
     if tree.orelse != []:
-        els = _else(tree.orelse)
-    return eval(config.get("if"))
+        els = _else(tree.orelse, blocks_handlers.get("else"))
+    return handler(condition, body, els)
 
 
 def _while(tree):
-    condition = basic_element.parser(tree.test)
+    condition = parser(tree.test)
     body = statement_block(tree.body)
     els = ""
     if tree.orelse != []:
         els = _else(tree.orelse)
-    return eval(config.get("while"))
+    return handler(condition, body, els)
 
 
 def _for(tree):
@@ -37,24 +36,35 @@ def _for(tree):
     print("});", end="")
 
 
-def _else(tree):
-    return eval(config.get("els"))
+def _else(tree, handler): 
+    if type(tree[0]) == _ast.If:
+        body = else_if(tree[0], blocks_handlers.get("else_if")) 
+    else:
+        body = handler(statement_block(tree, blocks_handlers.get("statement_block")))
+        
+    return body
 
+def else_if(tree, handler):
+    return handler(_if(tree, blocks_handlers.get(_ast.If)))
 
-def define_function(tree):
+def define_function(tree, handler):
     param = basic_element.args(tree.args.args)
     name = tree.name
+    
     body = statement_block(tree.body)
-    return eval(config.get("def_func"))
+    return handler(name, param, body)
 
 
 def ret(expression):
     print("return " + basic_element.parser(expression.value))
 
-
-def statement_block(body):
-    return "{\n" + "".join(list(map(block_parser, body))) + "}"
-
+nesting_level = 0
+def statement_block(body, handler):
+    global nesting_level
+    nesting_level += 1
+    body =  handler(list(map(block_parser, body)), nesting_level)
+    nesting_level -= 1
+    return body
 
 blocks = {_ast.Assign: assign,
           _ast.Expr: expr,
