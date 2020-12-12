@@ -1,5 +1,6 @@
 import ast
 import _ast
+import sys
 from transPYler import expressions, blocks
 
 
@@ -21,6 +22,4 @@ def conf(b_handlers, e_handlers, signs, a_attr, a_func):
     expressions.signs = dentification_signs(signs)
     expressions.function_analog_method = a_attr 
     expressions.function_analog_func = a_func
-
     blocks.blocks_handlers = b_handlers
-

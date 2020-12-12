@@ -24,23 +24,32 @@ signs = {"+": "+",
          "or": "||",
          "and": "&&",
          "|": "|",
-         "&": "&"
+         "&": "&",
+         "%": "%"
 }
 
-expr_handlers = {_ast.BinOp: expr.bin_op,
-                 _ast.Name: expr.name,
-                 _ast.Constant: expr.const,
-                 _ast.Attribute: expr.attr,
-                 _ast.Call: expr.call,
+expr_handlers = {"bin_op": expr.bin_op,
+                 "bool_op": expr.bool_op,
+                 "name": expr.name,
+                 "const": expr.const,
+                 "str": expr.c_str,
+                 "attr": expr.attr,
+                 "call": expr.call,
                  "args": expr.args,
-                 _ast.arg: expr.arg,
-                 _ast.Compare: expr.compare
+                 "arg": expr.arg,
+                 "compare": expr.compare,
+                 "list": expr._list
 }
 
-blocks_handlers = {_ast.Assign: blocks.assign,
-                   _ast.Expr: blocks.expr,
-                   _ast.If: blocks._if,
+blocks_handlers = {"assign": blocks.assign,
+                   "expr": blocks.expr,
+                   "aug_assign": blocks.aug_assign,
+                   "if": blocks._if,
                    "statement_block": blocks.statement_block,
                    "else": blocks._else,
-                   "else_if": blocks.else_if
+                   "else_if": blocks.else_if,
+                   "def": blocks.def_f,
+                   "return": blocks.ret,
+                   "c_like_for": blocks.c_like_for,
+                   "while": blocks._while
 }
