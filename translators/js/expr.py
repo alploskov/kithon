@@ -2,7 +2,7 @@ import _ast
 
 
 def bin_op(left, right, op):
-    return left+op+right
+    return f"{left}{op}{right}"
 
 def name(name):
     return name
