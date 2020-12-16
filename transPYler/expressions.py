@@ -79,16 +79,27 @@ def _list(tree):
     handler = expr_handlers.get("list")
     return handler(args(tree.elts))
 
+def slice(tree):
+    arr = parser(tree.value)
+    sl = tree.slice
+    if type(sl) == _ast.Index:
+        index = parser(sl.value)
+        handler = expr_handlers.get("index")
+        return handler(arr, index)
+    elif type(sl) == _ast.Slice:
+        handler = expr_handlers.get("slice")
+        
 def name(tree):
     handler = expr_handlers.get("name")
     name = tree.id
     return handler(name)
 
 def const(tree):
-    handler = expr_handlers.get("const")
     val = tree.value
     if type(val) == str:
-        return expr_handlers.get("name")(val)
+        handler = expr_handlers.get("string") 
+        return handler(val)
+    handler = expr_handlers.get("const")
     return handler(str(val))
 
 
@@ -99,6 +110,7 @@ operation = {_ast.Call: function_call,
              _ast.List: _list,
              _ast.Attribute: attribute,
              _ast.Name: name,
+             _ast.Subscript: slice,
              _ast.Constant: const,
              _ast.arg: arg
 }

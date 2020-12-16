@@ -2,7 +2,7 @@ import _ast
 
 
 def bin_op(left, right, op):
-    return left+op+right
+    return f"({left}{op}{right})"
 
 def name(name):
     return name
@@ -14,7 +14,10 @@ def c_str(val):
     return "\""+val+"\""
     
 def compare(els, ops):
-    return els[0]+"".join([ops[els[1:].index(i)]+i for i in els[1:]])
+    first_el = els[0]
+    other_el = els[1:]
+    op_and_el="".join([ops[i]+el for i, el in enumerate(other_el)])
+    return first_el+op_and_el
 
 def bool_op(els, op):
     return els[0]+" "+"".join([op+" "+i for i in els[1:]])
@@ -33,3 +36,8 @@ def args(args):
 
 def _list(ls):
     return f"[{ls}]"
+
+def slice(arr, *args):
+    first = args[0]
+    if len(args)==1:
+        return f"{arr}[{first}]"

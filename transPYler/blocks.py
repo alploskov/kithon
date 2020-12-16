@@ -9,7 +9,6 @@ def expr(expression):
     value = parser(expression.value)
     return handler(value)
 
-
 def assign(expression):
     handler = blocks_handlers.get("assign")
     value = parser(expression.value)
@@ -55,8 +54,8 @@ def _while(tree):
     return handler(condition, body, els)
 
 def _for(tree):
-    handler = blocks_handlers.get("for")
-    var = parser(tree.target) 
+    var = parser(tree.target)
+    body = statement_block(tree.body)
     if type(tree.iter) == _ast.Call:
         if tree.iter.func.id == "range":
             if "c_like_for" in blocks_handlers:
@@ -65,20 +64,11 @@ def _for(tree):
                     param.append("1")
                     if len(param)<3:
                         param.insert(0, "0")
-    else:
-        get_el = ast.parse(f"")
-        tree.body.append()
-        
-    body = statement_block(tree.body)
-    return handler(var, body, param)
-
-def c_like_for(var, body, param):
-    
-    if len(param) < 3:
-        param.append("1")
-        if len(param)<3:
-            param.insert(0, "0")
-    return handler(var, body, param[0], param[1], param[2])
+                handler = blocks_handlers.get("c_like_for")
+                return handler(var, body, param[0], param[1], param[2])
+    handler = blocks_handlers.get("for")
+    obj = parser(tree.iter)
+    return handler(var, obj, body)
     
 def define_function(tree):
     handler = blocks_handlers.get("def")

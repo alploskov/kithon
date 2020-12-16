@@ -1,3 +1,5 @@
+import uuid
+
 def expr(value):
     return value+";"
 
@@ -24,6 +26,10 @@ def def_f(name, args, body):
 
 def ret(value):
     return f"return {value}"
+
+def _for(var, obj, body):
+    step = f"step{str(uuid.uuid4())[:8]}"
+    return f"for(var {step}=0, {var}={obj}[0]; {step}<{obj}.length;{var}={obj}[++{step}]){body}"
 
 def c_like_for(var, body, start, finish, step):
     return f"for(var {var} = {start}; {var} < {finish}; {var}+={step}){body}"
