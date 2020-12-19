@@ -1,14 +1,23 @@
-import _ast
 from . import blocks
 from . import expr
 
 
-a_func={"print":"alert",
-        "input":"prompt"
+a_func = {"print": "alert",
+          "input": "prompt",
+          "get_id": "document.getElementById"
 }
 
-a_attr={"len":"length",
-        "append":"push"
+a_attr = {"len":"length",
+          "append":"push"
+}
+
+lib = {"math": {"__name__": "Math",
+                "pi": "PI"
+                },
+       "json": {"__name__": "JSON",
+                "dumps": "stringify",
+                "loads": "parse"
+                }
 }
 
 signs = {"+": "+",

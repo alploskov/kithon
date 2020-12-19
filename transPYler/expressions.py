@@ -34,6 +34,7 @@ def compare(tree):
 
 function_analog_method = {}
 function_analog_func = {}
+lib = {}
 
 def args(tree):
     handler = expr_handlers.get("args")
@@ -47,10 +48,14 @@ def arg(tree):
 
 def attribute(tree):
     handler = expr_handlers.get("attr")
-    attr_name = tree.attr
-    if tree.attr in function_analog_method:
-        attr_name = function_analog_method.get(attr_name)
     obj = parser(tree.value)
+    attr_name = tree.attr
+    if obj in lib:
+        l = lib.get(obj) 
+        obj = l.get("__name__")
+        attr_name = l.get(attr_name)
+    elif tree.attr in function_analog_method:
+        attr_name = function_analog_method.get(attr_name)
     return handler(obj, attr_name)
 
 def function_call(tree):

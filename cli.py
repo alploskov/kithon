@@ -14,10 +14,11 @@ args = parser.parse_args()
 translator = importlib.import_module(f"translators.{args.config}")
 
 tools.conf(b_handlers = translator.blocks_handlers,
-     e_handlers = translator.expr_handlers,
-     signs = translator.signs,
-     a_attr = translator.a_attr,
-     a_func = translator.a_func)
+           e_handlers = translator.expr_handlers,
+           signs = translator.signs,
+           a_attr = translator.a_attr,
+           a_func = translator.a_func,
+           lib = translator.lib)
 if args.output != sys.stdout:
     args.output = open(args.output, 'w') 
 
