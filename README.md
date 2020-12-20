@@ -1,5 +1,2 @@
 # Python-Universal-Translator
-Cейчас поддерживается только js.
-Запуск на GNU/Linux:
-`python core.py file > end_file`
-Telegram:@Lexa2000
+Запуск: python сli.py -c [название транслятора в /translators] -o [Выходной файл] file.py
