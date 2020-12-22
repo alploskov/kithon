@@ -4,11 +4,11 @@ from . import expr
 
 a_func = {"print": "alert",
           "input": "prompt",
-          "get_id": "document.getElementById"
+          "get_id": "document.getElementById",
 }
 
 a_attr = {"len":"length",
-          "append":"push"
+          "append":"push",
 }
 
 lib = {"math": {"__name__": "Math",
@@ -24,8 +24,10 @@ signs = {"+": "+",
          "-": "-",
          "*": "*",
          "/": "/",
-         "==": "==",
-         "!=": "!=",
+         "**": "**",
+         "//": lambda l, r: f"Math.floor({l}/{r})",
+         "==": "===",
+         "!=": "!==",
          ">": ">",
          "<": "<",
          ">=": ">=",
@@ -34,12 +36,14 @@ signs = {"+": "+",
          "and": "&&",
          "|": "|",
          "&": "&",
-         "%": "%"
+         "%": "%",
+         "not": "!"
 }
 
 expr_handlers = {"bin_op": expr.bin_op,
                  "bool_op": expr.bool_op,
                  "name": expr.name,
+                 "un_op": expr.un_op,
                  "const": expr.const,
                  "string": expr.c_str,
                  "attr": expr.attr,

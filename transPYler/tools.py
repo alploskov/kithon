@@ -7,9 +7,12 @@ from transPYler import expressions, blocks
 def dentification_signs(signs):
     finished = {}
     for i in signs:
-        op = ast.parse(f"a {i} b").body[0].value
+        try:
+            op = ast.parse(f"a {i} b").body[0].value
+        except:
+            op = ast.parse(f"{i} b").body[0].value
         op_type = type(op)
-        if op_type == _ast.BinOp or op_type == _ast.BoolOp:
+        if op_type == _ast.BinOp or op_type == _ast.BoolOp or op_type == _ast.UnaryOp:
             sign_type = type(op.op)
         else:
             sign_type = type(op.ops[0])    
@@ -24,4 +27,3 @@ def conf(b_handlers, e_handlers, signs, a_attr, a_func, lib):
     expressions.function_analog_func = a_func
     expressions.lib = lib
     blocks.blocks_handlers = b_handlers
-    

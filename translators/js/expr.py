@@ -1,8 +1,8 @@
-import _ast
-
-
 def bin_op(left, right, op):
     return f"({left}{op}{right})"
+
+def un_op(op, el):
+    return f"{op}({el})"
 
 def name(name):
     return name

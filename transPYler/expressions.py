@@ -11,10 +11,12 @@ def get_sign(op):
     
 def bin_op(tree):
     """Math operation"""
-    handler = expr_handlers.get("bin_op")
     left = parser(tree.left)
     right = parser(tree.right)
     op = get_sign(tree.op)
+    if callable(op):
+        return op(left, right) 
+    handler = expr_handlers.get("bin_op")
     return handler(left, right, op)
 
 def bool_op(tree):
@@ -32,6 +34,12 @@ def compare(tree):
     ops = list(map(get_sign, tree.ops))
     return handler(els, ops)
 
+def un_op(tree):
+    handler = expr_handlers.get("un_op")
+    op = get_sign(tree.op)
+    el = parser(tree.operand)
+    return handler(op, el)
+    
 function_analog_method = {}
 function_analog_func = {}
 lib = {}
@@ -61,7 +69,7 @@ def attribute(tree):
 def function_call(tree):
     handler = expr_handlers.get("call")
     if type(tree.func) == _ast.Attribute:
-        name = attribute(tree.func)        # if called function is method of any class that name will be an attribute of the class
+        name = attribute(tree.func)
     else:
         name = tree.func.id
         
@@ -117,7 +125,8 @@ operation = {_ast.Call: function_call,
              _ast.Name: name,
              _ast.Subscript: slice,
              _ast.Constant: const,
-             _ast.arg: arg
+             _ast.arg: arg,
+             _ast.UnaryOp: un_op
 }
 
 expr_handlers = {}
