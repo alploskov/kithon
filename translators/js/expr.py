@@ -23,6 +23,7 @@ def bool_op(els, op):
     return els[0]+" "+"".join([op+" "+i for i in els[1:]])
 
 def call(name, args):
+    args = ", ".join(args)
     return f"{name}({args})"
 
 def attr(obj, attr_name):
@@ -31,11 +32,8 @@ def attr(obj, attr_name):
 def arg(arg):
     return arg
 
-def args(args):
-    return ", ".join(args)
-
 def _list(ls):
-    return f"[{ls}]"
+    return f"[{', '.join(ls)}]"
 
 def slice(arr, *args):
     first = args[0]

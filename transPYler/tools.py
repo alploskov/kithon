@@ -1,8 +1,10 @@
 import ast
 import _ast
-import sys
 from transPYler import expressions, blocks
 
+
+def parser(el, dict_el):
+    return dict_el.get(type(el))
 
 def dentification_signs(signs):
     finished = {}
@@ -21,9 +23,10 @@ def dentification_signs(signs):
 
 
 def conf(b_handlers, e_handlers, signs, a_attr, a_func, lib):
-    expressions.expr_handlers = e_handlers
+    expressions.handlers = e_handlers
     expressions.signs = dentification_signs(signs)
+
     expressions.function_analog_method = a_attr 
     expressions.function_analog_func = a_func
     expressions.lib = lib
-    blocks.blocks_handlers = b_handlers
+    blocks.handlers = b_handlers

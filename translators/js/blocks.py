@@ -7,6 +7,9 @@ def expr(value):
 def assign(var, value):
     return f"{var} = {value};"
 
+def new_var(var, value):
+    return f"var {var} = {value};"
+
 def aug_assign(var, op, value):
     return f"{var} {op}= {value};"
 
@@ -23,6 +26,7 @@ def else_if(_if):
     return "else "+_if
 
 def def_f(name, args, body):
+    args = ', '.join(args)
     return f"function {name}({args}){body}"
 
 def ret(value):
