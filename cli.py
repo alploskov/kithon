@@ -20,8 +20,10 @@ tools.conf(b_handlers=translator.blocks_handlers,
 
 if args.output != sys.stdout:
     args.output = open(args.output, 'w')
+
+set_up = ""
 if "set_up" in dir(translator):
-    translator.set_up()
+    set_up = translator.set_up()
 
 code = open(args.file, 'r').read()
-print(crawler(ast.parse(code).body), file=args.output)
+print(set_up+crawler(ast.parse(code).body), file=args.output)

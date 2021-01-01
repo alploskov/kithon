@@ -14,7 +14,7 @@ def aug_assign(var, op, value):
     return f"{var} {op}= {value};"
 
 def _if(compare, body, els):
-    return f"if({compare}){body}\n{els}"
+    return f"if({compare}){body}{els}"
 
 def _while(compare, body, els):
     return f"while({compare}){body}"

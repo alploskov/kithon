@@ -29,7 +29,7 @@ def call(name, args):
 def attr(obj, attr_name):
     return f"{obj}.{attr_name}"
 
-def arg(arg):
+def arg(arg, type=""):
     return arg
 
 def _list(ls):

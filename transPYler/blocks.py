@@ -17,6 +17,16 @@ def assign(expression):
     handler = handlers.get("assign")
     return handler(var, value)
 
+def ann_assign(expression):
+    handler = handlers.get("ann_assign")
+    var = parser(expression.target)
+    created_variables.get(namespace).append(var)
+    _type = parser(expression.annotation)
+    if expression.value:
+        val = parser(expression.value)
+        return handler(var, _type, val=val)
+    return handler(var, _type)
+
 def aug_assign(expression):
     handler = handlers.get("aug_assign")
     var = parser(expression.target)
@@ -81,6 +91,9 @@ def define_function(tree):
         created_variables.update({namespace: []})
     body = statement_block(tree.body)
     ".".join(namespace.split(".")[:-1])
+    if tree.returns:
+        ret_t = parser(tree.returns)
+        return handler(name, args, body, ret_t=ret_t)
     return handler(name, args, body)
 
 def ret(expression):
@@ -106,6 +119,7 @@ created_variables = {"main": []}
 nesting_level = 0
 
 elements = {_ast.Assign: assign,
+            _ast.AnnAssign: ann_assign,
             _ast.Expr: expr,
             _ast.AugAssign: aug_assign,
             _ast.If: _if,
