@@ -1,5 +1,6 @@
 import ast
 import _ast
+from .tools import Parser
 
 
 def bin_op(tree):
@@ -70,7 +71,17 @@ def function_call(tree):
     if name in function_analog_func:
         name = function_analog_func.get(name)
         if callable(name):
-            param = str(tuple(map((lambda x: f"{parser(x)}"), tree.args)))
+            param = []
+            for i in tree.args:
+                if type(i) == _ast.Constant:
+                    val = i.value
+                    if type(val) == str:
+                        val = '"'+val+'"'
+                    val = str(val)
+                else:
+                    val = parser(i)
+                param.append(val)
+            param = str(tuple(param))
             return eval(f"name{param}")
     elif name in function_analog_method:
         val = tree.args[0]
@@ -125,6 +136,7 @@ elements = {_ast.Call: function_call,
             _ast.arg: arg,
             _ast.UnaryOp: un_op
 }
+parser = Parser(elements).parser
 
 handlers = {}
 function_analog_method = {}
@@ -133,4 +145,3 @@ lib = {}
 types = {}
 signs = {}
 get_sign = lambda op: signs.get(type(op))
-parser = lambda el: elements.get(type(el))(el)

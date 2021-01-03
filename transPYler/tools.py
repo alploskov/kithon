@@ -2,9 +2,11 @@ import ast
 import _ast
 from transPYler import expressions, blocks
 
-
-def parser(el, dict_el):
-    return dict_el.get(type(el))
+class Parser():
+    def __init__(self, dict_e):
+        self.dict_el = dict_e
+    def parser(self, el):
+        return self.dict_el.get(type(el))(el)
 
 def dentification_signs(signs):
     finished = {}

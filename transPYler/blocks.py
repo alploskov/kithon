@@ -1,6 +1,6 @@
 import _ast
 from transPYler.expressions import get_sign, parser
-
+from transPYler.tools import Parser
 
 def expr(expression):
     handler = handlers.get("expr")
@@ -102,10 +102,9 @@ def ret(expression):
 
 def statement_block(body):
     handler = handlers.get("statement_block")
-    parser = lambda el: elements.get(type(el))(el)
     global nesting_level
     nesting_level += 1
-    body = handler(list(map(parser, body)), nesting_level)
+    body = handler(list(map(b_parser, body)), nesting_level)
     nesting_level -= 1
     return body
 
@@ -130,8 +129,9 @@ elements = {_ast.Assign: assign,
             _ast.Global: scope_of_view,
             _ast.Nonlocal: scope_of_view,
 }
+b_parser = Parser(elements).parser
+
 
 def crawler(body):
-    parser = lambda el: elements.get(type(el))(el)
-    strings = list(map(parser, body))
+    strings = list(map(b_parser, body))
     return "\n".join(strings)
