@@ -1,14 +1,9 @@
-from . import blocks
-from . import expr
-
+from . import blocks, expr, types
 
 a_func = {"print": "alert",
           "input": "prompt",
-          "get_id": "document.getElementById",
-}
-
-a_attr = {"len":"length",
-          "append":"push",
+          "len": lambda obj: f"{obj}.length",
+          "get_by_id": "document.getElementById",
 }
 
 lib = {"math": {"__name__": "Math",
@@ -20,6 +15,7 @@ lib = {"math": {"__name__": "Math",
                 }
 }
 
+operator_overloading = types.operator_overloading
 signs = {"+": "+",
          "-": "-",
          "*": "*",
@@ -40,31 +36,30 @@ signs = {"+": "+",
          "not": "!"
 }
 
-expr_handlers = {"bin_op": expr.bin_op,
-                 "bool_op": expr.bool_op,
-                 "name": expr.name,
-                 "un_op": expr.un_op,
-                 "const": expr.const,
-                 "string": expr.c_str,
-                 "attr": expr.attr,
-                 "call": expr.call,
-                 "arg": expr.arg,
-                 "index": expr.slice,
-                 "compare": expr.compare,
-                 "list": expr._list
-}
-
-blocks_handlers = {"assign": blocks.assign,
-                   "new_var": blocks.new_var,
-                   "expr": blocks.expr,
-                   "aug_assign": blocks.aug_assign,
-                   "if": blocks._if,
-                   "statement_block": blocks.statement_block,
-                   "else": blocks._else,
-                   "else_if": blocks.else_if,
-                   "def": blocks.def_f,
-                   "return": blocks.ret,
-                   "for": blocks._for,
-                   "c_like_for": blocks.c_like_for,
-                   "while": blocks._while
+handlers = {"bin_op": expr.bin_op,
+            "bool_op": expr.bool_op,
+            "name": expr.name,
+            "un_op": expr.un_op,
+            "const": expr.const,
+            "string": expr.c_str,
+            "attr": expr.attr,
+            "call": expr.call,
+            "arg": expr.arg,
+            "index": expr.index,
+            "slice": expr.slice,
+            "compare": expr.compare,
+            "list": expr._list,
+            "assign": blocks.assign,
+            "new_var": blocks.new_var,
+            "expr": blocks.expr,
+            "aug_assign": blocks.aug_assign,
+            "if": blocks._if,
+            "statement_block": blocks.statement_block,
+            "else": blocks._else,
+            "else_if": blocks.else_if,
+            "def": blocks.def_f,
+            "return": blocks.ret,
+            "for": blocks._for,
+            "c_like_for": blocks.c_like_for,
+            "while": blocks._while
 }

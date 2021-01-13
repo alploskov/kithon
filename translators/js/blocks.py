@@ -10,6 +10,9 @@ def assign(var, value):
 def new_var(var, value):
     return f"var {var} = {value};"
 
+def ann_assign(var, _type, value=""):
+    return new_var(var, value)
+
 def aug_assign(var, op, value):
     return f"{var} {op}= {value};"
 
@@ -25,7 +28,7 @@ def _else(body):
 def else_if(_if):
     return "else "+_if
 
-def def_f(name, args, body):
+def def_f(name, args, body, ret_t=""):
     args = ', '.join(args)
     return f"function {name}({args}){body}"
 
@@ -36,7 +39,8 @@ def _for(var, obj, body):
     step = f"step{str(uuid.uuid4())[:8]}"
     return f"for(var {step}=0, {var}={obj}[0]; {step}<{obj}.length;{var}={obj}[++{step}]){body}"
 
-def c_like_for(var, body, start, finish, step):
+def c_like_for(var, body, param):
+    start, finish, step = param
     return f"for(var {var} = {start}; {var} < {finish}; {var}+={step}){body}"
 
 def statement_block(body, nesting_level):

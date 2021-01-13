@@ -1,16 +1,16 @@
 import ast
 import _ast
-from transPYler import expressions, blocks
-
-class Parser():
-    def __init__(self, dict_e):
-        self.dict_el = dict_e
-    def parser(self, el):
-        return self.dict_el.get(type(el))(el)
 
 def dentification_signs(signs):
     finished = {}
     for i in signs:
+        if i == '+' or i == '-':
+            op = ast.parse(f"a {i} b").body[0].value
+            sign_type = type(op.op)
+            finished.update({sign_type: signs.get(i)})
+            op = ast.parse(f"{i} b").body[0].value
+            sign_type = type(op.op)
+            finished.update({sign_type: signs.get(i)})
         try:
             op = ast.parse(f"a {i} b").body[0].value
         except:
@@ -24,11 +24,11 @@ def dentification_signs(signs):
     return finished
 
 
-def conf(b_handlers, e_handlers, signs, a_attr, a_func, lib):
-    expressions.handlers = e_handlers
+def conf(handlers, signs, a_func, operator_overloading, lib):
+    core_data.core.handlers = handlers
+    print(handlers)
+    from transPYler import expressions
     expressions.signs = dentification_signs(signs)
-
-    expressions.function_analog_method = a_attr 
+    expressions.operator_overloading = operator_overloading
     expressions.function_analog_func = a_func
     expressions.lib = lib
-    blocks.handlers = b_handlers

@@ -2,7 +2,7 @@ import ast
 import argparse
 import importlib
 import sys
-from transPYler import tools, crawler
+from transPYler import transPYler, tools
 
 parser = argparse.ArgumentParser(description='Python to other language')
 parser.add_argument("file", type=str, help="Python file")
@@ -11,12 +11,11 @@ parser.add_argument("-o", "--output", default=sys.stdout, help="Output file defa
 args = parser.parse_args()
 
 translator = importlib.import_module(f"translators.{args.config}")
-tools.conf(b_handlers=translator.blocks_handlers,
-           e_handlers=translator.expr_handlers,
-           signs=translator.signs,
-           a_attr=translator.a_attr,
-           a_func=translator.a_func,
-           lib=translator.lib)
+transPYler.handlers = translator.handlers
+transPYler.signs = tools.dentification_signs(translator.signs)
+transPYler.a_func = translator.a_func
+transPYler.operator_overloading_data = translator.operator_overloading 
+transPYler.lib = translator.lib
 
 if args.output != sys.stdout:
     args.output = open(args.output, 'w')
@@ -26,4 +25,5 @@ if "set_up" in dir(translator):
     set_up = translator.set_up()
 
 code = open(args.file, 'r').read()
-print(set_up+crawler(ast.parse(code).body), file=args.output)
+print(set_up+transPYler.crawler(ast.parse(code).body), file=args.output)
+

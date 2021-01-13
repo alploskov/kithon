@@ -1,18 +1,35 @@
 import ast
-import _ast
-from .tools import Parser
+import _ast 
+from .core_data import created_variables, namespace, handlers, Parser
+print(handlers)
+def operator_overloading(left, right, op):
+    l_type = left.get('type')
+    r_type = right.get('type') 
+    handler = operator_overloading_data.get((l_type, r_type, op))
+    return handler(left, right)
 
+def auto_type(l_type, r_type, op):
+    if (l_type, r_type, op) in type_by_bin_op:
+        return type_by_bin_op.get((l_type, r_type, op))
 
 def bin_op(tree):
     """Math operation(+, -, *, /...)"""
     left = parser(tree.left)
     right = parser(tree.right)
     op = get_sign(tree.op)
+    
+    l_type = left.get('type')
+    r_type = right.get('type')
+    if (l_type, r_type, op) in operator_overloading_data:
+        operator_overloading(left, right, op)
+    
+    _type = auto_type(left.get("type"), right.get("type"), op)
     if callable(op):
-        return op(left, right)
-    handler = handlers.get("bin_op")
-    return handler(left, right, op)
-
+        val = op(left, right)
+    else:
+        handler = handlers.get("bin_op")
+        val = handler(left.get("val"), right.get("val"), op)
+    return {"type": _type, "val": val}
 
 def bool_op(tree):
     """Logic operation(or, and)"""
@@ -20,7 +37,6 @@ def bool_op(tree):
     els = list(map(parser, tree.values))
     op = get_sign(tree.op)
     return handler(els, op)
-
 
 def compare(tree):
     """Compare operation(==, !=, >, <, >=, <=...)"""
@@ -30,14 +46,12 @@ def compare(tree):
     ops = list(map(get_sign, tree.ops))
     return handler(els, ops)
 
-
 def un_op(tree):
-    "unary operations(not)"
+    """unary operations(not)"""
     handler = handlers.get("un_op")
     op = get_sign(tree.op)
     el = parser(tree.operand)
     return handler(op, el)
-
 
 def arg(tree):
     handler = handlers.get("arg")
@@ -45,7 +59,6 @@ def arg(tree):
     if tree.annotation:
         return handler(name, type=parser(tree.annotation))
     return handler(name)
-
 
 def attribute(tree):
     handler = handlers.get("attr")
@@ -55,10 +68,7 @@ def attribute(tree):
         l = lib.get(obj)
         obj = l.get("__name__")
         attr_name = l.get(attr_name)
-    elif tree.attr in function_analog_method:
-        attr_name = function_analog_method.get(attr_name)
     return handler(obj, attr_name)
-
 
 def function_call(tree):
     handler = handlers.get("call")
@@ -67,7 +77,6 @@ def function_call(tree):
     else:
         name = tree.func.id
 
-    args = list(map(parser, tree.args))
     if name in function_analog_func:
         name = function_analog_func.get(name)
         if callable(name):
@@ -83,18 +92,15 @@ def function_call(tree):
                 param.append(val)
             param = str(tuple(param))
             return eval(f"name{param}")
-    elif name in function_analog_method:
-        val = tree.args[0]
-        name = attribute(ast.Attribute(value=val, attr=name))
-        if len(tree.args) <= 1:
-            return name
-        args = args[1:]
-    return handler(name, args)
+        
+    args = list(map(parser, tree.args))
+    ret_type = None
+    return {"type": ret_type, "val": handler(name, args)}
 
 
 def _list(tree):
     handler = handlers.get("list")
-    return handler(tree.elts)
+    return handler(list(map(parser, tree.elts)))
 
 
 def slice(tree):
@@ -106,23 +112,26 @@ def slice(tree):
         return handler(arr, index)
     elif type(sl) == _ast.Slice:
         handler = handlers.get("slice")
-        return handler()
+        lower = parser(sl.lower)
+        upper = parser(sl.upper)
+        step = parser(sl.step)
+        return handler(arr, lower, upper, step)
 
 
 def name(tree):
     handler = handlers.get("name")
     name = tree.id
-    return handler(name)
-
+    _type = vars.get(namespace).get(name).get("type")
+    return {"type": _type, "val": handler(name)}
 
 def const(tree):
     val = tree.value
     if type(val) == str:
         handler = handlers.get("string")
-        return handler(val)
+        return {"type": 'str', "val": handler(val)}
     handler = handlers.get("const")
-    return handler(str(val))
-
+    _type = str(type(val)).replace("<class '", "").replace("'>", "")
+    return {"type": _type, "val": handler(str(val))}
 
 elements = {_ast.Call: function_call,
             _ast.BinOp: bin_op,
@@ -134,14 +143,16 @@ elements = {_ast.Call: function_call,
             _ast.Subscript: slice,
             _ast.Constant: const,
             _ast.arg: arg,
-            _ast.UnaryOp: un_op
+            _ast.UnaryOp: un_op,
+            type(None): lambda t: None
 }
 parser = Parser(elements).parser
 
-handlers = {}
-function_analog_method = {}
+
 function_analog_func = {}
 lib = {}
 types = {}
 signs = {}
 get_sign = lambda op: signs.get(type(op))
+operator_overloading_data = {} 
+type_by_op = {}
