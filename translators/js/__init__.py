@@ -1,9 +1,16 @@
 from . import blocks, expr, types
 
-a_func = {"print": "alert",
+a_func = {"print": "console.log",
           "input": "prompt",
           "len": lambda obj: f"{obj}.length",
           "get_by_id": "document.getElementById",
+}
+
+attrs = {"list": {"index": {"type": "int",
+                            "val": "indexOf"
+                            },
+                  "append": {"val": "push"}
+                  }
 }
 
 lib = {"math": {"__name__": "Math",

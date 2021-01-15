@@ -57,9 +57,9 @@ def bin_op(tree):
 def bool_op(tree):
     """Logic operation(or, and)"""
     handler = handlers.get("bool_op")
-    els = list(map(parser, tree.values))
+    els = list(map(lambda a: parser(a).get('val'), tree.values))
     op = get_sign(tree.op)
-    return handler(els, op)
+    return {'type': 'bool', 'val': handler(els, op)}
 
 def compare(tree):
     """Compare operation(==, !=, >, <, >=, <=...)"""
@@ -88,13 +88,15 @@ def arg(tree):
 def attribute(tree):
     handler = handlers.get("attr")
     obj = parser(tree.value)
+    _type = obj.get('type')
+    obj = obj.get('val')
     attr_name = tree.attr
-    if obj.get('val') in lib:
-        l = lib.get(obj.get('val'))
+    if obj in lib:
+        l = lib.get(obj)
         obj = l.get("__name__")
         attr_name = l.get(attr_name)
-    else:
-        obj = obj.get('val')
+    elif type_parse(_type) in attrs.keys():
+            attr_name = attrs.get(type_parse(_type)).get(attr_name).get('val')
     return {'type': 'None', 'val': handler(obj, attr_name)}
 
 def function_call(tree):
@@ -147,6 +149,8 @@ def name(tree):
     handler = handlers.get("name")
     name = tree.id
     _type = str(created_variables.get(namespace).get(name))
+    if name == 'deck_of_cards':
+        print(namespace, ' :: ', name, ' :- ', _type, 'get')
     return {"type": _type, "val": handler(name)}
 
 def const(tree):
@@ -180,10 +184,15 @@ def assign(expression):
     value = parser(expression.value)
     var = parser(expression.targets[0])
     _type = value.get("type")
+    if var.get('val') == 'deck_of_cards': 
+        print(namespace, ' :: ', var.get('val'), ' :- ', _type, 'ch')
+
     if type(expression.targets[0]) == _ast.Name: # Могут быть изменения массивов (a[0] = 1)
         if not (var.get('val') in created_variables.get(namespace).keys()):
             created_variables.get(namespace).update({var.get('val'): _type})
             handler = handlers.get("new_var")
+            if var.get('val') == 'deck_of_cards':
+                print(created_variables.get(namespace))
             return handler(var.get('val'), value.get('val'))
     handler = handlers.get("assign")
     return handler(var.get('val'), value.get('val'))
@@ -249,11 +258,17 @@ def define_function(tree):
     args = list(map(parser, tree.args.args))
     name = tree.name
     global namespace
+    vars = created_variables.get(namespace)
+    global_vars = {}
+    for i in vars:
+        if vars.get(i) != type_parse(vars.get(i)):
+            global_vars.update({i: vars.get(i)})
+            
     namespace += f".{name}"
-    if not (namespace in created_variables.keys()):
-        created_variables.update({namespace: {}})
+    created_variables.update({namespace: {}})
+    created_variables.get(namespace).update(global_vars)
     body = statement_block(tree.body)
-    ".".join(namespace.split(".")[:-1])
+    namespace = ".".join(namespace.split(".")[:-1])
     if tree.returns:
         ret_t = parser(tree.returns)
         return handler(name, args, body, ret_t=ret_t)
@@ -272,8 +287,10 @@ def statement_block(body):
     return body
 
 def scope_of_view(tree):
-    created_variables.get(namespace).update(tree.names)
-    return None
+    for i in tree.names:
+        _type = created_variables.get(".".join(namespace.split(".")[:-1])).get(i)
+        created_variables.get(namespace).update({i: _type})
+    return ''
 
 
 nesting_level = 0
@@ -309,12 +326,13 @@ parser = lambda el: elements.get(type(el))(el)
 namespace = "main"
 created_variables = {"main": {}}
 handlers = {}
+attrs = {}
 
 def crawler(body):
     strings = []
     for i in body:
         i = parser(i)
-        print(i)
         if i:
             strings.append(i)
-    return "\n".join(strings)
+    print('---------------------------------------------')
+    return '\n'.join(strings)

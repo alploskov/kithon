@@ -16,7 +16,7 @@ transPYler.signs = tools.dentification_signs(translator.signs)
 transPYler.a_func = translator.a_func
 transPYler.operator_overloading_data = translator.operator_overloading 
 transPYler.lib = translator.lib
-
+transPYler.attrs = translator.attrs
 if args.output != sys.stdout:
     args.output = open(args.output, 'w')
 
