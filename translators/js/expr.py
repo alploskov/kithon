@@ -1,5 +1,5 @@
-def bin_op(left, right, op):
-    return f"({left}{op}{right})"
+def op(left, right, op):
+    return f"({left} {op} {right})"
 
 def un_op(op, el):
     return f"{op}({el})"

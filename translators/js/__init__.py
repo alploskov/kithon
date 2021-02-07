@@ -1,34 +1,26 @@
-from . import blocks, expr, types
+from . import blocks, expr
+from .macros import macros
 
-a_func = {"print": "console.log",
-          "input": "prompt",
-          "len": lambda obj: f"{obj}.length",
-          "get_by_id": "document.getElementById",
-}
 
-attrs = {"list": {"index": {"type": "int",
-                            "val": "indexOf"
-                            },
+attrs = {"list": {"index": {"val": "indexOf"},
                   "append": {"val": "push"}
+                  },
+         "math": {"__name__": "Math",
+                  "pi": {'val': 'PI',
+                         'type': 'float'
+                         }
+                  },
+         "json": {"__name__": "JSON",
+                  "dumps": {'val': 'stringify'},
+                  "loads": {'val': 'parse'}
                   }
 }
 
-lib = {"math": {"__name__": "Math",
-                "pi": "PI"
-                },
-       "json": {"__name__": "JSON",
-                "dumps": "stringify",
-                "loads": "parse"
-                }
-}
-
-operator_overloading = types.operator_overloading
 signs = {"+": "+",
          "-": "-",
          "*": "*",
          "/": "/",
          "**": "**",
-         "//": lambda l, r: f"Math.floor({l}/{r})",
          "==": "===",
          "!=": "!==",
          ">": ">",
@@ -43,8 +35,7 @@ signs = {"+": "+",
          "not": "!"
 }
 
-handlers = {"bin_op": expr.bin_op,
-            "bool_op": expr.bool_op,
+handlers = {"bbc_op": expr.op,
             "name": expr.name,
             "un_op": expr.un_op,
             "const": expr.const,
@@ -54,7 +45,6 @@ handlers = {"bin_op": expr.bin_op,
             "arg": expr.arg,
             "index": expr.index,
             "slice": expr.slice,
-            "compare": expr.compare,
             "list": expr._list,
             "assign": blocks.assign,
             "new_var": blocks.new_var,

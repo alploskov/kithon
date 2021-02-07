@@ -36,14 +36,18 @@ def ret(value):
     return f"return {value}"
 
 def _for(var, obj, body):
-    step = f"step{str(uuid.uuid4())[:8]}"
+    step = var*2
     return f"for(var {step}=0, {var}={obj}[0]; {step}<{obj}.length;{var}={obj}[++{step}]){body}"
 
 def c_like_for(var, body, param):
     start, finish, step = param
     return f"for(var {var} = {start}; {var} < {finish}; {var}+={step}){body}"
 
-def statement_block(body, nesting_level):
+nesting_level = 0
+def statement_block(body):
+    global nesting_level
+    nesting_level += 1
     tab = '\n'+'    '*nesting_level
-    last_tab = '\n'+'    '*(nesting_level-1)
-    return "{"+tab + tab.join(body)+last_tab+"}"
+    end = ('\n'+'    '*(nesting_level-1))+'}'
+    nesting_level -= 1
+    return "{"+tab + tab.join(body)+end
