@@ -2,18 +2,19 @@ from . import blocks, expr
 from .macros import macros
 
 
-attrs = {"list": {"index": {"val": "indexOf"},
-                  "append": {"val": "push"}
-                  },
-         "math": {"__name__": "Math",
-                  "pi": {'val': 'PI',
-                         'type': 'float'
-                         }
-                  },
-         "json": {"__name__": "JSON",
-                  "dumps": {'val': 'stringify'},
-                  "loads": {'val': 'parse'}
-                  }
+objects = {"list": {'__name__': 'Array',
+                    "index": {"val": "indexOf"},
+                    "append": {"val": "push"}
+                    },
+           "math": {"__name__": "Math",
+                    "pi": {'val': 'PI',
+                           'type': 'float'
+                           }
+                    },
+           "json": {"__name__": "JSON",
+                    "dumps": {'val': 'stringify'},
+                    "loads": {'val': 'parse'}
+                    }
 }
 
 signs = {"+": "+",
@@ -35,7 +36,9 @@ signs = {"+": "+",
          "not": "!"
 }
 
-handlers = {"bbc_op": expr.op,
+handlers = {"bin_op": expr.bin_op,
+            "bool_op": expr.bool_op,
+            "compare": expr.compare,
             "name": expr.name,
             "un_op": expr.un_op,
             "const": expr.const,
@@ -58,5 +61,9 @@ handlers = {"bbc_op": expr.op,
             "return": blocks.ret,
             "for": blocks._for,
             "c_like_for": blocks.c_like_for,
-            "while": blocks._while
+            "while": blocks._while,
+            "init": expr.init
 }
+
+setup = lambda: "(function (){\n"
+end = lambda: "\n}).call(this);"

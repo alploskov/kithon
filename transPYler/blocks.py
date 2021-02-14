@@ -1,6 +1,6 @@
 import _ast
 import ast
-from . import core
+from . import core, expressions
 from .core import parser, namespace, variables, handlers
 
 
@@ -101,11 +101,6 @@ def ret(expr):
     handler = handlers.get("return")
     return handler(parser(expr.value).get('val'))
 
-def statement_block(body):
-    handler = handlers.get("statement_block")
-    body = handler(list(map(parser, body)))
-    return body
-
 def scope_of_view(tree):
     for i in tree.names:
         _type = variables.get(".".join(namespace.split(".")[:-1])).get(i)
@@ -124,3 +119,16 @@ core.elements |= {_ast.Assign: assign,
                   _ast.Global: scope_of_view,
                   _ast.Nonlocal: scope_of_view
 }
+
+def statement_block(body):
+    handler = handlers.get("statement_block")
+    body = handler(list(map(parser, body)))
+    return body
+
+def crawler(body):
+    strings = []
+    for i in body:
+        i = parser(i)
+        if i:
+            strings.append(i)
+    return '\n'.join(strings)

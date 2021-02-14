@@ -1,26 +1,26 @@
 def what_macro(name):
     if type(name) == tuple:
-        if (name[0], name[1], name[2]) in macros:
-            return macros.get((name[0], name[1], name[2]))
-        elif (name[0], name[1], 'any') in macros:
-            return macros.get((name[0], name[1], 'any'))
-        if ('any', 'any', name[2]) in macros:
-            return macros.get(('any', 'any', name[2]))
-        if ('any', 'any', 'any') in macros:
-            return macros.get(('any', 'any', 'any'))
+        ol_data = [(name[0], name[1], name[2]),
+                   (name[0], name[1], 'any'),
+                   (name[0], 'any', name[2]),
+                   ('any', 'any', name[2]),
+                   ('any', 'any', 'any')
+                   ]
+        for i in ol_data:
+            if ol := macros.get(i):
+                return ol
     elif name in macros:
         name = macros.get(name)
         return name
 
-def get_val(val):
-    val = val.value
-    if type(val) == str:
-        val = '"'+val+'"'
-    val = str(val)
-    return val
-
-def macro(name, args, keywords):
-    kw = str(tuple(map(get_val, args)))
-    return {'type': 'None', 'val': eval(f"name{args}")}
+def macro(name, args):
+    def get_val(val):
+        val = val.value
+        if type(val) == str:
+            val = '"'+val+'"'
+        val = str(val)
+        return val
+    args = str(tuple(map(get_val, args)))
+    return {'val': eval(f"name{args}")}
 
 macros = {}

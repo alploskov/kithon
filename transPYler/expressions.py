@@ -1,41 +1,42 @@
 import _ast
 import re
 from . import core
-from .core import parser, namespace, variables, handlers
 from .macros import macro, what_macro
+from .core import parser, namespace, variables, handlers
 
 
 def bin_op(tree):
     """Math operation(+, -, *, /...)"""
     left = parser(tree.left)
     right = parser(tree.right)
+    if overload := what_macro((left.get('type'), right.get('type'), type(tree.op))):
+        return overload(left, right)
+    handler = handlers.get("bin_op")
     op = get_sign(tree.op)
-    val = operation(left, right, op)
-    return val
+    val = handler(left.get('val'), right.get('val'), op)
+    return {'type': 'int', 'val': val}
 
 def bool_op(tree):
     """Logic operation(or, and)"""
     els = list(map(lambda a: parser(a).get('val'), tree.values))
     op = get_sign(tree.op)
-    val = ''
-    for i in els:
-        pass
+    if overload := what_macro((els[0].get('type'), els[1].get('type'), type(op))):
+        return overload(els[0], els[1])
+    handler = handlers.get("bool_op")
+    els = list(map(lambda a: a.get('val'), els))
     return {'type': 'bool', 'val': handler(els, op)}
 
 def compare(tree):
     """Compare operation(==, !=, >, <, >=, <=...)"""
-    f_el = parser(tree.left).get('val')
-    els = list(map(lambda a: parser(a).get('val'), tree.comparators))
-    ops = []
-    val = operation(f_el, els[0], ops[0])
-    for el, op in zip(els[1], ):
-        val += operation(left, right, op)
+    f_el = parser(tree.left)
+    els = list(map(parser, tree.comparators))
+    if overload := what_macro((f_el.get('type'), els[0].get('type'), type(tree.ops[0]))):
+        return overload(f_el, els[0])
+    handler = handlers.get("compare")
+    ops = list(map(get_sign, tree.ops))
+    els.insert(0, f_el)
+    els = list(map(lambda a: a.get('val'), els))
     return {"type": 'bool', 'val': handler(els, ops)}
-
-def operation(left, right, op):
-    handler = handlers.get("bbc_op")
-    val = handler(left.get("val"), right.get("val"), op)
-    return {'type': 'simple', 'val': val}
 
 def un_op(tree):
     """unary operations(not)"""
@@ -78,6 +79,7 @@ def attribute(tree):
 def function_call(tree):
     handler = handlers.get("call")
     args = tree.args
+    ret_type = 'None'
     if type(tree.func) == _ast.Attribute:
         attr = attribute(tree.func)
         #if 'macros' in attr.keys():
@@ -87,10 +89,17 @@ def function_call(tree):
         name = attr.get('val')
     else:
         name = tree.func.id    
-    #if name in macros:
-    #    return macro(name, tree.args)
+    if name1 := what_macro(name):
+        if callable(name1):
+            return macro(name1, tree.args)
+        name = name1
+        if 'type' in name:
+            ret_type = name.get('type')
+            name = name.get('val')
+    elif name in objects:
+        name = objects.get('__name__')
+        handler = handlers.get('init')
     args = list(map(lambda a: parser(a).get('val'), tree.args))
-    ret_type = 'None'
     return {"type": ret_type, "val": handler(name, args)}
 
 def _list(tree):
@@ -142,7 +151,6 @@ signs = {}
 get_sign = lambda op: signs.get(type(op))
 type_by_op = {}
 objects = {}
-macros = {}
 core.elements |= {_ast.Call: function_call,
                   _ast.BinOp: bin_op,
                   _ast.BoolOp: bool_op,

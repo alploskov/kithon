@@ -1,4 +1,4 @@
-def op(left, right, op):
+def bin_op(left, right, op):
     return f"({left} {op} {right})"
 
 def un_op(op, el):
@@ -39,6 +39,10 @@ def index(arr, val):
     if val[0] == '-':
         return f"{arr}[{arr}.length{val}]"
     return f"{arr}[{val}]"
+
+def init(name, args):
+    args = ", ".join(args)
+    return f"new {name}(args)"
 
 def slice(arr, lower, upper, step):
     if lower == 'None':

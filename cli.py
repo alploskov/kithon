@@ -3,7 +3,8 @@ import argparse
 import importlib
 import sys
 import transPYler
-from transPYler import tools
+from transPYler import utils
+
 
 parser = argparse.ArgumentParser(description='Python to other language')
 parser.add_argument("file", type=str, help="Python file")
@@ -13,9 +14,9 @@ args = parser.parse_args()
 
 translator = importlib.import_module(f"translators.{args.config}")
 transPYler.core.handlers |= translator.handlers
-transPYler.expressions.signs |= tools.dentification_signs(translator.signs)
+transPYler.expressions.signs |= utils.dentification_signs(translator.signs)
 if 'macros' in dir(translator):
-    transPYler.macros = translator.macros
+    transPYler.macros.macros |= utils.op_overload_key(translator.macros)
 if 'attrs' in dir(translator):
     transPYler.objects = translator.attrs
 if 'type_by_op' in dir(translator):
@@ -24,8 +25,10 @@ if args.output != sys.stdout:
     args.output = open(args.output, 'w')
 
 set_up = ""
-if "set_up" in dir(translator):
-    set_up = translator.set_up()
+if "setup" in dir(translator):
+    setup = translator.setup()
+if "end" in dir(translator):
+    end = translator.end()
 
 code = open(args.file, 'r').read()
-print(set_up+transPYler.crawler(ast.parse(code).body), file=args.output)
+print(setup+transPYler.blocks.crawler(ast.parse(code).body)+end, file=args.output)
