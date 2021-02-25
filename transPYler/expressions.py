@@ -1,6 +1,7 @@
 import _ast
 import re
 from . import core
+from .utils import element_type, transpyler_type 
 from .macros import macro, what_macro
 from .core import parser, namespace, variables, handlers
 
@@ -9,7 +10,7 @@ def bin_op(tree):
     """Math operation(+, -, *, /...)"""
     left = parser(tree.left)
     right = parser(tree.right)
-    if overload := what_macro((left.get('type'), right.get('type'), type(tree.op))):
+    if overload := what_macro((left, right, type(tree.op))):
         return overload(left, right)
     handler = handlers.get("bin_op")
     op = get_sign(tree.op)
@@ -20,7 +21,7 @@ def bool_op(tree):
     """Logic operation(or, and)"""
     els = list(map(lambda a: parser(a).get('val'), tree.values))
     op = get_sign(tree.op)
-    if overload := what_macro((els[0].get('type'), els[1].get('type'), type(op))):
+    if overload := what_macro((els[0], els[1], type(op))):
         return overload(els[0], els[1])
     handler = handlers.get("bool_op")
     els = list(map(lambda a: a.get('val'), els))
@@ -30,7 +31,7 @@ def compare(tree):
     """Compare operation(==, !=, >, <, >=, <=...)"""
     f_el = parser(tree.left)
     els = list(map(parser, tree.comparators))
-    if overload := what_macro((f_el.get('type'), els[0].get('type'), type(tree.ops[0]))):
+    if overload := what_macro((f_el, els[0], type(tree.ops[0]))):
         return overload(f_el, els[0])
     handler = handlers.get("compare")
     ops = list(map(get_sign, tree.ops))
@@ -56,7 +57,7 @@ def arg(tree):
 
 def attribute(tree):
     obj = parser(tree.value)
-    _type = type_parse(obj.get('type'))
+    _type = obj.get('type')
     obj = obj.get('val')
     attr = tree.attr
     #if _type in objects or obj in objects:
@@ -110,7 +111,8 @@ def _list(tree):
         _type = elements[0].get('type')
     else:
         _type = 'None'
-    return {"type": f'list[{_type}]', "val": handler(els, _type)}
+    print(_type)
+    return {"type": f'list<{_type}>', "val": handler(els, _type)}
 
 def slice(tree):
     arr = parser(tree.value)
@@ -123,13 +125,12 @@ def slice(tree):
         val = handler(arr.get('val'), lower, upper, step)
         return {"type": arr.get('type'), "val": val}
     else:
-        index = parser(sl).get('val')
         handler = handlers.get("index")
+        index = parser(sl).get('val')
         val = handler(arr.get('val'), index)
-        if re.search(r'\[.+]', arr.get('type')):
-            _type = re.search(r'\[.+]', arr.get('type')).string[1:-1]
-        else:
-            _type = arr.get('type')
+        _type = element_type(arr)
+        print(transpyler_type(arr))
+        print(_type)
         return {"type": _type, "val": val}
 
 def name(tree):

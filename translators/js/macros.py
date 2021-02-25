@@ -11,7 +11,6 @@ def div(l, r):
     val = f"Math.floor({l.get('val')}/{r.get('val')})"
     return {'val': val}
 
-
 macros = {"print": "console.log",
           "input": "prompt",
           "len": lambda obj: f"{obj}.length",

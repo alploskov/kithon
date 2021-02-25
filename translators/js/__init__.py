@@ -1,5 +1,4 @@
 from . import blocks, expr
-from .macros import macros
 
 
 objects = {"list": {'__name__': 'Array',

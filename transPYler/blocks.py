@@ -124,11 +124,3 @@ def statement_block(body):
     handler = handlers.get("statement_block")
     body = handler(list(map(parser, body)))
     return body
-
-def crawler(body):
-    strings = []
-    for i in body:
-        i = parser(i)
-        if i:
-            strings.append(i)
-    return '\n'.join(strings)

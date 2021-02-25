@@ -1,3 +1,7 @@
+import re
+import ast
+
+
 elements = {}
 handlers = {}
 
@@ -8,3 +12,12 @@ def parser(el):
 
 namespace = "main"
 variables = {"main": {}}
+
+def crawler(code):
+    strings = []
+    body = ast.parse(code).body
+    for i in body:
+        i = parser(i)
+        if i:
+            strings.append(i)
+    return '\n'.join(strings)
