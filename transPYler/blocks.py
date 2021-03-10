@@ -2,7 +2,7 @@ import _ast
 import ast
 from . import core, expressions
 from .core import parser, namespace, variables, handlers
-
+from .macros import what_macro
 
 def expr(expr):
     handler = handlers.get("expr")
@@ -12,9 +12,11 @@ def expr(expr):
 def assign(expr):
     value = parser(expr.value)
     var = parser(expr.targets[0])
+    if macro := what_macro((var, value, '=')):
+        return macro(var, value)
     _type = value.get("type")
     if type(expr.targets[0]) == _ast.Name: # Могут быть изменения массивов (a[0] = 1)
-        if not (var.get('val') in variables.get(namespace).keys()):
+        if not(var.get('val') in variables.get(namespace).keys()):
             variables.get(namespace).update({var.get('val'): _type})
             handler = handlers.get("new_var")
             return handler(var.get('val'), value.get('val'))
@@ -120,7 +122,15 @@ core.elements |= {_ast.Assign: assign,
                   _ast.Nonlocal: scope_of_view
 }
 
+nesting_level = 0
 def statement_block(body):
+    global nesting_level
     handler = handlers.get("statement_block")
+    nesting_level += 1
     body = handler(list(map(parser, body)))
+    nesting_level -= 1
+    #_body = []
+    #for i in body:
+    #    print(parser(i))
+    #    _body.append(parser(i))
     return body

@@ -3,14 +3,14 @@ import re
 from . import core
 from .utils import element_type, transpyler_type 
 from .macros import macro, what_macro
-from .core import parser, namespace, variables, handlers
+from .core import parser, namespace, variables, handlers, objects, op_to_str
 
 
 def bin_op(tree):
     """Math operation(+, -, *, /...)"""
     left = parser(tree.left)
     right = parser(tree.right)
-    if overload := what_macro((left, right, type(tree.op))):
+    if overload := what_macro((left, right, op_to_str.get(type(tree.op)))):
         return overload(left, right)
     handler = handlers.get("bin_op")
     op = get_sign(tree.op)
@@ -21,7 +21,7 @@ def bool_op(tree):
     """Logic operation(or, and)"""
     els = list(map(lambda a: parser(a).get('val'), tree.values))
     op = get_sign(tree.op)
-    if overload := what_macro((els[0], els[1], type(op))):
+    if overload := what_macro((els[0], els[1], op_to_str.get(type(op)))):
         return overload(els[0], els[1])
     handler = handlers.get("bool_op")
     els = list(map(lambda a: a.get('val'), els))
@@ -31,7 +31,7 @@ def compare(tree):
     """Compare operation(==, !=, >, <, >=, <=...)"""
     f_el = parser(tree.left)
     els = list(map(parser, tree.comparators))
-    if overload := what_macro((f_el, els[0], type(tree.ops[0]))):
+    if overload := what_macro((f_el, els[0], op_to_str.get(type(tree.ops[0])))):
         return overload(f_el, els[0])
     handler = handlers.get("compare")
     ops = list(map(get_sign, tree.ops))
@@ -60,20 +60,20 @@ def attribute(tree):
     _type = obj.get('type')
     obj = obj.get('val')
     attr = tree.attr
-    #if _type in objects or obj in objects:
-    #    if obj in objects:
-    #        object = obj
-    #    else:
-    #        object = _type
-    #    o = objects.get(object)
-    #    if '__name__' in o.keys():
-    #        obj = o.get('__name__')
-    #    attr = o.get(attr).get('val')
-    #    if callable(attr):
-    #        return {'type': 'None',
-    #                'obj': obj,
-    #                'macros': attr
-    #                }
+    if _type in objects or obj in objects:
+        if obj in objects:
+            object = obj
+        else:
+            object = _type
+        o = objects.get(object)
+        if '__name__' in o.keys():
+            obj = o.get('__name__')
+        attr = o.get(attr).get('val')
+        if callable(attr):
+            return {'type': 'None',
+                    'obj': obj,
+                    'macros': attr
+                    }
     handler = handlers.get("attr")
     return {'type': 'None', 'val': handler(obj, attr)}
 
@@ -92,7 +92,8 @@ def function_call(tree):
         name = tree.func.id    
     if name1 := what_macro(name):
         if callable(name1):
-            return macro(name1, tree.args)
+            name = macro(name1, tree.args)
+            return {'val': name.get('val'), 'type': name.get('type')}
         name = name1
         if 'type' in name:
             ret_type = name.get('type')
@@ -111,7 +112,6 @@ def _list(tree):
         _type = elements[0].get('type')
     else:
         _type = 'None'
-    print(_type)
     return {"type": f'list<{_type}>', "val": handler(els, _type)}
 
 def slice(tree):
@@ -129,8 +129,6 @@ def slice(tree):
         index = parser(sl).get('val')
         val = handler(arr.get('val'), index)
         _type = element_type(arr)
-        print(transpyler_type(arr))
-        print(_type)
         return {"type": _type, "val": val}
 
 def name(tree):
@@ -145,13 +143,13 @@ def const(tree):
         handler = handlers.get("string")
         return {"type": 'str', "val": handler(val)}
     handler = handlers.get("const")
-    _type = str(type(val)).replace("<class '", "").replace("'>", "")
+    _type = str(type(val))
+    _type = re.search(r'\'.*\'', _type).group()[1:-1]
     return {"type": _type, "val": handler(str(val))}
 
-signs = {}
-get_sign = lambda op: signs.get(type(op))
+target_op = {}
+get_sign = lambda op: target_op.get(op_to_str.get(type(op)))
 type_by_op = {}
-objects = {}
 core.elements |= {_ast.Call: function_call,
                   _ast.BinOp: bin_op,
                   _ast.BoolOp: bool_op,
