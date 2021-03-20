@@ -4,6 +4,10 @@ from . import core, expressions
 from .core import parser, namespace, variables, handlers
 from .macros import what_macro
 
+
+def add_var(name, _type):
+    variables.get(namespace).update({name: _type})
+
 def expr(expr):
     handler = handlers.get("expr")
     value = parser(expr.value).get("val")
@@ -17,7 +21,7 @@ def assign(expr):
     _type = value.get("type")
     if type(expr.targets[0]) == _ast.Name: # Могут быть изменения массивов (a[0] = 1)
         if not(var.get('val') in variables.get(namespace).keys()):
-            variables.get(namespace).update({var.get('val'): _type})
+            add_var(var.get('val'), _type)
             handler = handlers.get("new_var")
             return handler(var.get('val'), value.get('val'))
     handler = handlers.get("assign")
@@ -60,7 +64,13 @@ def else_if(tree):
     return handler(_if(tree))
 
 def _while(tree):
-    pass
+    handler = handlers.get("while")
+    condition = parser(tree.test).get('val')
+    body = statement_block(tree.body)
+    els = ""
+    if tree.orelse:
+        els = _else(tree.orelse)
+    return handler(condition, body, els)
 
 def _for(tree):
     var = parser(tree.target)
@@ -68,7 +78,7 @@ def _for(tree):
     if type(tree.iter) == _ast.Call:
         if tree.iter.func.id == "range":
             if "c_like_for" in handlers:
-                get_val = lambda i: i.get('val')
+                get_val = lambda i: parser(i).get('val')
                 param = list(map(get_val, tree.iter.args))
                 if len(param) < 3:
                     param.append("1")
@@ -87,13 +97,12 @@ def define_function(tree):
     vars = variables.get(core.namespace)
     global_vars = {}
     for i in vars:
-        if vars.get(i) != type(parser(vars.get(i))):
-            global_vars.update({i: vars.get(i)})
-        core.namespace += '.'+name
+        global_vars.update({i: vars.get(i)})
+    core.namespace += f'.{name}'
     variables.update({core.namespace: {}})
     variables.get(core.namespace).update(global_vars)
     body = statement_block(tree.body)
-    namespace = ".".join(core.namespace.split(".")[:-1])
+    core.namespace = ".".join(core.namespace.split(".")[:-1])
     if tree.returns:
         ret_t = parser(tree.returns)
         return handler(name, args, body, ret_t=ret_t)
@@ -105,7 +114,7 @@ def ret(expr):
 
 def scope_of_view(tree):
     for i in tree.names:
-        _type = variables.get(".".join(namespace.split(".")[:-1])).get(i)
+        _type = variables.get(".".join(core.namespace.split(".")[:-1])).get(i)
         variables.get(namespace).update({i: _type})
     return ''
 
@@ -129,8 +138,8 @@ def statement_block(body):
     nesting_level += 1
     body = handler(list(map(parser, body)))
     nesting_level -= 1
-    #_body = []
-    #for i in body:
-    #    print(parser(i))
-    #    _body.append(parser(i))
+#    _body = []
+#    for i in body:
+#        print(parser(i))
+#        _body.append(parser(i))
     return body

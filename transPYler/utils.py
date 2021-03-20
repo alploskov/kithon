@@ -7,6 +7,7 @@ def element_type(el):
     _type = el.get('type')
     if _type.startswith('set') or _type.startswith('list') or _type.startswith('tuple'):
         return re.search(r'\<.*\>', _type).group()[1:-1]
+    return _type
 
 def transpyler_type(el):
     _type = el.get('type')

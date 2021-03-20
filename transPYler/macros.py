@@ -1,4 +1,6 @@
+import _ast
 from .utils import transpyler_type
+from .ast_decompiler import decompile
 
 
 def what_macro(name):
@@ -13,18 +15,27 @@ def what_macro(name):
         for i in ol_data:
             if ol := macros.get(i):
                 return ol
- 
-    elif name in macros:
-        name = macros.get(name)
-        return name
+
+    elif type(name)==str:
+        if name in macros:
+            name = macros.get(name)
+            return name
+    else:
+        for i in macros:
+            if callable(i):
+                if i(name):
+                    return macros.get(i)
 
 def macro(name, args):
     def get_val(val):
-        val = val.value
-        if type(val) == str:
-            val = '"'+val+'"'
-        val = str(val)
-        return val
+        if type(val)==_ast.Constant:
+            val = val.value
+            if type(val) == str:
+                val = '"'+val+'"'
+            val = str(val)
+            return val
+        else:
+            return decompile(val)
     args = str(tuple(map(get_val, args)))
     return eval(f"name{args}")
 

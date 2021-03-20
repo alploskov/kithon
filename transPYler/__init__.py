@@ -22,5 +22,8 @@ def macro(name):
         def add_macro():
             macros.macros.update({name: func})
         add_macro()
-        return add_macro
+        return func
     return _macro
+
+def objects(obj):
+    core.objects.update(obj)

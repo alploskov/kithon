@@ -1,9 +1,9 @@
 import _ast
 import re
 from . import core
-from .utils import element_type, transpyler_type 
+from .utils import element_type
 from .macros import macro, what_macro
-from .core import parser, namespace, variables, handlers, objects, op_to_str
+from .core import parser, namespace, variables, handlers, objects, op_to_str, auto_type, transpyler_type
 
 
 def bin_op(tree):
@@ -12,19 +12,20 @@ def bin_op(tree):
     right = parser(tree.right)
     if overload := what_macro((left, right, op_to_str.get(type(tree.op)))):
         return overload(left, right)
+    _type = auto_type((left, right, op_to_str.get(type(tree.op))))
     handler = handlers.get("bin_op")
     op = get_sign(tree.op)
     val = handler(left.get('val'), right.get('val'), op)
-    return {'type': 'int', 'val': val}
+    return {'type':  _type, 'val': val}
 
 def bool_op(tree):
-    """Logic operation(or, and)"""
-    els = list(map(lambda a: parser(a).get('val'), tree.values))
-    op = get_sign(tree.op)
-    if overload := what_macro((els[0], els[1], op_to_str.get(type(op)))):
+    """Boolean logic operation(or, and)"""
+    els = tree.values
+    if overload := what_macro((parser(els[0]), parser(els[1]), op_to_str.get(type(tree.op)))):
         return overload(els[0], els[1])
+    els = list(map(lambda a: parser(a).get('val'), els))
+    op = get_sign(tree.op)
     handler = handlers.get("bool_op")
-    els = list(map(lambda a: a.get('val'), els))
     return {'type': 'bool', 'val': handler(els, op)}
 
 def compare(tree):
@@ -40,7 +41,7 @@ def compare(tree):
     return {"type": 'bool', 'val': handler(els, ops)}
 
 def un_op(tree):
-    """unary operations(not)"""
+    """Unary operations(not...)"""
     handler = handlers.get("un_op")
     op = get_sign(tree.op)
     el = parser(tree.operand)
@@ -57,25 +58,23 @@ def arg(tree):
 
 def attribute(tree):
     obj = parser(tree.value)
-    _type = obj.get('type')
-    obj = obj.get('val')
     attr = tree.attr
-    if _type in objects or obj in objects:
-        if obj in objects:
-            object = obj
+    if (transpyler_type(obj) in objects) or (obj.get('val') in objects):
+        if obj.get('val') in objects:
+            object = obj.get('val')
         else:
-            object = _type
-        o = objects.get(object)
-        if '__name__' in o.keys():
-            obj = o.get('__name__')
-        attr = o.get(attr).get('val')
+            object = transpyler_type(obj)
+        attrs = objects.get(object)
+        if '__name__' in attrs.keys():
+            obj = {'val': attrs.get('__name__')}
+        attr = attrs.get(attr).get('val')
         if callable(attr):
             return {'type': 'None',
-                    'obj': obj,
+                    'obj': obj.get('val'),
                     'macros': attr
                     }
     handler = handlers.get("attr")
-    return {'type': 'None', 'val': handler(obj, attr)}
+    return {'type': 'None', 'val': handler(obj.get('val'), attr)}
 
 def function_call(tree):
     handler = handlers.get("call")
@@ -83,11 +82,11 @@ def function_call(tree):
     ret_type = 'None'
     if type(tree.func) == _ast.Attribute:
         attr = attribute(tree.func)
-        #if 'macros' in attr.keys():
-        #    args.insert(0, attr.get('obj'))
-        #    name = attr.get('macros')
-        #else:
-        name = attr.get('val')
+        if 'macros' in attr.keys():
+            args.insert(0, attr.get('obj'))
+            name = attr.get('macros')
+        else:
+            name = attr.get('val')
     else:
         name = tree.func.id    
     if name1 := what_macro(name):
