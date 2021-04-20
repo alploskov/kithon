@@ -51,6 +51,9 @@ def auto_type(expr):
             return _type
     return 'None'
 
+def ttype(name):
+    return variables.get(namespace).get(name)
+
 def parser(el):
     if macro := what_macro(el):
         return macro(el)
@@ -59,7 +62,10 @@ def parser(el):
         return el_f(el)
 
 namespace = "main"
-variables = {"main": {}}
+variables = {"main": {'str': 'type',
+                      'int': 'type',
+                      'float': 'type',
+                      }}
 
 def compiler(code):
     strings = []

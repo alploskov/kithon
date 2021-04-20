@@ -11,6 +11,8 @@ def element_type(el):
 
 def transpyler_type(el):
     _type = el.get('type')
+    if not(_type):
+        return 'None'
     if _type.startswith('set') or _type.startswith('list') or _type.startswith('tuple') or _type.startswith('dict'):
         return _type[:_type.find('<')]
     return _type

@@ -1,4 +1,5 @@
 from transPYler import handler, target_op
+from utils import type_to_type
 
 
 @handler("bin_op")
@@ -19,7 +20,7 @@ def const(val):
 
 @handler("string")
 def c_str(val):
-    return "\""+val+"\""
+    return '"'+val+'"'
 
 @handler("compare")
 def compare(els, ops):
@@ -43,15 +44,16 @@ def attr(obj, attr_name):
 
 @handler("arg")
 def arg(arg, _type=""):
-    return arg
+    return f'{arg} {type_to_type(_type)}'
 
 @handler("list")
 def _list(ls, _type):
-    return f"[{', '.join(ls)}]"
+    _type = type_to_type(_type)
+    return f"[]{_type}{{{', '.join(ls)}}}"
 
 @handler("index")
 def index(arr, val):
-    return f"{arr}[Index({val}, {arr}.length)]"
+    return f"""{arr}[Index({val}, len({arr}))]"""
 
 @handler("init")
 def init(name, args):
@@ -63,27 +65,28 @@ def slice(arr, lower, upper, step):
     if lower == 'None':
         lower = 0
     if upper == 'None':
-        upper = f'{arr}.length' 
+        upper = f"len({arr})" 
     if not(step):
         step = 1
-    return f"{arr}.slice({lower}, Index({upper}, {arr}.length))"
+    return f"{arr}[{lower}:Index({upper}, len({arr}))]"
 
 target_op |= {"+": "+",
-          "-": "-",
-          "*": "*",
-          "/": "/",
-          "**": "**",
-          "==": "==",
-          "!=": "!=",
-          ">": ">",
-          "<": "<",
-          ">=": ">=",
-          "<=": "<=",
-          "or": "||",
-          "and": "&&",
-          "|": "|",
-          "&": "&",
-          "%": "%",
-          "not": "!",
-          "is": "==="
+              "-": "-",
+              "*": "*",
+              "/": "/",
+              "**": "**",
+              "==": "==",
+              "!=": "!=",
+              ">": ">",
+              "<": "<",
+              ">=": ">=",
+              "<=": "<=",
+              "or": "||",
+              "and": "&&",
+              "|": "|",
+              "&": "&",
+              "%": "%",
+              "not": "!",
+              "is": "==",
+              '//': '/'
 }

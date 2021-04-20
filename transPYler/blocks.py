@@ -1,12 +1,10 @@
 import _ast
 import ast
 from . import core, expressions
-from .core import parser, namespace, variables, handlers
+from .expressions import add_var
+from .core import parser, handlers
 from .macros import what_macro
 
-
-def add_var(name, _type):
-    variables.get(namespace).update({name: _type})
 
 def expr(expr):
     handler = handlers.get("expr")
@@ -20,7 +18,7 @@ def assign(expr):
         return macro(var, value)
     _type = value.get("type")
     if type(expr.targets[0]) == _ast.Name: # Могут быть изменения массивов (a[0] = 1)
-        if not(var.get('val') in variables.get(namespace).keys()):
+        if var.get('val') not in core.variables.get(core.namespace).keys():
             add_var(var.get('val'), _type)
             handler = handlers.get("new_var")
             return handler(var.get('val'), value.get('val'))
@@ -31,7 +29,7 @@ def ann_assign(expr):
     handler = handlers.get("ann_assign")
     var = parser(expr.target)
     _type = expr.annotation.id
-    variables.get(namespace).update({var: _type})
+    core.variables.get(namespace).update({var: _type})
     if expr.value:
         val = parser(expr.value)
         return handler(var, _type, val=val)
@@ -94,17 +92,14 @@ def define_function(tree):
     handler = handlers.get("def")
     args = list(map(parser, tree.args.args))
     name = tree.name
-    vars = variables.get(core.namespace)
-    global_vars = {}
-    for i in vars:
-        global_vars.update({i: vars.get(i)})
+    global_vars = core.variables.get('main')
     core.namespace += f'.{name}'
-    variables.update({core.namespace: {}})
-    variables.get(core.namespace).update(global_vars)
+    core.variables.update({core.namespace: {}})
+    core.variables.get(core.namespace).update(global_vars)
     body = statement_block(tree.body)
     core.namespace = ".".join(core.namespace.split(".")[:-1])
     if tree.returns:
-        ret_t = parser(tree.returns)
+        ret_t = parser(tree.returns).get('val')
         return handler(name, args, body, ret_t=ret_t)
     return handler(name, args, body)
 
@@ -114,8 +109,8 @@ def ret(expr):
 
 def scope_of_view(tree):
     for i in tree.names:
-        _type = variables.get(".".join(core.namespace.split(".")[:-1])).get(i)
-        variables.get(namespace).update({i: _type})
+        _type = core.variables.get(".".join(core.namespace.split(".")[:-1])).get(i)
+        core.variables.get(core.namespace).update({i: _type})
     return ''
 
 core.elements |= {_ast.Assign: assign,
@@ -138,8 +133,4 @@ def statement_block(body):
     nesting_level += 1
     body = handler(list(map(parser, body)))
     nesting_level -= 1
-#    _body = []
-#    for i in body:
-#        print(parser(i))
-#        _body.append(parser(i))
     return body

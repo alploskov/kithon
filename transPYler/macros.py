@@ -1,6 +1,7 @@
 import _ast
 from .utils import transpyler_type
 from .ast_decompiler import decompile
+#from core import parser
 
 
 def what_macro(name):
@@ -27,16 +28,6 @@ def what_macro(name):
                     return macros.get(i)
 
 def macro(name, args):
-    def get_val(val):
-        if type(val)==_ast.Constant:
-            val = val.value
-            if type(val) == str:
-                val = '"'+val+'"'
-            val = str(val)
-            return val
-        else:
-            return decompile(val)
-    args = str(tuple(map(get_val, args)))
     return eval(f"name{args}")
 
 macros = {}

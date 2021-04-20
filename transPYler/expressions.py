@@ -1,10 +1,14 @@
+
 import _ast
 import re
 from . import core
 from .utils import element_type
 from .macros import macro, what_macro
-from .core import parser, namespace, variables, handlers, objects, op_to_str, auto_type, transpyler_type
+from .core import parser, handlers, objects, op_to_str, auto_type, transpyler_type
 
+
+def add_var(name, _type):
+    core.variables.get(core.namespace).update({name: _type})
 
 def bin_op(tree):
     """Math operation(+, -, *, /...)"""
@@ -52,9 +56,8 @@ def un_op(tree):
 def arg(tree):
     handler = handlers.get("arg")
     name = tree.arg
-    if tree.annotation:
-        return handler(name, type=parser(tree.annotation))
-    return handler(name)
+    add_var(name, tree.annotation.id)
+    return handler(name, _type=parser(tree.annotation).get('val'))
 
 def attribute(tree):
     obj = parser(tree.value)
@@ -67,12 +70,13 @@ def attribute(tree):
         attrs = objects.get(object)
         if '__name__' in attrs.keys():
             obj = {'val': attrs.get('__name__')}
-        attr = attrs.get(attr).get('val')
+        attr = attrs.get(attr)
         if callable(attr):
             return {'type': 'None',
-                    'obj': obj.get('val'),
+                    'obj': obj,
                     'macros': attr
                     }
+        attr = attr.get('val')
     handler = handlers.get("attr")
     return {'type': 'None', 'val': handler(obj.get('val'), attr)}
 
@@ -85,14 +89,17 @@ def function_call(tree):
         if 'macros' in attr.keys():
             args.insert(0, attr.get('obj'))
             name = attr.get('macros')
+            args = args[:1]+list(map(parser, args[1:]))
+            args = str(tuple(args))
+            return macro(name, args)
         else:
             name = attr.get('val')
     else:
-        name = tree.func.id    
+        name = tree.func.id
     if name1 := what_macro(name):
         if callable(name1):
-            name = macro(name1, tree.args)
-            return {'val': name.get('val'), 'type': name.get('type')}
+            args = str(tuple(map(parser, args)))
+            return macro(name1, args)
         name = name1
         if 'type' in name:
             ret_type = name.get('type')
@@ -133,7 +140,7 @@ def slice(tree):
 def name(tree):
     handler = handlers.get("name")
     name = tree.id
-    _type = str(variables.get(namespace).get(name))
+    _type = str(core.variables.get(core.namespace).get(name))
     return {"type": _type, "val": handler(name)}
 
 def const(tree):
