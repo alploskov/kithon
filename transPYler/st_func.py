@@ -1,3 +1,0 @@
-class range():
-    pass
-    
