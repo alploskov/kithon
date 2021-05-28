@@ -1,7 +1,14 @@
 import ast
 import _ast
 import re
+from . import core
 
+
+def is_var_created(name):
+    return name in core.variables.get(core.namespace)
+
+def add_var(name, _type):
+    core.variables.get(core.namespace).update({name: _type})
 
 def element_type(el):
     _type = el.get('type')

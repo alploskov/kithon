@@ -1,0 +1,33 @@
+#!/usr/bin/python3.9
+import sys
+import yaml
+from transPYler import core
+from jinja2 import Template
+
+
+yaml.warnings({'YAMLLoadWarning': False})
+
+conf = yaml.load(open('build.tp', 'r').read())
+
+for i in conf.get('templates'):
+    tmpls = yaml.load(open(i, 'r').read())
+    for i in tmpls:
+        if i not in ['operations', 'types']:
+            tmpls[i] = Template(tmpls.get(i))
+    core.tmpls |= tmpls
+
+if 'macros' in conf:
+    core.macros |= yaml.load(open(conf.get('macros')[0], 'r').read())
+
+ustd = conf.get('std')
+if  ustd == 1 or ustd == '1' or ustd == 'ok' or ustd == 'yes':
+    print(1)
+    std = core.compiler(open('/home/aleksey/ladon/transPYler/std.py', 'r').read())+'\n'
+else:
+    std = ''
+
+if 'file' in conf:
+    out_file = open(conf.get('file'), 'w')
+else:
+    out_file = sys.stdout
+print(std+core.compiler(open(sys.argv[1], 'r').read()), file=out_file)

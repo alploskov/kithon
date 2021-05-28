@@ -1,0 +1,71 @@
+event:
+  code: "{{el}}.addEventListener({{event_name}}, {{fun}})"
+  type: 'None'
+
+!!python/tuple ['list', 'list', '+']:
+  code: "{{l}}.concat({{r}})"
+  type: "{{l_type}}"
+
+!!python/tuple ['any', 'any', '//']:
+  code: "Math.floor({{l}}/{{r}})"
+  type: int
+
+check:
+  code: "document.getElementById({{_id}}).checked"
+  type: bool
+
+!!python/tuple ['list', 'type', '*']: 
+  code: "{{l}}"
+  type: "list<{{r}}>"
+
+print:
+  code: "console.log"
+  type: "None"
+
+input:
+  code: "prompt"
+  type: "str"
+
+len:
+  code: "{{_1}}.length"
+  type: int
+
+interval:
+  code: "setInterval"
+  type: "None"
+
+url_param:
+  code: "new URL(window.location.href).searchParams.get"
+  type: str
+
+get_by_id:
+  code: "document.getElementById"
+  type: dom
+
+!!python/tuple ['dom', 'any', '<=']:
+  code: "{{l}}.innerHTMl = {{r}}"
+  type: "None"
+
+!!python/tuple ['any', 'list', 'in']:
+  code: "{{r}}.includes({{l}})"
+  type: bool
+
+classes:
+  list:
+    index:
+      code: "indexOf"
+      type: int
+    append:
+      code: "push"
+      type: "None"
+  math:
+    "__name__": "Math"
+    "pi":
+      code: "PI"
+      type: float
+  json:
+    "__name__": "JSON"
+    dumps:
+      code: "stringify"
+    loads:
+      code: "parse"

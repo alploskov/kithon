@@ -1,63 +1,113 @@
-
 import _ast
 import re
 from . import core
-from .utils import element_type
-from .macros import macro, what_macro
-from .core import parser, handlers, objects, op_to_str, auto_type, transpyler_type
+from .utils import element_type, add_var, transpyler_type
+from .core import parser, tmpls, objects, op_to_str, macros
+from jinja2 import Template
 
 
-def add_var(name, _type):
-    core.variables.get(core.namespace).update({name: _type})
-
-def bin_op(tree):
+def math_op(tree):
     """Math operation(+, -, *, /...)"""
     left = parser(tree.left)
     right = parser(tree.right)
-    if overload := what_macro((left, right, op_to_str.get(type(tree.op)))):
-        return overload(left, right)
-    _type = auto_type((left, right, op_to_str.get(type(tree.op))))
-    handler = handlers.get("bin_op")
-    op = get_sign(tree.op)
-    val = handler(left.get('val'), right.get('val'), op)
-    return {'type':  _type, 'val': val}
+    op = op_to_str(tree.op)
+    return bin_op(left, right, op)     
 
 def bool_op(tree):
     """Boolean logic operation(or, and)"""
-    els = tree.values
-    if overload := what_macro((parser(els[0]), parser(els[1]), op_to_str.get(type(tree.op)))):
-        return overload(els[0], els[1])
-    els = list(map(lambda a: parser(a).get('val'), els))
-    op = get_sign(tree.op)
-    handler = handlers.get("bool_op")
-    return {'type': 'bool', 'val': handler(els, op)}
+    els = list(map(parser, tree.values))
+    op = op_to_str(tree.op)
+    expr = bin_op(els[0], els[1], op)
+    for i in els[2:]:
+        expr = bin_op(expr, i, op)
+    return expr
 
 def compare(tree):
     """Compare operation(==, !=, >, <, >=, <=...)"""
     f_el = parser(tree.left)
     els = list(map(parser, tree.comparators))
-    if overload := what_macro((f_el, els[0], op_to_str.get(type(tree.ops[0])))):
-        return overload(f_el, els[0])
-    handler = handlers.get("compare")
-    ops = list(map(get_sign, tree.ops))
-    els.insert(0, f_el)
-    els = list(map(lambda a: a.get('val'), els))
-    return {"type": 'bool', 'val': handler(els, ops)}
+    ops = list(map(op_to_str, tree.ops))
+    expr = bin_op(f_el, els[0], ops[0])
+    for i in zip(els[:-1], els[1:], ops[1:]):
+        expr = bin_op(expr, bin_op(i[0], i[1], i[2]), 'and')
+    return expr
+
+def bin_op(left, right, op):
+    def auto_type(left, right, op):
+        expr = (transpyler_type(left), transpyler_type(right), op)
+        ex_data = [(expr[0], expr[1], expr[2]),
+                   (expr[0], expr[1], 'any'),
+                   (expr[0], 'any', expr[2]),
+                   ('any', expr[1], expr[2]),
+                   ('any', expr[1], 'any'),
+                   ('any', 'any', expr[2]),
+                   (expr[0], 'any', 'any'),
+                   ('any', 'any', 'any'),
+                   ]
+        for i in ex_data:
+            if i in core.type_facts:
+                return core.type_facts.get(i)
+        if op in ['and', 'or', '==', '!=', '>', '<', '>=', '<=', 'in', 'is']:
+            return 'bool'
+        return 'None'
+    
+    expr = (transpyler_type(left), transpyler_type(right), op)
+    ex_data = [(expr[0], expr[1], expr[2]),
+               (expr[0], expr[1], 'any'),
+               (expr[0], 'any', expr[2]),
+               ('any', expr[1], expr[2]),
+               ('any', expr[1], 'any'),
+               ('any', 'any', expr[2]),
+               (expr[0], 'any', 'any'),
+               ('any', 'any', 'any'),
+               ]
+    for i in ex_data:
+        if ex := macros.get(i):
+            if 'type' in ex:
+                _type = Template(ex.get('type')).render(
+                    l=left.get('val'),
+                    r=right.get('val'),
+                    l_type=left.get('type'),
+                    r_type=right.get('type')
+                )
+            else:
+                _type = auto_type(left, right, op)
+            return {'val': Template(ex.get('code')).render(
+                l=left.get('val'),
+                r=right.get('val'),
+                l_type=left.get('type'),
+                r_type=right.get('type')
+            ),
+                    'type': _type
+            }
+    tmp = tmpls.get("bin_op")
+    return {'type': auto_type(left, right, op),
+            'val': tmp.render(left=left.get('val'),
+                              right=right.get('val'),
+                              op=tmpls.get('operations').get(op)
+                              )
+            }
 
 def un_op(tree):
     """Unary operations(not...)"""
-    handler = handlers.get("un_op")
-    op = get_sign(tree.op)
+    tmp = tmpls.get("un_op")
+    op = tmpls.get('operations').get(tree.op)
     el = parser(tree.operand)
-    return {'type': el.get('type'),
-            'val': handler(op, el.get('val'))
-            }
+    return {'type': el.get('type'), 'val': tmp.render(op=op, el=el.get('val'))}
 
 def arg(tree):
-    handler = handlers.get("arg")
+    tmp = tmpls.get("arg")
     name = tree.arg
-    add_var(name, tree.annotation.id)
-    return handler(name, _type=parser(tree.annotation).get('val'))
+    if tree.annotation:
+        t = tree.annotation.id
+        add_var(name, t)
+        _type = tmpls.get('types').get(t) if t in tmpls.get('types') else t
+    else:
+        t = ''
+        _type = ''
+        add_var(name, '')
+    return {'type': t,
+            'val': tmp.render(arg=name, _type=_type)}
 
 def attribute(tree):
     obj = parser(tree.value)
@@ -77,11 +127,12 @@ def attribute(tree):
                     'macros': attr
                     }
         attr = attr.get('val')
-    handler = handlers.get("attr")
-    return {'type': 'None', 'val': handler(obj.get('val'), attr)}
+    val = tmpls.get("attr").render(obj=obj.get('val'),
+                                   attr_name=attr)
+    return {'type': 'None', 'val': val}
 
 def function_call(tree):
-    handler = handlers.get("call")
+    tmp = tmpls.get("call")
     args = tree.args
     ret_type = 'None'
     if type(tree.func) == _ast.Attribute:
@@ -96,68 +147,62 @@ def function_call(tree):
             name = attr.get('val')
     else:
         name = tree.func.id
-    if name1 := what_macro(name):
-        if callable(name1):
-            args = str(tuple(map(parser, args)))
-            return macro(name1, args)
-        name = name1
         if 'type' in name:
-            ret_type = name.get('type')
-            name = name.get('val')
-    elif name in objects:
-        name = objects.get('__name__')
-        handler = handlers.get('init')
+            ret_type = str(name.get('type'))
+#    elif name in objects:
+#        name = objects.get('__name__')
+#        tmp = tmpls.get('init')
     args = list(map(lambda a: parser(a).get('val'), tree.args))
-    return {"type": ret_type, "val": handler(name, args)}
+    return {"type": ret_type, "val": tmp.render(name=name, args=args)}
 
 def _list(tree):
-    handler = handlers.get("list")
+    tmp = tmpls.get("list")
     elements = list(map(parser, tree.elts))
-    els = list(map(lambda a: a.get('val'), elements))
-    if len(elements):
-        _type = elements[0].get('type')
+    ls = list(map(lambda a: a.get('val'), elements))
+    if len(elements) and 'types' in tmpls:
+        t = elements[0].get('type')
+        _type = str(tmpls.get('types').get(t))
     else:
         _type = 'None'
-    return {"type": f'list<{_type}>', "val": handler(els, _type)}
+    return {"type": f'list<{_type}>', "val": tmp.render(ls=ls, _type=_type)}
+
+def _dict(tree):
+    pass
 
 def slice(tree):
     arr = parser(tree.value)
     sl = tree.slice
     if type(sl) == _ast.Slice:
-        handler = handlers.get("slice")
+        tmp = tmpls.get("slice")
         lower = parser(sl.lower).get('val')
         upper = parser(sl.upper).get('val')
         step = parser(sl.step).get('val')
-        val = handler(arr.get('val'), lower, upper, step)
+        val = tmp.render(arr=arr.get('val'), lower=lower, upper=upper, step=step)
         return {"type": arr.get('type'), "val": val}
     else:
-        handler = handlers.get("index")
+        tmp = tmpls.get("index")
         index = parser(sl).get('val')
-        val = handler(arr.get('val'), index)
+        val = tmp.render(arr=arr.get('val'), val=index)
         _type = element_type(arr)
         return {"type": _type, "val": val}
 
 def name(tree):
-    handler = handlers.get("name")
+    tmp = tmpls.get("name")
     name = tree.id
     _type = str(core.variables.get(core.namespace).get(name))
-    return {"type": _type, "val": handler(name)}
+    return {"type": _type, "val": tmp.render(name=name)}
 
 def const(tree):
     val = tree.value
     if type(val) == str:
-        handler = handlers.get("string")
-        return {"type": 'str', "val": handler(val)}
-    handler = handlers.get("const")
-    _type = str(type(val))
-    _type = re.search(r'\'.*\'', _type).group()[1:-1]
-    return {"type": _type, "val": handler(str(val))}
+        tmp = tmpls.get("string")
+        return {"type": 'str', "val": tmp.render(val=val)}
+    tmp = tmpls.get("const")
+    _type = re.search(r'\'.*\'', str(type(val))).group()[1:-1]
+    return {"type": _type, "val": tmp.render(val=str(val))}
 
-target_op = {}
-get_sign = lambda op: target_op.get(op_to_str.get(type(op)))
-type_by_op = {}
 core.elements |= {_ast.Call: function_call,
-                  _ast.BinOp: bin_op,
+                  _ast.BinOp: math_op,
                   _ast.BoolOp: bool_op,
                   _ast.Compare: compare,
                   _ast.List: _list,
@@ -168,6 +213,6 @@ core.elements |= {_ast.Call: function_call,
                   _ast.arg: arg,
                   _ast.UnaryOp: un_op,
                   type(None): lambda t: {'type': 'None',
-                                         'val': 'None'
+                                         'val': ''
                                          }
 }

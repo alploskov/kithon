@@ -1,0 +1,7 @@
+templates:
+  - expr.tp
+  - blocks.tp
+
+macros:
+  - macros.tp
+std: 0

@@ -1,0 +1,27 @@
+expr: "{{value}};"
+assign: "{{var}} = {{value}};"
+new_var: "var {{var}} = {{value}};"
+
+
+if: "if({{condition}}){{body}}{{els}}"
+
+else_if: "else {{_if}}"
+
+else: "else{{body}}"
+
+while: "while({{condition}}){{body}}{{els}}"
+
+def: "function {{name}}({{', '.join(args)}}){{body}}"
+return: "return {{value}}"
+
+for: >-
+  for(var {{var*2}}=0, {{var}}={{obj}}[0];
+  {{var*2}}<{{obj}}.length;
+  {{var}}={{obj}}[++{{var*2}}]){{body}}
+
+c_like_for: "for(var {{var}} = {{start}}; {{var}} < {{finish}}; {{var}}+={{step}}){{body}}"
+
+body: |-
+  { {%for st in body%}
+  {%for i in range(nl)%}    {%endfor%}{{st}}{%endfor%}
+  {%for i in range(nl-1)%}    {%endfor%}}
