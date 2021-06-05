@@ -1,5 +1,9 @@
 event:
-  code: "{{el}}.addEventListener({{event_name}}, {{fun}})"
+  args:
+    - el
+    - event_name
+    - fun
+  code: "{{args.el}}.addEventListener({{args.event_name}}, {{args.fun}})"
   type: 'None'
 
 !!python/tuple ['list', 'list', '+']:
@@ -19,7 +23,7 @@ check:
   type: "list<{{r}}>"
 
 print:
-  code: "console.log"
+  code: "console.log({{', '.join(args.values())}})"
   type: "None"
 
 input:
@@ -39,7 +43,7 @@ url_param:
   type: str
 
 get_by_id:
-  code: "document.getElementById"
+  code: "document.getElementById({{args._0}})"
   type: dom
 
 !!python/tuple ['dom', 'any', '<=']:

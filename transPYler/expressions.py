@@ -133,7 +133,7 @@ def attribute(tree):
 
 def function_call(tree):
     tmp = tmpls.get("call")
-    args = tree.args
+    args = list(map(lambda a: parser(a).get('val'), tree.args))
     ret_type = 'None'
     if type(tree.func) == _ast.Attribute:
         attr = attribute(tree.func)
@@ -147,12 +147,21 @@ def function_call(tree):
             name = attr.get('val')
     else:
         name = tree.func.id
-        if 'type' in name:
-            ret_type = str(name.get('type'))
+        if name in macros:
+            macro = macros.get(name)
+            if 'type' in macro:
+                ret_type = macro.get('type')
+            if 'args' in macro:
+                _args = macro.get('args')
+            else:
+                _args = [f'_{i}' for i in range(len(args))] 
+            args = dict(zip(_args, args))
+            if 'code' in macro:
+                name = Template(macro.get('code'))
+                return {"type": ret_type, "val": name.render(args=args)}
 #    elif name in objects:
 #        name = objects.get('__name__')
 #        tmp = tmpls.get('init')
-    args = list(map(lambda a: parser(a).get('val'), tree.args))
     return {"type": ret_type, "val": tmp.render(name=name, args=args)}
 
 def _list(tree):

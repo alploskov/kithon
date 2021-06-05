@@ -19,15 +19,8 @@ for i in conf.get('templates'):
 if 'macros' in conf:
     core.macros |= yaml.load(open(conf.get('macros')[0], 'r').read())
 
-ustd = conf.get('std')
-if  ustd == 1 or ustd == '1' or ustd == 'ok' or ustd == 'yes':
-    print(1)
-    std = core.compiler(open('/home/aleksey/ladon/transPYler/std.py', 'r').read())+'\n'
-else:
-    std = ''
-
 if 'file' in conf:
     out_file = open(conf.get('file'), 'w')
 else:
     out_file = sys.stdout
-print(std+core.compiler(open(sys.argv[1], 'r').read()), file=out_file)
+print(core.compiler(open(sys.argv[1], 'r').read()), file=out_file)
