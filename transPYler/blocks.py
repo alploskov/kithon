@@ -48,8 +48,11 @@ def _if(tree):
     els = ""
     if tree.orelse:
         els = _else(tree.orelse)
-    ret = tmp.render(condition=condition, body=body, els=els, nl=nesting_level)
-    return ret
+    return tmp.render(
+        condition=condition,
+        body=body,
+        els=els
+    )
 
 def _else(tree):
     if type(tree[0]) == _ast.If:
@@ -71,7 +74,11 @@ def _while(tree):
     els = ""
     if tree.orelse:
         els = _else(tree.orelse)
-    return tmp.render(condition, body, els)
+    return tmp.render(
+        condition=condition,
+        body=body,
+        els=els
+    )
 
 def _for(tree):
     var = parser(tree.target)

@@ -6,10 +6,14 @@ bin_op: "({{left}} {{op}} {{right}})"
 un_op: "{{op}}({{el}})"
 
 call: "{{name}}({{', '.join(args)}})"
-attr: "{{obj}}.{{name}}"
+attr: "{{obj}}.{{attr_name}}"
+method: "{{obj}}.{{attr_name}}({{', '.join(args)}})"
 arg: "{{arg}}"
 
 list: "[{{', '.join(ls)}}]"
+dict: >-
+  {{'{'}}{%for i in key_val%} {{i.key}}: {{i.val}},{%endfor%}}
+
 index: "{{arr}}[Index({{val}}, {{arr}}.length)]"
 slice: "{{arr}}.slice({{lower if lower else 0}}, {{upper}})"
 

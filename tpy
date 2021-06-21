@@ -8,7 +8,6 @@ from jinja2 import Template
 yaml.warnings({'YAMLLoadWarning': False})
 
 conf = yaml.load(open('build.tp', 'r').read())
-
 for i in conf.get('templates'):
     tmpls = yaml.load(open(i, 'r').read())
     for i in tmpls:
@@ -18,6 +17,8 @@ for i in conf.get('templates'):
 
 if 'macros' in conf:
     core.macros |= yaml.load(open(conf.get('macros')[0], 'r').read())
+    if 'classes' in core.macros:
+        core.objects |= core.macros.get('classes')
 
 if 'file' in conf:
     out_file = open(conf.get('file'), 'w')

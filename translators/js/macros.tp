@@ -15,7 +15,9 @@ event:
   type: int
 
 check:
-  code: "document.getElementById({{_id}}).checked"
+  args:
+    - id
+  code: "document.getElementById({{args.id}}).checked"
   type: bool
 
 !!python/tuple ['list', 'type', '*']: 
@@ -23,27 +25,27 @@ check:
   type: "list<{{r}}>"
 
 print:
-  code: "console.log({{', '.join(args.values())}})"
+  alt_name: "console.log"
   type: "None"
 
 input:
-  code: "prompt"
+  alt_name: "prompt"
   type: "str"
 
 len:
-  code: "{{_1}}.length"
+  code: "{{args._1}}.length"
   type: int
 
 interval:
-  code: "setInterval"
+  alt_name: "setInterval"
   type: "None"
 
 url_param:
-  code: "new URL(window.location.href).searchParams.get"
+  alt_name: "new URL(window.location.href).searchParams.get"
   type: str
 
 get_by_id:
-  code: "document.getElementById({{args._0}})"
+  alt_name: "document.getElementById"
   type: dom
 
 !!python/tuple ['dom', 'any', '<=']:
@@ -56,20 +58,26 @@ get_by_id:
 
 classes:
   list:
+    lox:
+      code: |-
+        {%for i in range(5)%}lox
+        {%endfor%}
+      type: None
+      
     index:
-      code: "indexOf"
+      alt_name: "indexOf"
       type: int
     append:
-      code: "push"
+      alt_name: "push"
       type: "None"
   math:
     "__name__": "Math"
     "pi":
-      code: "PI"
+      alt_name: "PI"
       type: float
   json:
     "__name__": "JSON"
     dumps:
-      code: "stringify"
+      alt_name: "stringify"
     loads:
-      code: "parse"
+      alt_name: "parse"
