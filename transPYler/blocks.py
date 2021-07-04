@@ -11,9 +11,9 @@ nesting_level = 0
 
 def expr(expr):
     tmp = tmpls.get("expr")
-    value = parser(expr.value).get("val")
+    value = parser(expr.value)
     return tmp.render(value=value)
-
+    
 def assign(expr):
     value = parser(expr.value)
     var = parser(expr.targets[0])
@@ -133,19 +133,22 @@ def expression_block(body):
     global nesting_level
     nesting_level += 1
     body = list(map(parser, body))
-    body = tmpls.get("body").render(body=body, nl=nesting_level)
+    body = tmpls.get('body').render(body=body, nl=nesting_level)
     nesting_level -= 1
     return body
 
-core.elements |= {_ast.Assign: assign,
-                  _ast.AnnAssign: ann_assign,
-                  _ast.Expr: expr,
-                  _ast.AugAssign: aug_assign,
-                  _ast.If: _if,
-                  _ast.While: _while,
-                  _ast.For: _for,
-                  _ast.FunctionDef: define_function,
-                  _ast.Return: ret,
-                  _ast.Global: scope_of_view,
-                  _ast.Nonlocal: scope_of_view
+core.elements |= {
+    _ast.Assign: assign,
+    _ast.AnnAssign: ann_assign,
+    _ast.Expr: expr,
+    _ast.AugAssign: aug_assign,
+    _ast.If: _if,
+    _ast.While: _while,
+    _ast.For: _for,
+    _ast.FunctionDef: define_function,
+    _ast.Return: ret,
+    _ast.Global: scope_of_view,
+    _ast.Nonlocal: scope_of_view,
+    _ast.Break: lambda t: tmpls.get('break').render(),
+    _ast.Continue: lambda t: tmpls.get('continue').render(),
 }

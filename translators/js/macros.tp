@@ -6,7 +6,7 @@ event:
   code: "{{args.el}}.addEventListener({{args.event_name}}, {{args.fun}})"
   type: 'None'
 
-!!python/tuple ['list', 'list', '+']:
+!!python/tuple [list, list, '+']:
   code: "{{l}}.concat({{r}})"
   type: "{{l_type}}"
 

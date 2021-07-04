@@ -1,27 +1,56 @@
 #!/usr/bin/python3.9
 import sys
+import subprocess
+from typing import List, Optional
+
 import yaml
-from transPYler import core
+import typer
 from jinja2 import Template
+
+from transPYler import core
 
 
 yaml.warnings({'YAMLLoadWarning': False})
 
-conf = yaml.load(open('build.tp', 'r').read())
-for i in conf.get('templates'):
-    tmpls = yaml.load(open(i, 'r').read())
+def add_templ(t):
+    tmpls = yaml.load(open(t, 'r').read())
     for i in tmpls:
         if i not in ['operations', 'types']:
             tmpls[i] = Template(tmpls.get(i))
     core.tmpls |= tmpls
 
-if 'macros' in conf:
-    core.macros |= yaml.load(open(conf.get('macros')[0], 'r').read())
+def add_macros(m):
+    core.macros |= yaml.load(open(m, 'r').read())
     if 'classes' in core.macros:
         core.objects |= core.macros.get('classes')
 
-if 'file' in conf:
-    out_file = open(conf.get('file'), 'w')
-else:
-    out_file = sys.stdout
-print(core.compiler(open(sys.argv[1], 'r').read()), file=out_file)
+def main(
+        _file: typer.FileText = typer.Argument(
+            'index.py',
+            help='Name of file for transpilation'
+        ),
+        tmpl: Optional[List[str]] = typer.Option(
+            None,
+            help='Names of template file(templates for js translators/js)'
+        ),
+        macr: Optional[List[str]] = typer.Option(
+            [],
+            help='Names of macros file(macros for js translators/js/macros.tp)'
+        ),
+        out: typer.FileTextWrite = typer.Option(
+            sys.stdout,
+            help='Output file'
+        ),
+):
+    if not(tmpl):
+        typer.echo('You must send at least one template file')
+        raise typer.Abort()
+    for t in tmpl:
+        add_templ(t)
+    for m in macr:
+        add_macros(m)
+    src = core.compiler(_file.read())
+    print(src, file=out)
+
+if __name__ == '__main__':
+     typer.run(main)

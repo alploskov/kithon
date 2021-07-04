@@ -4,6 +4,7 @@ from . import core
 from .utils import element_type, add_var, transpyler_type
 from .core import parser, objects, tmpls, op_to_str, macros
 from jinja2 import Template
+from jinja2.nativetypes import NativeTemplate
 
 
 def math_op(tree):
@@ -33,27 +34,11 @@ def compare(tree):
     return expr
 
 def bin_op(left, right, op):
-    def auto_type(left, right, op):
-        expr = (transpyler_type(left), transpyler_type(right), op)
-        ex_data = [
-            (expr[0], expr[1], expr[2]),
-            (expr[0], expr[1], 'any'),
-            (expr[0], 'any', expr[2]),
-            ('any', expr[1], expr[2]),
-            ('any', expr[1], 'any'),
-            ('any', 'any', expr[2]),
-            (expr[0], 'any', 'any'),
-            ('any', 'any', 'any'),
-        ]
-        for i in ex_data:
-            if i in core.type_facts:
-                return core.type_facts.get(i)
-        if op in ['and', 'or', '==', '!=', '>',
-                  '<', '>=', '<=', 'in', 'is']:
-            return 'bool'
-        return 'None'
-    
     expr = (transpyler_type(left), transpyler_type(right), op)
+    _type = None
+    if op in ['and', 'or', '==', '!=', '>',
+                  '<', '>=', '<=', 'in', 'is']:
+        _type = bool
     ex_data = [
         (expr[0], expr[1], expr[2]),
         (expr[0], expr[1], 'any'),
@@ -67,24 +52,24 @@ def bin_op(left, right, op):
     for i in ex_data:
         if ex := macros.get(i):
             if 'type' in ex:
-                _type = Template(ex.get('type')).render(
+                _type = NativeTemplate(ex.get('type')).render(
                     l=left.get('val'),
                     r=right.get('val'),
                     l_type=left.get('type'),
                     r_type=right.get('type')
                 )
-            else:
-                _type = auto_type(left, right, op)
-            return {'val': Template(ex.get('code')).render(
-                l=left.get('val'),
-                r=right.get('val'),
-                l_type=left.get('type'),
-                r_type=right.get('type')
-            ),
-                    'type': _type
-            }
-    tmp = tmpls.get("bin_op")
-    return {'type': auto_type(left, right, op),
+            if 'code' in ex:
+                return {
+                    'type': _type,
+                    'val': Template(ex.get('code')).render(
+                        l=left.get('val'),
+                        r=right.get('val'),
+                        l_type=left.get('type'),
+                        r_type=right.get('type')
+                    )
+                }
+    tmp = tmpls.get('bin_op')
+    return {'type': _type,
             'val': tmp.render(
                 left=left.get('val'),
                 right=right.get('val'),
@@ -166,7 +151,7 @@ def attribute(tree, args=None):
 
 def function_call(tree):
     args = list(map(lambda a: parser(a).get('val'), tree.args))
-    ret_type = 'None'
+    ret_type = None
     if type(tree.func) == _ast.Attribute:
         return attribute(tree.func, args=args)
     else:
@@ -202,7 +187,7 @@ def _list(tree):
         r_type = el_type
     return {
         'type': {
-            'base_type': 'list',
+            'base_type': list,
             'el_type': el_type 
         },
         'val': tmp.render(
@@ -248,19 +233,19 @@ def slice(tree):
     arr = parser(tree.value)
     sl = tree.slice
     if type(sl) == _ast.Slice:
-        tmp = tmpls.get("slice")
+        tmp = tmpls.get('slice')
         lower = parser(sl.lower).get('val')
         upper = parser(sl.upper).get('val')
         step = parser(sl.step).get('val')
         val = tmp.render(
             arr=arr.get('val'),
-            lower=lower,
-            upper=upper,
+            low=lower,
+            up=upper,
             step=step
         )
-        return {"type": arr.get('type'), "val": val}
+        return {'type': arr.get('type'), "val": val}
     else:
-        tmp = tmpls.get("index")
+        tmp = tmpls.get('index')
         index = parser(sl).get('val')
         val = tmp.render(arr=arr.get('val'), val=index)
         _type = element_type(arr)
@@ -278,8 +263,8 @@ def const(tree):
         tmp = tmpls.get('string')
         return {'type': 'str', 'val': tmp.render(val=val)}
     tmp = tmpls.get('const')
-    _type = re.search(r'\'.*\'', str(type(val))).group()[1:-1]
-    return {'type': _type, 'val': tmp.render(val=str(val))}
+    _type = type(val)
+    return {'type': _type, 'val': tmp.render(val=val)}
 
 core.elements |= {
     _ast.Call: function_call,

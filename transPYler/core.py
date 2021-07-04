@@ -4,7 +4,7 @@ import re
 
 
 elements = {}
-tmpls = {}
+tmpls = {'operations': {'+': '+'}}
 macros = {}
 objects = {}
 
@@ -23,7 +23,7 @@ def op_to_str(op):
         _ast.BitAnd: '&',
         _ast.FloorDiv: '//',
         _ast.Invert: '~',
-        _ast.Not: 'not ',
+        _ast.Not: 'not',
         _ast.UAdd: '+',
         _ast.USub: '-',
         _ast.Eq: '==',
@@ -53,6 +53,8 @@ variables = {"main": {'str': 'type',
                       'float': 'type',
                       }}
 
+#class element():
+#    def __init__(self, var, _type)
 def compiler(code):
     strings = []
     body = ast.parse(code).body
