@@ -2,8 +2,8 @@ name: "{{name}}"
 const: "{{val}}"
 string: "\"{{val}}\""
 
-bin_op: "({{left}} {{op}} {{right}})"
-un_op: "{{op}}({{el}})"
+bin_op: "({{left()}} {{op}} {{right()}})"
+un_op: "{{op}}({{el()}})"
 
 call: "{{name}}({{', '.join(args)}})"
 attr: "{{obj}}.{{attr_name}}"
@@ -11,10 +11,10 @@ method: "{{obj}}.{{attr_name}}({{', '.join(args)}})"
 arg: "{{arg}}"
 
 list: "[{{ls|join(', ')}}]"
-dict: "{{'{'}}{%for i in key_val%}{{i.key}}: {{i.val}},{%endfor%}}"
+dict: "{{'{'}}{%for i in key_val%}{{i.key()}}: {{i.val()}},{%endfor%}}"
 
 index: "{{arr}}[Index({{val}}, {{arr}}.length)]"
-slice: "{{arr}}.slice({{low|default(0, true)}}, {{up}})"
+slice: "{{arr()}}.slice({{low()|default(0, true)}}, {{up()}})"
 
 operations:
   "+": "+"

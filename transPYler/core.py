@@ -1,10 +1,14 @@
 import ast
 import _ast
+from dataclasses import dataclass
 import re
 
 
 elements = {}
-tmpls = {'operations': {'+': '+'}}
+tmpls = {
+    'types': {},
+    'operations': {}
+}
 macros = {}
 objects = {}
 
@@ -45,16 +49,26 @@ type_facts = {}
 def parser(el):
     el_f = elements.get(type(el))
     if el_f:
-        return el_f(el)
+        comp = el_f(el)
+        if type(comp) == str:
+            return comp
+        return node(**comp)
 
-namespace = "main"
-variables = {"main": {'str': 'type',
-                      'int': 'type',
-                      'float': 'type',
-                      }}
+namespace = 'main'
+variables = {'main': {
+    'str': 'type',
+    'int': 'type',
+    'float': 'type',
+}}
 
-#class element():
-#    def __init__(self, var, _type)
+@dataclass
+class node():
+    val: str = ''
+    type: str = ''
+    def __call__(self):
+        return self.val
+
+
 def compiler(code):
     strings = []
     body = ast.parse(code).body

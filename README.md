@@ -5,17 +5,19 @@ transPYler is a project that provides the ability to translate Python into any p
 ### CLI
 tpy [OPTIONS] [_FILE]
 
-Arguments:
+**Arguments:**
+
   [_FILE]  Name of file for transpilation  [default: index.py]
 
-Options:
+**Options:**
+
   --tmpl Names of template file (templates for js translators/js)
 
   --macr Names of macros file (macros for js translators/js/macros.tp)
 
   --out Output file  [default: stdout]
 
-Example:
+**Example:**
 
 tpy --tmpl expr.tp --tmpl blocks.tp --macr macros.tp --out hi.js hello_world.py
 

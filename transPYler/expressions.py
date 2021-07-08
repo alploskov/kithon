@@ -35,10 +35,10 @@ def compare(tree):
 
 def bin_op(left, right, op):
     expr = (transpyler_type(left), transpyler_type(right), op)
-    _type = None
+    _type = 'None'
     if op in ['and', 'or', '==', '!=', '>',
-                  '<', '>=', '<=', 'in', 'is']:
-        _type = bool
+              '<', '>=', '<=', 'in', 'is']:
+        _type = 'bool'
     ex_data = [
         (expr[0], expr[1], expr[2]),
         (expr[0], expr[1], 'any'),
@@ -53,40 +53,41 @@ def bin_op(left, right, op):
         if ex := macros.get(i):
             if 'type' in ex:
                 _type = NativeTemplate(ex.get('type')).render(
-                    l=left.get('val'),
-                    r=right.get('val'),
-                    l_type=left.get('type'),
-                    r_type=right.get('type')
+                    l=left(),
+                    r=right(),
+                    l_type=left.type,
+                    r_type=right.type
                 )
             if 'code' in ex:
                 return {
                     'type': _type,
                     'val': Template(ex.get('code')).render(
-                        l=left.get('val'),
-                        r=right.get('val'),
-                        l_type=left.get('type'),
-                        r_type=right.get('type')
+                        l=left(),
+                        r=right(),
+                        l_type=left.type,
+                        r_type=right.type
                     )
                 }
     tmp = tmpls.get('bin_op')
-    return {'type': _type,
-            'val': tmp.render(
-                left=left.get('val'),
-                right=right.get('val'),
-                op=tmpls.get('operations').get(op)
-                )
-            }
+    return {
+        'type': _type,
+        'val': tmp.render(
+            left=left,
+            right=right,
+            op=tmpls.get('operations').get(op)
+        )
+    }
 
 def un_op(tree):
     """Unary operations(not...)"""
-    tmp = tmpls.get("un_op")
+    tmp = tmpls.get('un_op')
     op = tmpls.get('operations').get(op_to_str(tree.op))
     el = parser(tree.operand)
     return {
-        'type': el.get('type'),
+        'type': el.type,
         'val': tmp.render(
             op=op,
-            el=el.get('val')
+            el=el
         )
     }
 
@@ -101,8 +102,10 @@ def arg(tree):
         t = ''
         _type = ''
         add_var(name, '')
-    return {'type': t,
-            'val': tmp.render(arg=name, _type=_type)}
+    return {
+        'type': t,
+        'val': tmp.render(arg=name, _type=_type)
+    }
 
 def macro(m, args):
     if 'args' in m:
@@ -117,9 +120,9 @@ def attribute(tree, args=None):
     obj = parser(tree.value)
     ret_type = 'None'
     attr = tree.attr
-    if (transpyler_type(obj) in objects) or (obj.get('val') in objects):
-        if obj.get('val') in objects:
-            objct = obj.get('val')
+    if (transpyler_type(obj) in objects) or (obj() in objects):
+        if obj() in objects:
+            objct = obj()
         else:
             objct = transpyler_type(obj)
         attrs = objects.get(objct)
@@ -133,7 +136,7 @@ def attribute(tree, args=None):
             attr = attr.get('alt_name')
         elif 'code' in attr:
             args = []
-            args.insert(0, obj.get('val'))
+            args.insert(0, obj())
             return {
                 'type': ret_type,
                 'val': macro(attr, args)
@@ -143,15 +146,15 @@ def attribute(tree, args=None):
     else:
         tmp = tmpls.get('attr')
     val = tmp.render(
-        obj=obj.get('val'),
+        obj=obj(),
         attr_name=attr,
         args=args
     )
     return {'type': ret_type, 'val': val}
 
 def function_call(tree):
-    args = list(map(lambda a: parser(a).get('val'), tree.args))
-    ret_type = None
+    args = [parser(a)() for a in tree.args]
+    ret_type = 'None'
     if type(tree.func) == _ast.Attribute:
         return attribute(tree.func, args=args)
     else:
@@ -176,18 +179,18 @@ def function_call(tree):
 def _list(tree):
     tmp = tmpls.get('list')
     elements = list(map(parser, tree.elts))
-    ls = list(map(lambda a: a.get('val'), elements))
+    ls = list(map(lambda a: a(), elements))
     if len(elements):
-        el_type = elements[0].get('type')
+        el_type = elements[0].type
     else:
         el_type = 'None'
     if 'types' in tmpls:
-        r_type = tmpls.get('types').get(_type)
+        r_type = tmpls.get('types').get(el_type) or el_type
     else:
         r_type = el_type
     return {
         'type': {
-            'base_type': list,
+            'base_type': 'list',
             'el_type': el_type 
         },
         'val': tmp.render(
@@ -201,8 +204,8 @@ def _dict(tree):
     keys = list(map(parser, tree.keys))
     values = list(map(parser, tree.values))
     if len(keys):
-        el_type = values[0].get('type')
-        key_type = keys[0].get('type')
+        el_type = values[0].type
+        key_type = keys[0].type
     else:
         el_type = 'None'
         key_type = 'None'
@@ -213,12 +216,12 @@ def _dict(tree):
         r_key_type = key_type
         r_el_type = el_type
     key_val = list(map(
-        lambda x: {'key': x[0]['val'], 'val': x[1]['val']},
+        lambda x: {'key': x[0], 'val': x[1]},
         zip(keys, values)
     ))
     return {
         'type': {
-            'base_type': 'list',
+            'base_type': 'dict',
             'key_type': key_type,
             'el_type': el_type 
         },
@@ -234,20 +237,20 @@ def slice(tree):
     sl = tree.slice
     if type(sl) == _ast.Slice:
         tmp = tmpls.get('slice')
-        lower = parser(sl.lower).get('val')
-        upper = parser(sl.upper).get('val')
-        step = parser(sl.step).get('val')
+        lower = parser(sl.lower)
+        upper = parser(sl.upper)
+        step = parser(sl.step)
         val = tmp.render(
-            arr=arr.get('val'),
+            arr=arr,
             low=lower,
             up=upper,
             step=step
         )
-        return {'type': arr.get('type'), "val": val}
+        return {'type': arr.type, 'val': val}
     else:
         tmp = tmpls.get('index')
-        index = parser(sl).get('val')
-        val = tmp.render(arr=arr.get('val'), val=index)
+        index = parser(sl)()
+        val = tmp.render(arr=arr, val=index)
         _type = element_type(arr)
         return {'type': _type, 'val': val}
 
@@ -255,7 +258,7 @@ def name(tree):
     tmp = tmpls.get('name')
     name = tree.id
     _type = core.variables.get(core.namespace).get(name)
-    return {'type': _type, 'val': tmp.render(name=name)}
+    return {'type': _type, 'val': tmp.render(name=name, type=_type)}
 
 def const(tree):
     val = tree.value
@@ -263,8 +266,8 @@ def const(tree):
         tmp = tmpls.get('string')
         return {'type': 'str', 'val': tmp.render(val=val)}
     tmp = tmpls.get('const')
-    _type = type(val)
-    return {'type': _type, 'val': tmp.render(val=val)}
+    _type = re.search(r'\'.*\'', str(type(val))).group()[1:-1]
+    return {'type': _type, 'val': tmp.render(val=val, type=_type)}
 
 core.elements |= {
     _ast.Call: function_call,

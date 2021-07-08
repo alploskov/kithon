@@ -1,6 +1,5 @@
 import ast
 import _ast
-import re
 from . import core
 
 
@@ -11,16 +10,15 @@ def add_var(name, _type):
     core.variables.get(core.namespace).update({name: _type})
 
 def element_type(el):
-    _type = el.get('type')
+    _type = el.type
     if type(_type) == dict:
         return _type.get('el_type')
     return _type
 
 def transpyler_type(el):
-    _type = el.get('type')
+    _type = el.type
     if not(_type):
         return 'None'
-    elif type(_type) == type:
-        return re.search(r'\'.*\'', str(_type)).group()[1:-1]
     elif 'base_type' in _type:
-        return transpyler_type({'type':_type.get('base_type')})
+        return _type.get('base_type')
+    return _type
