@@ -3,7 +3,7 @@ event:
     - el
     - event_name
     - fun
-  code: "{{args.el}}.addEventListener({{args.event_name}}, {{args.fun}})"
+  code: "{{el}}.addEventListener({{event_name}}, {{fun}})"
   type: 'None'
 
 !!python/tuple [list, list, '+']:
@@ -22,7 +22,7 @@ check:
 
 !!python/tuple ['list', 'type', '*']: 
   code: "{{l}}"
-  type: "list<{{r}}>"
+  type: "{'base_type':'list',  'el_type':'{{r}}'}"
 
 print:
   alt_name: "console.log"
@@ -33,7 +33,7 @@ input:
   type: "str"
 
 len:
-  code: "{{args._1}}.length"
+  code: "{{_1()}}.length"
   type: int
 
 interval:
@@ -57,13 +57,7 @@ get_by_id:
   type: bool
 
 classes:
-  list:
-    lox:
-      code: |-
-        {%for i in range(5)%}lox
-        {%endfor%}
-      type: None
-      
+  list:      
     index:
       alt_name: "indexOf"
       type: int

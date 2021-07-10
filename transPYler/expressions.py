@@ -97,10 +97,10 @@ def arg(tree):
     if tree.annotation:
         t = tree.annotation.id
         add_var(name, t)
-        _type = tmpls.get('types').get(t) if t in tmpls.get('types') else t
+        _type = tmpls.get('types').get(t) or t
     else:
-        t = ''
-        _type = ''
+        t = 'None'
+        _type = 'None'
         add_var(name, '')
     return {
         'type': t,
@@ -114,7 +114,7 @@ def macro(m, args):
         _args = [f'_{i+1}' for i in range(len(args))] 
     args = dict(zip(_args, args))
     tmp = Template(m.get('code'))
-    return tmp.render(args=args)
+    return tmp.render(**args)
 
 def attribute(tree, args=None):
     obj = parser(tree.value)
@@ -128,21 +128,22 @@ def attribute(tree, args=None):
         attrs = objects.get(objct)
         if '__name__' in attrs.keys():
             obj['val'] = attrs.get('__name__')
-        
-        attr = attrs.get(attr)
-        if 'type' in attr:
-            ret_type = attr.get('type')
-        if 'alt_name' in attr:
-            attr = attr.get('alt_name')
-        elif 'code' in attr:
-            args = []
-            args.insert(0, obj())
-            return {
-                'type': ret_type,
-                'val': macro(attr, args)
-            }
+        if attr in attrs:
+            attr = attrs.get(attr)
+            if 'type' in attr:
+                ret_type = attr.get('type')
+            if 'alt_name' in attr:
+                attr = attr.get('alt_name')
+            elif 'code' in attr:
+                args = []
+                args.insert(0, obj())
+                return {
+                    'type': ret_type,
+                    'val': macro(attr, args)
+                }
     if type(args) == list:
         tmp = tmpls.get('method')
+        args = [a() for a in args]
     else:
         tmp = tmpls.get('attr')
     val = tmp.render(
@@ -153,13 +154,15 @@ def attribute(tree, args=None):
     return {'type': ret_type, 'val': val}
 
 def function_call(tree):
-    args = [parser(a)() for a in tree.args]
+    args = [parser(a) for a in tree.args]
     ret_type = 'None'
     if type(tree.func) == _ast.Attribute:
         return attribute(tree.func, args=args)
     else:
         tmp = tmpls.get('call')
         name = tree.func.id
+        if name in core.variables.get(core.namespace):
+            _type = core.variables.get(core.namespace).get(name).get('ret_type')
         if name in macros:
             macr = macros.get(name)
             if 'type' in macr:
@@ -171,6 +174,7 @@ def function_call(tree):
                     'type': ret_type,
                     'val': macro(macr, args)
                 }
+    args = [a() for a in args]
     return {
         'type': ret_type,
         'val': tmp.render(name=name, args=args)
@@ -249,7 +253,7 @@ def slice(tree):
         return {'type': arr.type, 'val': val}
     else:
         tmp = tmpls.get('index')
-        index = parser(sl)()
+        index = parser(sl)
         val = tmp.render(arr=arr, val=index)
         _type = element_type(arr)
         return {'type': _type, 'val': val}
@@ -258,6 +262,12 @@ def name(tree):
     tmp = tmpls.get('name')
     name = tree.id
     _type = core.variables.get(core.namespace).get(name)
+    if name in macros:
+        macr = macros.get(name)
+        if 'type' in macr:
+            _type = macr.get('type')
+        if 'alt_name' in macr:
+            name = macr.get('alt_name')
     return {'type': _type, 'val': tmp.render(name=name, type=_type)}
 
 def const(tree):

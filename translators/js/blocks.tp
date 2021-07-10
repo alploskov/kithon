@@ -8,16 +8,20 @@ else: "else{{body}}"
 
 def: "function {{name}}({{', '.join(args)}}){{body}}"
 
-return: "return {{value}};"
+return: "return {{value()}};"
 
 while: "while({{condition()}}){{body}}{{els}}"
 
-for: >-
-  for(var {{var()}}
-  {% if obj.type.get('base_type') == 'list'%}of
-  {% elif obj.type.get('base_type') == 'dict'%}in
-  {%endif%}
-  {{obj()}}){{body}}
+for: "{% if 'base_type' in obj.type %}\
+{% if obj.type.get('base_type') == 'list'%}\
+{%set iterator = 'of'%}\
+{% elif obj.type.get('base_type') == 'dict'%}\
+{% set iterator = 'in' %}\
+{% endif %}\
+{% else %}\
+{%set iterator = 'of'%}\
+{% endif %}\
+for(var {{var()}} {{iterator}} {{obj()}}){{body}}"
 
 c_like_for: "for(var {{var()}} = {{start}}; {{var()}} < {{finish}}; {{var()}}+={{step}}){{body}}"
 

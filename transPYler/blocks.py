@@ -27,7 +27,7 @@ def assign(expr):
     return tmp.render(
         var=var,
         value=value,
-        type=tmpls.get('types').get(_type) or _type
+        type=_type
     )
 
 def ann_assign(expr):

@@ -7,22 +7,10 @@ import yaml
 import typer
 from jinja2 import Template
 
-from transPYler import core
+from transPYler import core, config
 
 
 yaml.warnings({'YAMLLoadWarning': False})
-
-def add_templ(t):
-    tmpls = yaml.load(open(t, 'r').read())
-    for i in tmpls:
-        if i not in ['operations', 'types']:
-            tmpls[i] = Template(tmpls.get(i))
-    core.tmpls |= tmpls
-
-def add_macros(m):
-    core.macros |= yaml.load(open(m, 'r').read())
-    if 'classes' in core.macros:
-        core.objects |= core.macros.get('classes')
 
 def main(
         _file: typer.FileText = typer.Argument(
@@ -46,9 +34,9 @@ def main(
         typer.echo('You must send at least one template file')
         raise typer.Abort()
     for t in tmpl:
-        add_templ(t)
+        config.add_templ(t)
     for m in macr:
-        add_macros(m)
+        config.add_macros(m)
     src = core.compiler(_file.read())
     print(src, file=out)
 
