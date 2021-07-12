@@ -1,32 +1,16 @@
 event:
-  args:
-    - el
-    - event_name
-    - fun
-  code: "{{el}}.addEventListener({{event_name}}, {{fun}})"
+  args: [el, event_name, fun]
+  code: "{{el()}}.addEventListener({{event_name()}}, {{fun()}})"
   type: 'None'
 
-!!python/tuple [list, list, '+']:
-  code: "{{l}}.concat({{r}})"
-  type: "{{l_type}}"
-
-!!python/tuple ['any', 'any', '//']:
-  code: "Math.floor({{l}}/{{r}})"
-  type: int
-
 check:
-  args:
-    - id
+  args: [id]
   code: "document.getElementById({{args.id}}).checked"
   type: bool
 
-!!python/tuple ['list', 'type', '*']: 
-  code: "{{l}}"
-  type: "{'base_type':'list',  'el_type':'{{r}}'}"
 
 print:
   alt_name: "console.log"
-  type: "None"
 
 input:
   alt_name: "prompt"
@@ -47,31 +31,3 @@ url_param:
 get_by_id:
   alt_name: "document.getElementById"
   type: dom
-
-!!python/tuple ['dom', 'any', '<=']:
-  code: "{{l}}.innerHTMl = {{r}}"
-  type: "None"
-
-!!python/tuple ['any', 'list', 'in']:
-  code: "{{r}}.includes({{l}})"
-  type: bool
-
-classes:
-  list:      
-    index:
-      alt_name: "indexOf"
-      type: int
-    append:
-      alt_name: "push"
-      type: "None"
-  math:
-    "__name__": "Math"
-    "pi":
-      alt_name: "PI"
-      type: float
-  json:
-    "__name__": "JSON"
-    dumps:
-      alt_name: "stringify"
-    loads:
-      alt_name: "parse"

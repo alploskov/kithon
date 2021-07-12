@@ -34,40 +34,40 @@ def compare(tree):
     return expr
 
 def bin_op(left, right, op):
-    expr = (transpyler_type(left), transpyler_type(right), op)
+    print(left, right, op)
+    left_t, right_t = transpyler_type(left), transpyler_type(right)
     _type = 'None'
-    if op in ['and', 'or', '==', '!=', '>',
-              '<', '>=', '<=', 'in', 'is']:
+    if op in [
+        'and', 'or', '==', '!=', '>',
+        '<', '>=', '<=', 'in', 'is'
+    ]:
         _type = 'bool'
-    ex_data = [
-        (expr[0], expr[1], expr[2]),
-        (expr[0], expr[1], 'any'),
-        (expr[0], 'any', expr[2]),
-        ('any', expr[1], expr[2]),
-        ('any', expr[1], 'any'),
-        ('any', 'any', expr[2]),
-        (expr[0], 'any', 'any'),
-        ('any', 'any', 'any'),
-    ]
-    for i in ex_data:
-        if ex := macros.get(i):
-            if 'type' in ex:
-                _type = NativeTemplate(ex.get('type')).render(
-                    l=left(),
-                    r=right(),
-                    l_type=left.type,
-                    r_type=right.type
+    if left_t in objects:
+        attrs = objects.get(left_t)
+    elif 'any' in objects:
+        left_t = 'any'
+        attrs = objects.get('any')
+    else:
+        attrs = []
+    if op in attrs:
+        ex = ''
+        if right_t in attrs.get(op):
+            ex = objects[left_t][op][right_t]
+        elif 'any' in attrs.get(op):
+            ex = objects[left_t][op]['any']
+        if 'type' in ex:
+            _type = NativeTemplate(ex.get('type')).render(
+                l=left,
+                r=right
+            )
+        if 'code' in ex:
+            return {
+                'type': _type,
+                'val': Template(ex.get('code')).render(
+                    l=left,
+                    r=right
                 )
-            if 'code' in ex:
-                return {
-                    'type': _type,
-                    'val': Template(ex.get('code')).render(
-                        l=left(),
-                        r=right(),
-                        l_type=left.type,
-                        r_type=right.type
-                    )
-                }
+            }
     tmp = tmpls.get('bin_op')
     return {
         'type': _type,
@@ -129,17 +129,18 @@ def attribute(tree, args=None):
         if '__name__' in attrs.keys():
             obj['val'] = attrs.get('__name__')
         if attr in attrs:
-            attr = attrs.get(attr)
-            if 'type' in attr:
-                ret_type = attr.get('type')
-            if 'alt_name' in attr:
-                attr = attr.get('alt_name')
-            elif 'code' in attr:
-                args = []
+            macro_attr = attrs.get(attr)
+            if 'type' in macro_attr:
+                ret_type = macro_attr.get('type')
+            if 'alt_name' in macro_attr:
+                attr = macro_attr.get('alt_name')
+                print(attr)
+            elif 'code' in macro_attr:
+                args = args or []
                 args.insert(0, obj())
                 return {
                     'type': ret_type,
-                    'val': macro(attr, args)
+                    'val': macro(macro_attr, args)
                 }
     if type(args) == list:
         tmp = tmpls.get('method')
