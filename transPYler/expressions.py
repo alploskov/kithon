@@ -34,7 +34,6 @@ def compare(tree):
     return expr
 
 def bin_op(left, right, op):
-    print(left, right, op)
     left_t, right_t = transpyler_type(left), transpyler_type(right)
     _type = 'None'
     if op in [
@@ -110,6 +109,8 @@ def arg(tree):
 def macro(m, args):
     if 'args' in m:
         _args = m.get('args')
+        if len(_args) < len(args):
+            _args.insert(0, 'obj')
     else:
         _args = [f'_{i+1}' for i in range(len(args))] 
     args = dict(zip(_args, args))
@@ -127,14 +128,13 @@ def attribute(tree, args=None):
             objct = transpyler_type(obj)
         attrs = objects.get(objct)
         if '__name__' in attrs.keys():
-            obj['val'] = attrs.get('__name__')
+            obj.val = attrs.get('__name__')
         if attr in attrs:
             macro_attr = attrs.get(attr)
             if 'type' in macro_attr:
                 ret_type = macro_attr.get('type')
             if 'alt_name' in macro_attr:
                 attr = macro_attr.get('alt_name')
-                print(attr)
             elif 'code' in macro_attr:
                 args = args or []
                 args.insert(0, obj())

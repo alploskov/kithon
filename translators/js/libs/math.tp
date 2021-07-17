@@ -1,0 +1,132 @@
+classes:
+  math:
+    "__name__": "Math"
+
+    "ceil":
+      type: int
+
+    "copysign":
+      args: [x, y]
+      code: "{{x()}}*Math.sign(y())"
+      type: float
+
+    "fabs":
+      alt_name: abs
+      type: float
+
+    "factorial":
+      type: int
+
+    "floor":
+      type: int
+
+    "fmod":
+      args: [x, y]
+      code: "{{x()}} % {{y()}}"
+      type: float
+
+    "fsum":
+      args: [x]
+      code: "{{x()}}.reduce((sum, current)=>{return sum + current},0)"
+      type: float
+
+    "isinf":
+      args: [x]
+      code: "{{x()}} === Infinity"
+      type: bool
+
+    "isnan":
+      args: [x]
+      code: "isNaN({{x()}})"
+      type: bool
+
+    "trunc":
+      alt_name: "round"
+      type: int
+
+    "exp":
+      type: float
+
+    "expm1":
+      type: float
+
+    "log":
+      type: float
+
+    "log1p":
+      type: float
+
+    "log10":
+      type: float
+
+    "log2":
+      type: float
+
+    "pow":
+      type: float
+
+    "sqrt":
+      type: float 
+    "acos":
+      type: float
+
+    "asin":
+      type: float
+
+    "atan":
+      type: float
+
+    "atan2":
+      type: float
+
+    "cos":
+      type: float
+
+    "sin":
+      type: float
+
+    "tan":
+      type: float
+
+    "hypot":
+      type: float
+
+    "degrees":
+      args: [x]
+      code: "({{x()}}/(Math.PI/180))"
+      type: float
+
+    "radians":
+      args: [x]
+      code: "({{x()}}*(Math.PI/180))"
+      type: float
+
+    "cosh":
+      type: float
+
+    "sinh":
+      type: float
+
+    "tanh":
+      type: float
+
+    "acosh":
+      type: float
+
+    "asinh":
+      type: float
+
+    "atanh":
+      type: float
+
+    "pi":
+      alt_name: "PI"
+      type: float
+
+    "tau":
+      code: "(Math.PI*2)"
+      type: float
+
+    "e":
+      alt_name: "E"
+      type: float
