@@ -44,11 +44,6 @@ classes:
   list: *list_class
   any: *any_class
   dom: *dom_class
-  math:
-    "__name__": "Math"
-    "pi":
-      alt_name: "PI"
-      type: float
   json:
     "__name__": "JSON"
     dumps:

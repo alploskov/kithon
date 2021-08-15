@@ -1,6 +1,9 @@
 name: "{{name}}"
-const: "{{val}}"
-string: "\"{{val}}\""
+const: &const "{{val}}"
+int: *const
+float: *const
+bool: *const
+str: "\"{{val}}\""
 
 bin_op: "({{left()}} {{op}} {{right()}})"
 un_op: "{{op}}({{el()}})"
@@ -10,11 +13,13 @@ attr: "{{obj}}.{{attr_name}}"
 method: "{{obj}}.{{attr_name}}({{', '.join(args)}})"
 arg: "{{arg}}"
 
-list: "[{{ls|join(', ')}}]"
+list: "[{{ls|map(attribute='val')|join(', ')}}]"
+tuple: "[{{ls|join(', ')}}]"
 dict: "{{'{'}}{%for i in key_val%}{{i.key()}}: {{i.val()}},{%endfor%}}"
 
-index: "{{arr()}}[Index({{val()}}, {{arr()}}.length)]"
-slice: "{{arr()}}.slice({{low()|default(0, true)}}, {{up()}})"
+#index: "{{arr()}}[Index({{val()}}, {{arr()}}.length)]"
+index: "{{obj()}}[{{val()}}]"
+slice: "{{obj()}}.slice({{low()|default(0, true)}}, {{up()}})"
 
 operations:
   "+": "+"

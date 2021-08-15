@@ -7,7 +7,7 @@ import yaml
 import typer
 from jinja2 import Template
 
-from transPYler import core, config
+from transPYler import transpiler
 
 
 yaml.warnings({'YAMLLoadWarning': False})
@@ -33,11 +33,8 @@ def main(
     if not(tmpl):
         typer.echo('You must send at least one template file')
         raise typer.Abort()
-    for t in tmpl:
-        config.add_templ(t)
-    for m in macr:
-        config.add_macros(m)
-    src = core.compiler(_file.read())
+    tr = transpiler(tmpl, macr)
+    src = tr.compiler(_file.read())
     print(src, file=out)
 
 if __name__ == '__main__':

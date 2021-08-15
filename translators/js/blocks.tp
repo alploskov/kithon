@@ -12,18 +12,12 @@ return: "return {{value()}};"
 
 while: "while({{condition()}}){{body}}{{els}}"
 
-for: "{% if 'base_type' in obj.type %}\
-{% if obj.type.get('base_type') == 'list'%}\
-{%set iterator = 'of'%}\
-{% elif obj.type.get('base_type') == 'dict'%}\
-{% set iterator = 'in' %}\
-{% endif %}\
-{% else %}\
-{%set iterator = 'of'%}\
-{% endif %}\
-for(var {{var()}} {{iterator}} {{obj()}}){{body}}"
+for: >-
+  for(var {{var()}} {{
+  'in' if type(obj) == 'dict' else 'of'
+  }} {{obj()}}){{body}}
 
-c_like_for: "for(var {{var()}} = {{start}}; {{var()}} < {{finish}}; {{var()}}+={{step}}){{body}}"
+c_like_for: "for(var {{var()}} = {{start()}}; {{var()}} < {{finish()}}; {{var()}}+={{step()}}){{body}}"
 
 break: "break;"
 continue: "continue;"
