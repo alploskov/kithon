@@ -10,7 +10,7 @@ def un_op(self, tree):
     """Unary operations(not...)"""
     tmp = self.tmpls.get('un_op')
     op = self.tmpls.get('operations').get(self.op_to_str(tree.op))
-    el = self.parser(tree.operand)
+    el = self.visit(tree.operand)
     return {
         'type': el.type,
         'val': tmp.render(
@@ -21,14 +21,14 @@ def un_op(self, tree):
 
 def math_op(self, tree):
     """Math operation(+, -, *, /...)"""
-    left = self.parser(tree.left)
-    right = self.parser(tree.right)
+    left = self.visit(tree.left)
+    right = self.visit(tree.right)
     op = self.op_to_str(tree.op)
     return bin_op(self, left, right, op)     
 
 def bool_op(self, tree):
     """Boolean logic operation(or, and)"""
-    els = list(map(self.parser, tree.values))
+    els = list(map(self.visit, tree.values))
     op = self.op_to_str(tree.op)
     expr = bin_op(self, els[0], els[1], op)
     for i in els[2:]:
@@ -37,8 +37,8 @@ def bool_op(self, tree):
 
 def compare(self, tree):
     """Compare operation(==, !=, >, <, >=, <=...)"""
-    f_el = self.parser(tree.left)
-    els = list(map(self.parser, tree.comparators))
+    f_el = self.visit(tree.left)
+    els = list(map(self.visit, tree.comparators))
     ops = list(map(self.op_to_str, tree.ops))
     expr = bin_op(self, f_el, els[0], ops[0])
     for i in zip(els[:-1], els[1:], ops[1:]):
@@ -109,7 +109,7 @@ def macro(m, args, args_names=[]):
 
 def attribute(self, tree, args=None):
     objects = self.objects
-    obj = self.parser(tree.value)
+    obj = self.visit(tree.value)
     ret_type = 'None'
     attr = tree.attr
     attrs = objects.get(
@@ -144,7 +144,7 @@ def attribute(self, tree, args=None):
     return {'type': ret_type, 'val': val}
 
 def function_call(self, tree):
-    args = [self.parser(a) for a in tree.args]
+    args = [self.visit(a) for a in tree.args]
     if type(tree.func) == _ast.Attribute:
         return attribute(self, tree.func, args=args)
     tmp = self.tmpls.get('call')
@@ -169,7 +169,7 @@ def function_call(self, tree):
 
 def _list(self, tree):
     tmp = self.tmpls.get('list')
-    elements = list(map(self.parser, tree.elts))
+    elements = list(map(self.visit, tree.elts))
     if len(elements):
         el_type = elements[0].type
     else:
@@ -188,8 +188,8 @@ def _list(self, tree):
 
 def _dict(self, tree):
     tmp = self.tmpls.get('dict')
-    keys = list(map(self.parser, tree.keys))
-    values = list(map(self.parser, tree.values))
+    keys = list(map(self.visit, tree.keys))
+    values = list(map(self.visit, tree.values))
     if len(keys):
         el_type = values[0].type
         key_type = keys[0].type
@@ -213,18 +213,18 @@ def _dict(self, tree):
     }
 
 def slice(self, tree):
-    obj = self.parser(tree.value)
+    obj = self.visit(tree.value)
     sl = tree.slice
     if type(sl) != _ast.Slice:
         tmp = self.tmpls.get('index')
-        index = self.parser(sl)
+        index = self.visit(sl)
         val = tmp.render(obj=obj, val=index)
         _type = element_type(obj)
         return {'type': _type, 'val': val}
     tmp = self.tmpls.get('slice')
-    lower = self.parser(sl.lower)
-    upper = self.parser(sl.upper)
-    step = self.parser(sl.step)
+    lower = self.visit(sl.lower)
+    upper = self.visit(sl.upper)
+    step = self.visit(sl.step)
     val = tmp.render(
         obj=obj,
         low=lower,

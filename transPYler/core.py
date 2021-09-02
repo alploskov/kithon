@@ -1,10 +1,15 @@
 import ast
 import _ast
 from dataclasses import dataclass
-from . import blocks, expressions, utils
 import re
+
 import yaml
 from jinja2 import Template, Environment, DictLoader
+from hy.compiler import hy_compile, hy_parse
+from coconut.convenience import parse, setup
+
+from . import blocks, expressions, utils
+
 
 
 class transpiler:
@@ -58,9 +63,9 @@ class transpiler:
     }
 
     def add_templ(self, t):
-        tmpls = yaml.load(open(t, 'r').read())
+        tmpls = yaml.load(t.read(), Loader=yaml.FullLoader)
         for i in tmpls:
-            if i not in ['operations', 'types']:
+            if i not in ['operations', 'types', 'rec']:
                 tmpls[i] = Template(tmpls.get(i))
                 tmpls[i].globals |= {
                     'type': utils.transpyler_type,
@@ -68,7 +73,7 @@ class transpiler:
         self.tmpls |= tmpls
 
     def add_macros(self, m):
-        self.macros |= yaml.load(open(m, 'r').read())
+        self.macros |= yaml.load(m.read(), Loader=yaml.FullLoader)
         if 'classes' in self.macros:
             self.objects |= self.macros.get('classes')
 
@@ -118,22 +123,41 @@ class transpiler:
         def __call__(self):
             return self.val
 
-    def parser(self, el):
+    def visit(self, el):
         el_f = self.elements.get(type(el))
         comp = el_f(self, el)
         if type(comp) == str:
             return comp
         return self.node(**comp, ast=el)
 
-    def compiler(self, code):
-        strings = []
-        body = ast.parse(code).body
+    strings = []
+    def generate(self, code, lang='py'):
+        if lang == 'py':
+            astree = ast.parse(code)
+        elif lang == 'hy':
+            astree = hy_compile(hy_parse(code), '__main__')
+        elif lang == 'coco':
+            setup(target="sys")
+            astree = ast.parse(parse(code, 'block'))
+        body = astree.body
         for i in body:
-            i = self.parser(i)
+            i = self.visit(i)
             if '\n' in i:
-                strings.extend(i.split('\n'))
+                self.strings.extend(i.split('\n'))
             else:
-                strings.append(i)
-        if 'main' not in self.tmpls:
-            return '\n'.join(strings)
-        return self.tmpls.get('main').render(body=strings)
+                self.strings.append(i)
+        if 'main' in self.tmpls:
+            code = self.tmpls.get('main').render(body=self.strings)
+        else:
+            code = '\n'.join(self.strings)
+        self.strings = []
+        self.namespace = 'main'
+        self.variables = {'main': {
+            'str': 'type',
+            'int': 'type',
+            'float': 'type'
+        }}
+        return {
+            'recomend': self.tmpls.get('rec', ''),
+            'code': code
+        }

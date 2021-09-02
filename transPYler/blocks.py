@@ -3,16 +3,16 @@ import ast
 from .utils import element_type, add_var, is_var_created
 
 
-get_val = lambda i: parser(i)()
+get_val = lambda i: visit(i)()
 
 def expr(self, expr):
     tmp = self.tmpls.get('expr')
-    value = self.parser(expr.value)
+    value = self.visit(expr.value)
     return tmp.render(value=value)
     
 def assign(self, expr):
-    value = self.parser(expr.value)
-    var = self.parser(expr.targets[0])
+    value = self.visit(expr.value)
+    var = self.visit(expr.targets[0])
     _type = value.type
     if type(expr.targets[0]) == _ast.Name and not(is_var_created(self, var())):
         # May be changes array or attributes, etc (a[0] = 1)
@@ -28,10 +28,10 @@ def assign(self, expr):
 
 def ann_assign(self, expr):
     tmp = self.tmpls.get('ann_assign')
-    var = self.parser(expr.target)
+    var = self.visit(expr.target)
     _type = expr.annotation.id
     self.variables.get(namespace).update({var: _type})
-    val = self.parser(expr.value)
+    val = self.visit(expr.value)
     return tmp.render(
         var = var,
         _type = self.tmpls.get('types').get(_type) or _type,
@@ -51,7 +51,7 @@ def aug_assign(self, expr):
 
 def _if(self, tree):
     tmp = self.tmpls.get("if")
-    condition = self.parser(tree.test)
+    condition = self.visit(tree.test)
     body = expression_block(self, tree.body)
     els = ""
     if tree.orelse:
@@ -75,7 +75,7 @@ def else_if(self, tree):
 
 def _while(self, tree):
     tmp = self.tmpls.get('while')
-    condition = self.parser(tree.test)
+    condition = self.visit(tree.test)
     body = expression_block(self, tree.body)
     els = ""
     if tree.orelse:
@@ -87,17 +87,17 @@ def _while(self, tree):
     )
 
 def _for(self, tree):
-    var = self.parser(tree.target)
+    var = self.visit(tree.target)
     body = expression_block(self, tree.body)
     if type(tree.iter) == _ast.Call and tree.iter.func.id == 'range':
         if 'c_like_for' in self.tmpls:
             if not(is_var_created(self, var())):
                 add_var(self, var(), 'int')
-            param = [self.parser(i) for i in tree.iter.args]
+            param = [self.visit(i) for i in tree.iter.args]
             if len(param) < 3:
-                param.append(self.parser(ast.Constant(value=1)))
+                param.append(self.visit(ast.Constant(value=1)))
             if len(param) < 3:
-                param.insert(0, self.parser(ast.Constant(value=0)))
+                param.insert(0, self.visit(ast.Constant(value=0)))
             tmp = self.tmpls.get('c_like_for')
             return tmp.render(
                 var = var,
@@ -107,7 +107,7 @@ def _for(self, tree):
                 step = param[2],
             )
     tmp = self.tmpls.get('for')
-    obj = self.parser(tree.iter)
+    obj = self.visit(tree.iter)
     if not(is_var_created(self, var())):
         add_var(self, var(), element_type(obj))
     return tmp.render(var=var, obj=obj, body=body)
@@ -135,7 +135,7 @@ def define_function(self, tree):
 
 def ret(expr):
     tmp = self.tmpls.get('return')
-    return tmp.render(value=self.parser(expr.value))
+    return tmp.render(value=self.visit(expr.value))
 
 def scope_of_view(self, tree):
     for i in tree.names:
@@ -145,7 +145,7 @@ def scope_of_view(self, tree):
 
 def expression_block(self, body):
     self.nl += 1
-    body = list(map(self.parser, body))
+    body = list(map(self.visit, body))
     body = self.tmpls.get('body').render(body=body, nl=self.nl)
     self.nl -= 1
     return body

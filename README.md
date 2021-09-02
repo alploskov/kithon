@@ -1,25 +1,32 @@
-# transPYler
-transPYler is a project that provides the ability to translate Python into any programming language.
+transPYler
+===========
 
-# Usage
+transPYler is a project that provides the ability to translate python and python-family language such as [hy-lang](https://github.com/hylang/hy) and [coconut](https://github.com/evhub/coconut) into any other programming languages.
+
+
+[Usage](#usage)
+---------------
 ### CLI
-tpy [OPTIONS] [_FILE]
+tpy [OPTIONS] [FILE]
 
-**Arguments:**
+[Arguments:](#args)
 
-  [_FILE]  Name of file for transpilation  [default: index.py]
+  FILE  Name of file for transpilation  [default: index.py]
 
-**Options:**
+[Options:](#opt)
 
-  --tmpl Names of template file (templates for js translators/js)
+  -t, --templ FILENAME            Names of template file
 
-  --macr Names of macros file (macros for js translators/js/macros.tp)
+  -m, --macros FILENAME           Names of macros file
 
-  --out Output file  [default: stdout]
+  -o, --out FILENAME              Output file  [default: (stdout)]
 
-**Example:**
+  -l, --lang TEXT                 Marking the entrance language (py, hy)
+                                  [default: Вetermined by the filename]
 
-tpy --tmpl expr.tp --tmpl blocks.tp --macr macros.tp --out hi.js hello_world.py
+  --help                          Show this message and exit.
 
-### Build system
-in development
+
+```bash
+tpy -t expr.tp -t blocks.tp -m macros.tp -o hello.js hello_world.py
+```
