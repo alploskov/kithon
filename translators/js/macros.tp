@@ -8,6 +8,15 @@ check:
   code: "document.getElementById({{args.id}}).checked"
   type: bool
 
+min:
+  alt_name: "Math.min"
+
+max:
+  alt_name: "Math.max"
+
+round:
+  args: [num, ndigits]
+  code: "+{{num()}}.toFixed({{ndigits()}})"
 
 print:
   alt_name: "console.log"

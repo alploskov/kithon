@@ -2,26 +2,27 @@ expr: "{{value()}};"
 assign: "{{var()}} = {{value()}};"
 new_var: "var {{var()}} = {{value()}};"
 
-if: "if({{condition()}}){{body}}{{els}}"
-else_if: "else {{_if}}"
-else: "else{{body}}"
+if: "if ({{condition()}}) {{body}} {{els}}"
+elif: "else if ({{condition()}}) {{body}} {{els}}"
+else: "else {{body}}"
 
-def: "function {{name}}({{', '.join(args)}}){{body}}"
+func: "function {{name}} ({{args|map(attribute='val')|join(', ')}}) {{body}}"
 
 return: "return {{value()}};"
 
-while: "while({{condition()}}){{body}}{{els}}"
+while: "while ({{condition()}}) {{body}}"
 
 for: >-
-  for(var {{var()}} {{
+  for (var {{var()}} {{
   'in' if type(obj) == 'dict' else 'of'
-  }} {{obj()}}){{body}}
+  }} {{obj()}}) {{body}}
 
-c_like_for: "for(var {{var()}} = {{start()}}; {{var()}} < {{finish()}}; {{var()}}+={{step()}}){{body}}"
+c_like_for: "for (var {{var()}} = {{start()}}; {{var()}} < {{finish()}}; {{var()}}+={{step()}}) {{body}}"
 
 break: "break;"
 continue: "continue;"
 
+import: "const {{alias}} = require('{{module}}');"
 body: |-
   {{'{'}}{%for st in body%}
   {{'    '*nl}}{{st}}{%endfor%}

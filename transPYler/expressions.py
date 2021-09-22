@@ -1,9 +1,13 @@
+import ast
 import _ast
 import re
 import math
-from .utils import element_type, transpyler_type
+import copy
+from .utils import element_type, transpyler_type, getvar, types_to_id
 from jinja2 import Template
 from jinja2.nativetypes import NativeTemplate
+from .types import List
+import pprint
 
 
 def un_op(self, tree):
@@ -16,8 +20,7 @@ def un_op(self, tree):
         'val': tmp.render(
             op=op,
             el=el
-        )
-    }
+        )}
 
 def math_op(self, tree):
     """Math operation(+, -, *, /...)"""
@@ -54,12 +57,12 @@ def bin_op(self, left, right, op):
         '<', '>=', '<=', 'in', 'is'
     ]:
         _type = 'bool'
-    attrs = self.objects.get(
-        left_t, 
-        self.objects.get('any', [])
+    attrs = self.tmpls.get(
+        left_t,
+        self.tmpls.get('any', [])
     )
     if op in attrs:
-        ex = self.objects[left_t][op].get(right_t, 'any')
+        ex = attrs[op].get(right_t, attrs[op].get('any', []))
         if 'type' in ex:
             _type = NativeTemplate(ex.get('type')).render(
                 l=left,
@@ -68,7 +71,7 @@ def bin_op(self, left, right, op):
         if 'code' in ex:
             return {
                 'type': _type,
-                'val': macro(ex, [left, right], ['l', 'r'])
+                'val': macro(self,ex, [left, right], ['l', 'r'])
             }
     tmp = self.tmpls.get('bin_op')
     return {
@@ -83,45 +86,41 @@ def bin_op(self, left, right, op):
 def arg(self, tree):
     tmp = self.tmpls.get('arg')
     name = tree.arg
-    if tree.annotation:
-        t = tree.annotation.id
-        add_var(name, t)
-        _type = self.tmpls.get('types').get(t, t)
-    else:
-        t = 'None'
-        _type = 'None'
-        add_var(name, '')
+    t = getattr(tree.annotation, 'id', 'any')
+    self.variables.update({f'{self.namespace}.{name}': {
+        'type': [t]
+    }})
+#    _type = self.tmpls.get('types').get(t)
     return {
         'type': t,
-        'val': tmp.render(arg=name, type=_type)
+        'val': tmp.render(arg=name, _type='_type')
     }
 
-def macro(m, args, args_names=[]):
+def macro(self,m, args, args_names=[]):
+    tmp = Template(m.get('code'))
     if 'args' in m:
         args_names = m.get('args')
+        if type(args_names) == str and args_names == '*args':
+            return tmp.render(args=args, ctx=self)
         if len(args_names) < len(args):
             args_names.insert(0, 'obj')
     elif args_names == []:
         args_names = [f'_{i+1}' for i in range(len(args))]
     args = dict(zip(args_names, args))
-    code = m.get('code')
-    return tmp.render(**args)
+    return tmp.render(**args, ctx=self)
 
 def attribute(self, tree, args=None):
-    objects = self.objects
+    tmpls = self.tmpls
     obj = self.visit(tree.value)
     ret_type = 'None'
     attr = tree.attr
-    attrs = objects.get(
+    attrs = tmpls.get(
         transpyler_type(obj),
-        objects.get(
-            obj(),
-            objects.get('any', [])
-        )
-    )
+        tmpls.get(
+            tree.value.id,
+            tmpls.get('any', [])))
     if attr in attrs:
         macro_attr = attrs.get(attr)
-        obj.val = attrs.get('__name__', obj())
         ret_type = macro_attr.get('type', ret_type)
         attr = macro_attr.get('alt_name', attr)
         if 'code' in macro_attr:
@@ -129,39 +128,34 @@ def attribute(self, tree, args=None):
             args.insert(0, obj())
             return {
                 'type': ret_type,
-                'val': macro(macro_attr, args)
-            }
+                'val': macro(self,macro_attr, args)}
     if type(args) == list:
-        tmp = self.tmpls.get('method')
+        tmp = self.tmpls.get('callmethod')
         args = [a() for a in args]
     else:
-        tmp = self.tmpls.get('attr')
+        tmp = self.tmpls.get('getattr')
     val = tmp.render(
-        obj=obj(),
+        obj=obj,
         attr_name=attr,
-        args=args
-    )
+        args=args)
     return {'type': ret_type, 'val': val}
 
 def function_call(self, tree):
     args = [self.visit(a) for a in tree.args]
     if type(tree.func) == _ast.Attribute:
         return attribute(self, tree.func, args=args)
-    tmp = self.tmpls.get('call')
     name = tree.func.id
     ret_type = 'None'
-    if name in self.variables.get(self.namespace):
-        ret_type = self.variables.get(self.namespace)[name]['ret_type']
-    elif name in self.macros:
-        macr = self.macros.get(name)
+    if name in self.tmpls:
+        macr = self.tmpls.get(name)
         ret_type = macr.get('type', ret_type)
         name = macr.get('alt_name', name)
         if 'code' in macr:
             return {
                 'type': ret_type,
-                'val': macro(macr, args)
+                'val': macro(self,macr, args)
             }
-    args = [a() for a in args]
+    tmp = self.tmpls.get('callfunc')
     return {
         'type': ret_type,
         'val': tmp.render(name=name, args=args)
@@ -176,10 +170,7 @@ def _list(self, tree):
         el_type = 'None'
     ren_type = self.tmpls.get('types').get(el_type, el_type)
     return {
-        'type': {
-            'base_type': 'list',
-            'el_type': el_type 
-        },
+        'type': List(el_type),
         'val': tmp.render(
             ls=elements,
             type=ren_type
@@ -194,8 +185,8 @@ def _dict(self, tree):
         el_type = values[0].type
         key_type = keys[0].type
     else:
-        el_type = 'None'
-        key_type = 'None'
+        el_type = 'any'
+        key_type = 'any'
     ren_key_type = self.tmpls.get('types').get(key_type, key_type)
     ren_el_type = self.tmpls.get('types').get(el_type, el_type)
     key_val = [{'key': x[0], 'val': x[1]} for x in zip(keys, values)]
@@ -218,7 +209,7 @@ def slice(self, tree):
     if type(sl) != _ast.Slice:
         tmp = self.tmpls.get('index')
         index = self.visit(sl)
-        val = tmp.render(obj=obj, val=index)
+        val = tmp.render(obj=obj, val=index, ctx=self)
         _type = element_type(obj)
         return {'type': _type, 'val': val}
     tmp = self.tmpls.get('slice')
@@ -229,7 +220,8 @@ def slice(self, tree):
         obj=obj,
         low=lower,
         up=upper,
-        step=step
+        step=step,
+        ctx=self
     )
     return {'type': obj.type, 'val': val}
 
@@ -240,10 +232,14 @@ def name(self, tree):
         _ast.Store: 'store',
         _ast.Load: 'load'
     }.get(type(tree.ctx))
-    _type = self.variables.get(self.namespace).get(name)
-    macr = self.macros.get(name, {})
-    _type = macr.get('type', _type)
-    name = macr.get('alt_name', name)
+    _type = 'None'
+    var_info = getvar(self, name)
+    if var_info:
+       _type = var_info['type'][-1]
+    macr = self.tmpls.get(name, {})
+    if type(macr) != Template: 
+        _type = macr.get('type', _type)
+        name = macr.get('alt_name', name)
     return {
         'type': _type,
         'val': tmp.render(name=name, type=_type, ctx=ctx)
@@ -254,20 +250,20 @@ def const(self, tree):
     _type = type(_val)
     if _type == bool: return {
         'type': 'bool',
-        'val': self.self.tmpls.get('bool').render(val=_val)
+        'val': self.tmpls.get('Bool').render(val=_val)
     }
     elif _type == int: return {
         'type': 'int',
-        'val': self.tmpls.get('int').render(val=_val)
+        'val': self.tmpls.get('Int').render(val=_val)
     }
     elif _type == float: return {
         'type': 'float',
-        'val': self.tmpls.get('float').render(
+        'val': self.tmpls.get('Float').render(
             val=_val,
             parts=math.modf(_val)
         )
     }
     elif _type == str: return {
         'type': 'str',
-        'val': self.tmpls.get('str').render(val=_val)
+        'val': self.tmpls.get('Str').render(val=_val)
     }

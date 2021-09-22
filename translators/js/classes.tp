@@ -1,4 +1,4 @@
-_list: &list_class
+List:
   index:
     alt_name: 'indexOf'
     type: int
@@ -8,29 +8,44 @@ _list: &list_class
     type: "None"
 
   '+':
-    list:
+    List:
       code: "{{l()}}.concat({{r()}})"
       type: "{{l.type}}"
-
+    any:
+      code: "{{l()}}.append({{r()}})"
+      type: "{{l.type}}"
   '*':
     type:
       code: "{{l()}}"
       type: "{'base_type':'list',  'el_type':'{{r()}}'}"
     int:
-      code: '(function(e,n){a=[];for(i=0;i<n;i++){a=a.concat(e)}return a})({{l()}}, {{r()}})'
+      code: 'Array({{r()}}).fill({{l()}}).flat()'
       type: '{{l.type}}'
+  '==':
+    List:
+      code: |-
+        {%- if l() == r()-%}
+            true
+        {%- else -%}
+            arrayEgal({{l()}},{{r()}}){{ctx.use('arrayEgal')}}
+        {%- endif -%}
+str:
+  '*':
+    int:
+      code: '{{l()}}.repeat({{r()}})'
+      type: 'str'
 
-_any: &any_class
+any:
   '//':
     any:
       code: "Math.floor({{l()}}/{{r()}})"
       type: int
   'in':
-    list:
+    List:
       code: "{{r()}}.includes({{l()}})"
       type: bool
 
-_dom: &dom_class
+dom:
   '<=':
     any:
       code: "{{l()}}.innerHTMl = {{r()}}"
@@ -40,13 +55,9 @@ _dom: &dom_class
       code: "{{l()}}.innerHTMl += {{r()}}"
       type: "None"
 
-classes:
-  list: *list_class
-  any: *any_class
-  dom: *dom_class
-  json:
-    "__name__": "JSON"
-    dumps:
-      alt_name: "stringify"
-    loads:
-      alt_name: "parse"
+json:
+  "__name__": "JSON"
+  dumps:
+    alt_name: "stringify"
+  loads:
+    alt_name: "parse"

@@ -1,7 +1,7 @@
-classes:
-  math:
-    "__name__": "Math"
-
+math:
+    ignore_import: 1
+    alt_name: "Math"
+   
     "ceil":
       type: int
 
