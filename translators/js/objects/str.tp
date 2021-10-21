@@ -1,0 +1,3 @@
+str.*.int:
+  code: '{{left()}}.repeat({{right()}})'
+  type: "str"

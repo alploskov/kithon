@@ -66,13 +66,9 @@ def main(
         'coco': 'coco',
         'coconut': 'coconut'
     }.get(_file.name.split('.')[-1])
-    tr = transpiler(tmpl)
-#    pprint.pprint(tr.tmpls)
+    tr = transpiler(*list(map(lambda t: t.read(), tmpl)))
     result = tr.generate(_file.read(), lang=input_lang)
-    if result['recomend']:
-        print(result['recomend'])
-        print('-' * len(result['recomend']) + '\n')
-    print(result['code'], file=out)
+    print(result, file=out)
 
 if __name__ == '__main__':
      typer.run(main)

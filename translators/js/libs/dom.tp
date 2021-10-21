@@ -1,0 +1,33 @@
+event:
+  args: [el, event_name, fun]
+  code: "{{el()}}.addEventListener({{event_name()}}, {{fun()}})"
+  rettype: 'None'
+
+check:
+  args: [id]
+  code: "document.getElementById({{id()}}).checked"
+  rettype: bool
+
+url_param:
+  alt_name: "new URL(window.location.href).searchParams.get"
+  type: str
+
+get_by_id:
+  alt_name: "document.getElementById"
+  rettype: dom
+
+get_by_class:
+  alt_name: "document.getElementsByClassName"
+  rettype: "list[dom]"
+
+get_by_tagname:
+  alt_name: "document.getElementsByTagName"
+  rettype: "list[dom]"
+
+dom.<=.any:
+  code: "{{left()}}.innerHTML = {{right()}}"
+  type: "None"
+
+dom.<<.any:
+  code: "{{left()}}.innerHTML += {{right()}}"
+  type: "None"

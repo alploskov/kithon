@@ -1,192 +1,181 @@
 import ast
-import _ast
+from _ast import *
 import re
 import math
 import copy
-from .utils import element_type, transpyler_type, getvar, types_to_id
-from jinja2 import Template
-from jinja2.nativetypes import NativeTemplate
-from .types import List
-import pprint
+from . import types
+from .types import to_any, to_string, type_translation
+from .utils import getvar
+from .core import visitor, op_to_str
+from .side_effects import side_effects
+from itertools import product
 
 
-def un_op(self, tree):
+@visitor
+def un_op(self, tree: UnaryOp):
     """Unary operations(not...)"""
-    tmp = self.tmpls.get('un_op')
-    op = self.tmpls.get('operations').get(self.op_to_str(tree.op))
     el = self.visit(tree.operand)
-    return {
-        'type': el.type,
-        'val': tmp.render(
-            op=op,
-            el=el
-        )}
+    return self.node(
+        tmp='un_op',
+        type=el.type,
+        parts={
+            'op': self.tmpls['operators'][op_to_str(tree.op)],
+            'el': el
+        }
+    )
 
-def math_op(self, tree):
+@visitor
+def bin_op(self, tree: BinOp):
     """Math operation(+, -, *, /...)"""
-    left = self.visit(tree.left)
-    right = self.visit(tree.right)
-    op = self.op_to_str(tree.op)
-    return bin_op(self, left, right, op)     
+    return _bin_op(
+        self,
+        self.visit(tree.left),
+        self.visit(tree.right),
+        op_to_str(tree.op)
+    )
 
-def bool_op(self, tree):
+@visitor
+def bool_op(self, tree: BoolOp):
     """Boolean logic operation(or, and)"""
     els = list(map(self.visit, tree.values))
-    op = self.op_to_str(tree.op)
-    expr = bin_op(self, els[0], els[1], op)
-    for i in els[2:]:
-        expr = bin_op(self, expr, i, op)
+    op = op_to_str(tree.op)
+    expr = _bin_op(self, els[0], els[1], op)
+    for el in els[2:]:
+        expr = _bin_op(self, expr, el, op)
     return expr
 
-def compare(self, tree):
+@visitor
+def compare(self, tree: Compare):
     """Compare operation(==, !=, >, <, >=, <=...)"""
     f_el = self.visit(tree.left)
     els = list(map(self.visit, tree.comparators))
-    ops = list(map(self.op_to_str, tree.ops))
-    expr = bin_op(self, f_el, els[0], ops[0])
-    for i in zip(els[:-1], els[1:], ops[1:]):
-        expr = bin_op(self, expr, bin_op(i[0], i[1], i[2]), 'and')
+    ops = list(map(op_to_str, tree.ops))
+    expr = _bin_op(self, f_el, els[0], ops[0])
+    for l, r, op in zip(els[:-1], els[1:], ops[1:]):
+        expr = _bin_op(self, expr, _bin_op(self, l, e, op), 'and')
     return expr
 
-def bin_op(self, left, right, op):
-    left_t = transpyler_type(left)
-    right_t = transpyler_type(right)
-    _type = 'None'
-    if op in [
-        'and', 'or', '==', '!=', '>',
-        '<', '>=', '<=', 'in', 'is'
-    ]:
-        _type = 'bool'
-    attrs = self.tmpls.get(
-        left_t,
-        self.tmpls.get('any', [])
-    )
-    if op in attrs:
-        ex = attrs[op].get(right_t, attrs[op].get('any', []))
-        if 'type' in ex:
-            _type = NativeTemplate(ex.get('type')).render(
-                l=left,
-                r=right
-            )
-        if 'code' in ex:
-            return {
-                'type': _type,
-                'val': macro(self,ex, [left, right], ['l', 'r'])
-            }
-    tmp = self.tmpls.get('bin_op')
-    return {
-        'type': _type,
-        'val': tmp.render(
-            left=left,
-            right=right,
-            op=self.tmpls.get('operations').get(op)
-        )
-    }
-
-def arg(self, tree):
-    tmp = self.tmpls.get('arg')
-    name = tree.arg
-    t = getattr(tree.annotation, 'id', 'any')
-    self.variables.update({f'{self.namespace}.{name}': {
-        'type': [t]
-    }})
-#    _type = self.tmpls.get('types').get(t)
-    return {
-        'type': t,
-        'val': tmp.render(arg=name, _type='_type')
-    }
-
-def macro(self,m, args, args_names=[]):
-    tmp = Template(m.get('code'))
-    if 'args' in m:
-        args_names = m.get('args')
-        if type(args_names) == str and args_names == '*args':
-            return tmp.render(args=args, ctx=self)
-        if len(args_names) < len(args):
-            args_names.insert(0, 'obj')
-    elif args_names == []:
-        args_names = [f'_{i+1}' for i in range(len(args))]
-    args = dict(zip(args_names, args))
-    return tmp.render(**args, ctx=self)
-
-def attribute(self, tree, args=None):
-    tmpls = self.tmpls
-    obj = self.visit(tree.value)
-    ret_type = 'None'
-    attr = tree.attr
-    attrs = tmpls.get(
-        transpyler_type(obj),
-        tmpls.get(
-            tree.value.id,
-            tmpls.get('any', [])))
-    if attr in attrs:
-        macro_attr = attrs.get(attr)
-        ret_type = macro_attr.get('type', ret_type)
-        attr = macro_attr.get('alt_name', attr)
-        if 'code' in macro_attr:
-            args = args or []
-            args.insert(0, obj())
-            return {
-                'type': ret_type,
-                'val': macro(self,macro_attr, args)}
-    if type(args) == list:
-        tmp = self.tmpls.get('callmethod')
-        args = [a() for a in args]
+def _bin_op(self, left, right, op):
+    lt = left.type
+    rt = right.type
+    left_types = [to_string(lt)]
+    right_types = [to_string(rt)]
+    while lt != 'any':
+        lt = to_any(lt)
+        left_types.append(to_string(lt))
+    while rt != 'any':
+        rt = to_any(rt)
+        right_types.append(to_string(rt))
+    for l, r in product(left_types, right_types):
+        overload = self.tmpls.get(f'{l}.{op}.{r}')
+        if overload:
+            tmp = overload.get('code', 'bin_op')
+            _type = eval(overload.get(
+                'type',
+                'None'
+            )) or 'None'
+            if isinstance(_type, type):
+                _type = str(_type)[8:-2]
+            break
     else:
-        tmp = self.tmpls.get('getattr')
-    val = tmp.render(
-        obj=obj,
-        attr_name=attr,
-        args=args)
-    return {'type': ret_type, 'val': val}
+        tmp = 'bin_op'
+        _type = 'None'
+    return self.node(
+        parts={
+            'left': left,
+            'right': right,
+            'op': self.tmpls['operators'][op]
+        },
+        tmp=tmp,
+        type=_type
+    )
 
-def function_call(self, tree):
+def merge_args(macro, args):
+    if 'args' not in macro:
+        return {}
+    return dict(list(zip(macro['args'], args)))
+
+@visitor
+def attribute(self, tree: Attribute, args=None):
+    obj = self.visit(tree.value)
+    _type = 'None'
+    attr = tree.attr
+    macro = ''
+    parts = {'obj': obj, 'attr': attr, 'args': args}
+    if isinstance(obj.type, types.Module):
+        macro = self.tmpls[obj.type.name].get(attr)
+    if not macro:
+        obj_type = obj.type
+        macro = self.tmpls.get(f'{to_string(obj_type)}.{attr}')
+        while obj_type != 'any' and not macro:
+            obj_type = to_any(obj_type)
+            macro = self.tmpls.get(f'{to_string(obj_type)}.{attr}')
+    if macro:
+        _type = type_translation(macro.get('type', _type))
+        parts['attr'] = macro.get('alt_name', attr)
+        tmp = macro.get('code', 'callmethod')
+        parts.update(merge_args(macro, args))
+        exec(
+            macro.get('side_effect', ''),
+            side_effects | parts
+        )
+    else:
+        tmp = 'callmethod' if args else 'attr'
+    return self.node(
+        type=_type, 
+        tmp=tmp,
+        parts=parts
+    )
+
+@visitor
+def function_call(self, tree: Call):
     args = [self.visit(a) for a in tree.args]
-    if type(tree.func) == _ast.Attribute:
-        return attribute(self, tree.func, args=args)
-    name = tree.func.id
+    if isinstance(tree.func, Attribute):
+        return self.attribute(tree.func, args=args)
+    func = self.visit(tree.func)
+    named_args = {}
     ret_type = 'None'
-    if name in self.tmpls:
-        macr = self.tmpls.get(name)
-        ret_type = macr.get('type', ret_type)
-        name = macr.get('alt_name', name)
-        if 'code' in macr:
-            return {
-                'type': ret_type,
-                'val': macro(self,macr, args)
-            }
-    tmp = self.tmpls.get('callfunc')
-    return {
-        'type': ret_type,
-        'val': tmp.render(name=name, args=args)
-    }
+    parts = {'func': func, 'args': args}
+    if isinstance(tree.func, Name) and tree.func.id in self.tmpls:
+        macro = self.tmpls.get(tree.func.id)
+        parts.update(merge_args(macro, args))
+        ret_type = macro.get('rettype', ret_type)
+        tmp = macro.get('code', 'callfunc')
+        exec(
+            macro.get('side_effect', ''),
+            side_effects | parts
+        )
+    else:
+        tmp = 'callfunc'
+    return self.node(
+        type=ret_type,
+        parts=parts | named_args,
+        tmp=tmp
+    )
 
-def _list(self, tree):
-    tmp = self.tmpls.get('list')
+@visitor
+def _list(self, tree: List):
     elements = list(map(self.visit, tree.elts))
     if len(elements):
         el_type = elements[0].type
     else:
-        el_type = 'None'
-    ren_type = self.tmpls.get('types').get(el_type, el_type)
-    return {
-        'type': List(el_type),
-        'val': tmp.render(
-            ls=elements,
-            type=ren_type
-        )
-    }
+        el_type = 'generic'
+    return self.node(
+        tmp='List',
+        type=types.List(el_type),
+        parts={'ls': elements}
+    )
 
-def _dict(self, tree):
-    tmp = self.tmpls.get('dict')
+@visitor
+def _dict(self, tree: Dict):
     keys = list(map(self.visit, tree.keys))
     values = list(map(self.visit, tree.values))
     if len(keys):
         el_type = values[0].type
         key_type = keys[0].type
     else:
-        el_type = 'any'
-        key_type = 'any'
+        el_type = 'generic'
+        key_type = 'generic'
     ren_key_type = self.tmpls.get('types').get(key_type, key_type)
     ren_el_type = self.tmpls.get('types').get(el_type, el_type)
     key_val = [{'key': x[0], 'val': x[1]} for x in zip(keys, values)]
@@ -203,67 +192,79 @@ def _dict(self, tree):
         )
     }
 
-def slice(self, tree):
+@visitor
+def slice(self, tree: Subscript):
     obj = self.visit(tree.value)
     sl = tree.slice
-    if type(sl) != _ast.Slice:
-        tmp = self.tmpls.get('index')
-        index = self.visit(sl)
-        val = tmp.render(obj=obj, val=index, ctx=self)
-        _type = element_type(obj)
-        return {'type': _type, 'val': val}
-    tmp = self.tmpls.get('slice')
-    lower = self.visit(sl.lower)
-    upper = self.visit(sl.upper)
-    step = self.visit(sl.step)
-    val = tmp.render(
-        obj=obj,
-        low=lower,
-        up=upper,
-        step=step,
-        ctx=self
+    if type(sl) != Slice:
+        return self.node(
+            type=getattr(obj, 'el_type', 'None'),
+            tmp='index',
+            parts={'obj': obj, 'key': self.visit(sl)}
+        )
+    return self.node(
+        tmp = 'slice',
+        type = obj.type,
+        parts = {
+            'obj': obj,
+            'low': self.visit(
+                sl.lower or ast.Consrant(value=0)
+            ),
+            'up': self.visit(
+                sl.upper or ast.Call(
+                    func=ast.Name(id='len', ctx=Load),
+                    args=[tree.value]
+            )),
+            'step': self.visit(
+                sl.step or ast.Constant(value=1)
+            )
+        }
     )
-    return {'type': obj.type, 'val': val}
 
-def name(self, tree):
-    tmp = self.tmpls.get('name')
+@visitor
+def name(self, tree: Name):
     name = tree.id
-    ctx = {
-        _ast.Store: 'store',
-        _ast.Load: 'load'
-    }.get(type(tree.ctx))
     _type = 'None'
+    ctx = {
+        Store: 'store',
+        Load: 'load'
+    }.get(type(tree.ctx))
     var_info = getvar(self, name)
     if var_info:
-       _type = var_info['type'][-1]
-    macr = self.tmpls.get(name, {})
-    if type(macr) != Template: 
+        _type = var_info['type'][-1]
+        if isinstance(tree.ctx, Store):
+            self.variables[var_info['own']]['immut'] = False
+    elif isinstance(tree.ctx, Load) and (name in self.tmpls):
+        macr = self.tmpls[name]
         _type = macr.get('type', _type)
+        if _type == 'module':
+            _type = types.Module(name)
         name = macr.get('alt_name', name)
-    return {
-        'type': _type,
-        'val': tmp.render(name=name, type=_type, ctx=ctx)
-    }
+    return self.node(
+        type=_type,
+        tmp='name',
+        parts={
+            'name': name,
+            'own': var_info.get('own')
+        }
+    )
 
-def const(self, tree):
+@visitor
+def const(self, tree: Constant):
     _val = tree.value
-    _type = type(_val)
-    if _type == bool: return {
-        'type': 'bool',
-        'val': self.tmpls.get('Bool').render(val=_val)
-    }
-    elif _type == int: return {
-        'type': 'int',
-        'val': self.tmpls.get('Int').render(val=_val)
-    }
-    elif _type == float: return {
-        'type': 'float',
-        'val': self.tmpls.get('Float').render(
-            val=_val,
-            parts=math.modf(_val)
-        )
-    }
-    elif _type == str: return {
-        'type': 'str',
-        'val': self.tmpls.get('Str').render(val=_val)
-    }
+    _type = str(type(_val))[8:-2]
+    parts={'val': _val}
+    if isinstance(_val, float):
+        parts |= {'parts': math.modf(_val)}        
+    return self.node(
+        type=_type,
+        tmp=_type.capitalize(),
+        parts=parts
+    )
+
+@visitor
+def none(self, tree: type(None)):
+    return self.node(
+        tmp='None',
+        type='None'
+    )

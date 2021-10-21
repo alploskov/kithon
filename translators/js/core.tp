@@ -1,0 +1,93 @@
+name: "{{name}}"
+const: &const "{{val}}"
+Int: *const
+Float: *const
+Bool: "{{val|lower}}"
+Str: "'{{val}}'"
+
+operators:
+  "+": "+"
+  "-": "-"
+  "*": "*"
+  "/": "/"
+  "**": "**"
+  "==": "=="
+  "!=": "!="
+  ">": ">"
+  "<": "<"
+  ">=": ">="
+  "<=": "<="
+  "or": "||"
+  "and": "&&"
+  "|": "|"
+  "&": "&"
+  "%": "%"
+  "not": "!"
+  "is": "==="
+
+bin_op: "({{left()}} {{op}} {{right()}})"
+un_op: "{{op}}{{el()}}"
+
+callfunc: "{{func()}}({{args|map(attribute='val')|join(', ')}})"
+attr: "{{obj()}}.{{attr}}"
+callmethod: "{{obj()}}.{{attr}}({{args|map(attribute='val')|join(', ')}})"
+arg: "{{arg}}"
+
+List: "[{{ls|map(attribute='val')|join(', ')}}]"
+Tuple: "[{{ls|map(attribute='val')|join(', ')}}]"
+Dict: "{{'{'}}{%for i in key_val%}{{i.key()}}: {{i.val()}},{%endfor%}}"
+
+index: "{{obj()}}[{{key()}}<0?{{obj()}}.length+{{key()}}:{{key()}}]"
+slice: |-
+  {%-if step() == '1'-%}
+    {{obj()}}.slice({{low()}}, {{up()}})
+  {%-elif step() != '0'-%}
+    ({{step()}}<0?Array.from({{obj()}}).reverse():{{obj()}})
+    {%-if low() != '' or up() != ''-%}
+      .slice(...({{step()}}<0?[{{up()}}, {{low()}}]:[{{low()}}, {{up()}}]))
+    {%-endif-%}
+    {%-if step() != '1' and step() != '-1'-%}
+      .filter((_,i)=>(i%{{step()}})==0)
+    {%-endif-%}
+  {%-endif-%}
+
+expr: "{{value()}};"
+assign: "{{var()}} = {{value()}};"
+new_var: "let {{var()}} = {{value()}};"
+
+if: "if ({{condition()}}) {{body()}} {{els()}}"
+elif: "else if ({{condition()}}) {{body()}} {{els()}}"
+else: "else {{body()}}"
+
+func: "function {{name}} ({{args|map(attribute='val')|join(', ')}}) {{body()}}"
+
+return: "return {{value()}};"
+
+while: "while ({{condition()}}) {{body}}"
+
+for: >-
+  for (let {{var()}}
+  {{'in' if isinstance(obj.type, Dict) else 'of'}}
+  {{obj()}})
+  {{body()}}
+
+c_like_for: >-
+  for (let {{var()}} = {{start()}};
+  ({{step()}}<0?{{var()}}>{{finish()}}:{{var()}}<{{finish()}});
+  {{var()}} += {{step()}})
+  {{body()}}
+
+break: "break;"
+continue: "continue;"
+
+import: "const {{alias}} = require('{{module}}');"
+
+body: |-
+  {{'{'}}{%for st in body%}
+  {{'    '*nl}}{{st()}}{%endfor%}
+  {{'    '*(nl-1)}}}
+
+main: |-
+  {{';(function(){'}}{%for st in body%}
+  {{st}}{%endfor%}
+  })();

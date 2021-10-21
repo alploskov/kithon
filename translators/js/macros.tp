@@ -1,18 +1,20 @@
 event:
   args: [el, event_name, fun]
   code: "{{el()}}.addEventListener({{event_name()}}, {{fun()}})"
-  type: 'None'
+  rettype: 'None'
 
 check:
   args: [id]
-  code: "document.getElementById({{args.id}}).checked"
-  type: bool
+  code: "document.getElementById({{id()}}).checked"
+  rettype: bool
 
 min:
   alt_name: "Math.min"
+  type: float
 
 max:
   alt_name: "Math.max"
+  type: float
 
 round:
   args: [num, ndigits]
@@ -20,18 +22,21 @@ round:
 
 print:
   alt_name: "console.log"
+  ret_type: "None"
 
 input:
   alt_name: "prompt"
-  type: "str"
+  type: "Func"
+  rettype: "str"
 
 len:
-  code: "{{_1()}}.length"
-  type: int
+  code: "{{args[0]()}}.length"
+  rettype: int
 
 interval:
   alt_name: "setInterval"
-  type: "None"
+  type: "Func"
+  ret_type: "None"
 
 url_param:
   alt_name: "new URL(window.location.href).searchParams.get"
@@ -40,3 +45,7 @@ url_param:
 get_by_id:
   alt_name: "document.getElementById"
   type: dom
+
+any.//.any:
+  code: "Math.floor({{left()}}/{{right()}})"
+  type: "int"

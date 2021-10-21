@@ -1,0 +1,9 @@
+json:
+  type: module
+  alt_name: "JSON"
+  dumps:
+    alt_name: "stringify"
+    ret_type: "any"
+  loads:
+    alt_name: "parse"
+    ret_type: "str"
