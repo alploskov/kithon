@@ -1,32 +1,32 @@
-transPYler
-===========
+**transPYler** is a project that provides the ability to translate python and python-family language such as
+[hy-lang](https://github.com/hylang/hy) and [coconut](https://github.com/evhub/coconut)
+into human-readable code in any other programming languages.
 
-transPYler is a project that provides the ability to translate python and python-family language such as [hy-lang](https://github.com/hylang/hy) and [coconut](https://github.com/evhub/coconut) into any other programming languages.
+[Try out the web demo](https://alploskov.github.io/transPYler/demo/)
 
+For what?
+---------
 
-[Usage](#usage)
----------------
-### CLI
-tpy [OPTIONS] [FILE]
+For use python where we can't. For example in browser(js), embedded scripting(mostly lua).
+Or make python program faster by translating to go, c++, rust, nim or julia.
+Also for supporting program written on in unpopular programming languages (very new or vice versa)
 
-[Arguments:](#args)
+How it works?
+-------------
 
-  FILE  Name of file for transpilation  [default: index.py]
+transPYler uses a dsl based on yaml and jinja to apply the rules described on it to the nodes of the ast tree. 
+Using this dsl you can add new languages or extensions to those already added.
 
-[Options:](#opt)
+Status
+------
 
-  -t, --templ FILENAME            Names of template file
+The project is under active development.
+Now the ability to add translation of basic python constructs into any other language(in this repo js only) is supported.
 
-  -m, --macros FILENAME           Names of macros file
+There are plans to develop a number of supported languages and expand support for python syntax
 
-  -o, --out FILENAME              Output file  [default: (stdout)]
+Similar projects
+----------------
 
-  -l, --lang TEXT                 Marking the entrance language (py, hy)
-                                  [default: Вetermined by the filename]
-
-  --help                          Show this message and exit.
-
-
-```bash
-tpy -t expr.tp -t blocks.tp -m macros.tp -o hello.js hello_world.py
-```
+* [py2many](https://github.com/adsharma/py2many)
+* [pseudo](https://github.com/pseudo-lang/pseudo)
