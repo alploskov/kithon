@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style type="text/css">
+      .code {
+	  position: absolute;
+          top: 0;
+          bottom: 0;
+          width: 50%;
+	  font-size: 12pt;
+      }
+      #editor {left: 0;}
+      #output {right: 0;}
+    </style>    
+  </head>
+  <body>
+    <div id='editor' class='code'></div>
+    <div id='output' class='code'></div>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.18.0/full/pyodide.js"></script>
+    <script src="src/ace.js" type="text/javascript" charset="utf-8"></script>
+    <script src="src/tpy.js"></script>
+    <script src="src/editor.js"></script>
+  </body>
+</html>
