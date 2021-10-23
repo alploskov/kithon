@@ -22,11 +22,11 @@ round:
 
 print:
   alt_name: "console.log"
-  ret_type: "None"
+  rettype: "None"
 
 input:
   alt_name: "prompt"
-  type: "Func"
+  type: "func"
   rettype: "str"
 
 len:

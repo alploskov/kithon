@@ -13,6 +13,7 @@ class Func():
 
 class Dict():
     pass
+
 class Module():
     def __init__(self, name):
         self.name = name
@@ -25,8 +26,12 @@ def type_render(self, _type):
         tmp = self.tmpls['types'].get('list')
         if tmp:
             return Template(tmp).render(
-                el_type=_type.el_type
+                el_type=type_render(
+                    self,
+                    _type.el_type
+                )
             )
+        return to_string(_type)
     return self.tmpls['types'].get(_type, _type)
     
 def to_any(_type):

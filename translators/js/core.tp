@@ -6,22 +6,8 @@ Bool: "{{val|lower}}"
 Str: "'{{val}}'"
 
 operators:
-  "+": "+"
-  "-": "-"
-  "*": "*"
-  "/": "/"
-  "**": "**"
-  "==": "=="
-  "!=": "!="
-  ">": ">"
-  "<": "<"
-  ">=": ">="
-  "<=": "<="
   "or": "||"
   "and": "&&"
-  "|": "|"
-  "&": "&"
-  "%": "%"
   "not": "!"
   "is": "==="
 
@@ -31,13 +17,13 @@ un_op: "{{op}}{{el()}}"
 callfunc: "{{func()}}({{args|map(attribute='val')|join(', ')}})"
 attr: "{{obj()}}.{{attr}}"
 callmethod: "{{obj()}}.{{attr}}({{args|map(attribute='val')|join(', ')}})"
-arg: "{{arg}}"
+arg: "{{name}}"
 
 List: "[{{ls|map(attribute='val')|join(', ')}}]"
 Tuple: "[{{ls|map(attribute='val')|join(', ')}}]"
 Dict: "{{'{'}}{%for i in key_val%}{{i.key()}}: {{i.val()}},{%endfor%}}"
 
-index: "{{obj()}}[{{key()}}<0?{{obj()}}.length+{{key()}}:{{key()}}]"
+index: "{{obj()}}[({{key()}}<0)?({{obj()}}.length+{{key()}}):({{key()}})]"
 slice: |-
   {%-if step() == '1'-%}
     {{obj()}}.slice({{low()}}, {{up()}})
@@ -63,7 +49,7 @@ func: "function {{name}} ({{args|map(attribute='val')|join(', ')}}) {{body()}}"
 
 return: "return {{value()}};"
 
-while: "while ({{condition()}}) {{body}}"
+while: "while ({{condition()}}) {{body()}}"
 
 for: >-
   for (let {{var()}}

@@ -47,6 +47,7 @@ class _node():
         self.type = type
         self.ctx = ctx
         self.env = env
+        self.val = ''
 
     def render(self):
         parts = self.parts
@@ -55,6 +56,8 @@ class _node():
                 part.render()
             elif isinstance(part, list):
                 [p.render() for p in part]
+        if not self.tmp:
+             return ''
         self.val = self.tmp.render(
             env=self.env,
             _type=type_render(self.env, self.type),
@@ -76,7 +79,8 @@ class transpiler:
         'name', 'Int', 'Float', 'Bool', 'Str',
         'bin_op', 'un_op', 'callfunc', 'attr',
         'callmethod', 'arg', 'List', 'tuple',
-        'dict', 'index', 'slice', 'new_var', 'main' 
+        'dict', 'index', 'slice', 'new_var', 'main',
+        'global', 'nonlocal'
     ],'') | {'types': {}, 'operators': {}} 
     elements = {}
 
@@ -141,7 +145,7 @@ class transpiler:
         if 'main' in self.tmpls:
             code = self.tmpls.get('main').render(
                 body=self.strings,
-                ctx=self)
+                env=self)
         else:
             code = '\n'.join(self.strings)
         self.default_state()

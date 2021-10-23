@@ -1,7 +1,5 @@
 import ast
 import _ast
-from collections import namedtuple
-from os import listdir
 from .types import element_type
 from .core import visitor
 
@@ -31,7 +29,8 @@ def assign(self, tree: _ast.Assign, _type=None):
             tmp = 'new_var'
         else:
             self.variables[full_name]['type'].append(_type)
-    elif isinstance(tree.targets[0], _ast.Subscript): ...
+    elif isinstance(tree.targets[0], _ast.Subscript):
+        full_name = f'{self.namespace}.{tree.targets[0].value.id}'
     elif isinstance(tree.targets[0], _ast.Attribute): ...
     return self.node(
         parts={
@@ -119,7 +118,7 @@ def _for(self, tree: _ast.For):
             'own': var_name
         }})
     else:
-        self.variables[var_name]['type'].append(element_type(obj))
+        self.variables[var_name]['type'].append(_type)
     return self.node(
         parts = parts | {
             'var': var,
@@ -133,20 +132,18 @@ def define_function(self, tree: _ast.FunctionDef):
     name = tree.name
     self.namespace += f'.{name}'
     args = list(map(self.visit, tree.args.args))
-    args_types = tuple([a.type for a in args])
     ret_t = getattr(tree.returns, 'id', [])
     self.variables.update({self.namespace: {
-        'base_type': 'func',
+        'type': 'func',
         'ret_type': ret_t
     }})
-    body = expression_block(self, tree.body)
     func = self.node(
         tmp='func',
         parts={
             'name': name,
             'args': args,
-            'ret_t': ret_t,
-            'body':body
+            'ret_type': ret_t,
+            'body': expression_block(self, tree.body)
         }
     )
     self.namespace = self.namespace.replace('.'+name, '')
@@ -154,23 +151,25 @@ def define_function(self, tree: _ast.FunctionDef):
 
 @visitor
 def arg(self, tree: _ast.arg):
-    tmp = self.tmpls.get('arg')
     name = tree.arg
-    t = getattr(tree.annotation, 'id', 'any')
-    self.variables.update({f'{self.namespace}.{name}': {
-        'type': [t]
+    _type = getattr(tree.annotation, 'id', 'any')
+    full_name = f'{self.namespace}.{name}'
+    self.variables.update({full_name: {
+        'type': [_type],
+        'own': full_name
     }})
-    return {
-        'type': t,
-        'val': tmp.render(arg=name, _type='_type')
-    }
+    return self.node(
+        tmp='arg',
+        type=_type,
+        parts={'name': name}
+    )
 
 def overload(function, args_types):
     pass
 
 @visitor
 def ret(self, tree: _ast.Return):
-    val = self.visit(expr.value)
+    val = self.visit(tree.value)
     self.variables[self.namespace]['ret_type'] = val.type
     return self.node(
         tmp='return',
@@ -212,7 +211,12 @@ def _global(self, tree: _ast.Global):
     return self.node(
         tmp='global',
         parts={
-            'vars': list(map(self.visit, tree.names))
+            'vars': list(map(
+                lambda n: self.visit(
+                    ast.Name(id=n, ctx=ast.Load)
+                ),
+                tree.names
+            ))
         }
     )
 

@@ -15,11 +15,15 @@ from itertools import product
 def un_op(self, tree: UnaryOp):
     """Unary operations(not...)"""
     el = self.visit(tree.operand)
+    op = self.tmpls['operators'].get(
+        op_to_str(tree.op),
+        op_to_str(tree.op)
+    )
     return self.node(
         tmp='un_op',
         type=el.type,
         parts={
-            'op': self.tmpls['operators'][op_to_str(tree.op)],
+            'op': op,
             'el': el
         }
     )
@@ -84,7 +88,7 @@ def _bin_op(self, left, right, op):
         parts={
             'left': left,
             'right': right,
-            'op': self.tmpls['operators'][op]
+            'op': self.tmpls['operators'].get(op, op)
         },
         tmp=tmp,
         type=_type
@@ -208,7 +212,7 @@ def slice(self, tree: Subscript):
         parts = {
             'obj': obj,
             'low': self.visit(
-                sl.lower or ast.Consrant(value=0)
+                sl.lower or ast.Constant(value=0)
             ),
             'up': self.visit(
                 sl.upper or ast.Call(
