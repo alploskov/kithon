@@ -15,15 +15,26 @@ from itertools import product
 def un_op(self, tree: UnaryOp):
     """Unary operations(not...)"""
     el = self.visit(tree.operand)
-    op = self.tmpls['operators'].get(
-        op_to_str(tree.op),
-        op_to_str(tree.op)
-    )
+    _type = el_type = el.type
+    tmp = 'un_op'
+    op = op_to_str(tree.op)
+    overload = self.tmpls.get(f'{op}.{to_string(_type)}')
+    while el_type != 'any' and not overload:
+        el_type = to_any(el_type)
+        overload = self.tmpls.get(f'{op}.{to_string(el_type)}')
+    if overload:
+        _type = eval(overload.get(
+                'type',
+                'None'
+            )) or 'None'
+        if isinstance(_type, type):
+            _type = str(_type)[8:-2]
+        tmp = overload.get('code', tmp)
     return self.node(
-        tmp='un_op',
-        type=el.type,
+        tmp=tmp,
+        type=_type,
         parts={
-            'op': op,
+            'op': self.tmpls['operators'].get(op, op),
             'el': el
         }
     )

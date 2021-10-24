@@ -2,7 +2,7 @@ import ast
 import _ast
 import yaml
 from jinja2 import Template
-from hy.compiler import hy_compile, hy_parse
+#from hy.compiler import hy_compile, hy_parse
 from coconut.convenience import parse, setup
 from . import templ_utils, types
 from .types import type_render, Dict, List

@@ -1,0 +1,52 @@
+event:
+  args: [el, event_name, fun]
+  code: "{{el()}}.addEventListener({{event_name()}}, {{fun()}})"
+  rettype: 'None'
+
+check:
+  args: [id]
+  code: "document.getElementById({{id()}}).checked"
+  rettype: bool
+
+min:
+  alt_name: "Math.min"
+  type: float
+
+max:
+  alt_name: "Math.max"
+  type: float
+
+round:
+  args: [num, ndigits]
+  code: "+{{num()}}.toFixed({{ndigits()}})"
+
+print:
+  code: |-
+    {{-env.use('mod_fmt')-}}
+    fmt.Println({{args|map(attribute='val')|join(', ')}})
+  rettype: "None"
+
+input:
+  alt_name: "prompt"
+  type: "Func"
+  rettype: "str"
+
+len:
+  rettype: int
+
+interval:
+  alt_name: "setInterval"
+  type: "Func"
+  ret_type: "None"
+
+url_param:
+  alt_name: "new URL(window.location.href).searchParams.get"
+  type: str
+
+get_by_id:
+  alt_name: "document.getElementById"
+  type: dom
+
+any.//.any:
+  code: "Math.floor({{left()}}/{{right()}})"
+  type: "int"

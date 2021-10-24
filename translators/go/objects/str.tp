@@ -1,0 +1,5 @@
+str.*.int:
+  code: |-
+    {{- env.use('mod_strings') -}}
+    strings.Repeat({{left()}}, {{right()}})
+  rettype: str
