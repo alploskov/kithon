@@ -9,11 +9,11 @@ list[None].*.type:
   side_effect: |-
     set_el_type(obj, as=args[0])
     set_as_mut(obj)
-  code: "{{left()}}"
+  code: "{{left}}"
   type: "List[{{right.type}}]"
 
 list[any].*.int:
-  code: 'Array({{right()}}).fill({{left()}}).flat()'
+  code: 'Array({{right}}).fill({{left}}).flat()'
   type: 'left.type'
 
 list[any].==.list[any]:
@@ -21,7 +21,7 @@ list[any].==.list[any]:
     {%- if left() == right()-%}
       true
     {%- else -%}
-      (JSON.stringify({{left()}})==JSON.stringify({{right()}}))
+      (JSON.stringify({{left}})==JSON.stringify({{right}}))
     {%- endif -%}
   type: 'bool'
 
@@ -30,9 +30,9 @@ list[any].index:
   type: 'int'
 
 list[any].+.list[any]:
-  code: "{{left()}}.concat({{right()}})"
+  code: "{{left}}.concat({{right}})"
   type: "left.type"
 
 any.in.list[any]:
-  code: "{{right()}}.includes({{left()}})"
+  code: "{{right}}.includes({{left}})"
   type: "bool"

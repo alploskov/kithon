@@ -1,13 +1,3 @@
-event:
-  args: [el, event_name, fun]
-  code: "{{el()}}.addEventListener({{event_name()}}, {{fun()}})"
-  rettype: 'None'
-
-check:
-  args: [id]
-  code: "document.getElementById({{id()}}).checked"
-  rettype: bool
-
 min:
   alt_name: "Math.min"
   type: float
@@ -18,7 +8,7 @@ max:
 
 round:
   args: [num, ndigits]
-  code: "+{{num()}}.toFixed({{ndigits()}})"
+  code: "+{{num}}.toFixed({{ndigits}})"
 
 print:
   alt_name: "console.log"
@@ -30,7 +20,7 @@ input:
   rettype: "str"
 
 len:
-  code: "{{args[0]()}}.length"
+  code: "{{args[0]}}.length"
   rettype: int
 
 interval:
@@ -38,14 +28,6 @@ interval:
   type: "Func"
   ret_type: "None"
 
-url_param:
-  alt_name: "new URL(window.location.href).searchParams.get"
-  type: str
-
-get_by_id:
-  alt_name: "document.getElementById"
-  type: dom
-
 any.//.any:
-  code: "Math.floor({{left()}}/{{right()}})"
+  code: "Math.floor({{left}}/{{right}})"
   type: "int"

@@ -5,4 +5,4 @@ from . import (
     core
 )
 
-transpiler = core.transpiler
+Transpiler = core.Transpiler

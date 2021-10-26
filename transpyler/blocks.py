@@ -66,7 +66,7 @@ def _if(self, tree: _ast.If, is_elif=False):
 
 def _else(self, body):
     if not body:
-        return lambda: ''
+        return ''
     elif isinstance(body[0], _ast.If):
         return _if(self, body[0], is_elif=True)
     return self.node(
@@ -92,7 +92,7 @@ def _while(self, tree: _ast.While):
 def _for(self, tree: _ast.For):
     iter = tree.iter
     parts = {}
-    if isinstance(iter, _ast.Call) and iter.func.id == 'range' and 'c_like_for' in self.tmpls:
+    if isinstance(iter, _ast.Call) and iter.func.id == 'range' and 'c_like_for' in self.templates:
         tmp = 'c_like_for'
         _type = 'int'
         param = [self.visit(a) for a in tree.iter.args]

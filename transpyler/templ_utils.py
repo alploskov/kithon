@@ -3,10 +3,9 @@ import _ast
 
 def is_const(node):
     ast = node.ast
-    return type(ast) == _ast.Constant or\
-        (type(ast) == _ast.UnaryOp and\
-         type(ast.operand) == _ast.Constant and\
-         type(ast.op) == _ast.USub)
+    return isinstance(ast, _ast.Constant) or\
+        isinstance(ast, _ast.UnaryOp) and\
+        isinstance(ast.operand, _ast.Constant)
 
 def tmin(node1, node2):
     type1 = node1.type

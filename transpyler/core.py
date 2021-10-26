@@ -2,19 +2,18 @@ import ast
 import _ast
 import yaml
 from jinja2 import Template
-#from hy.compiler import hy_compile, hy_parse
+from hy.compiler import hy_compile, hy_parse
 from coconut.convenience import parse, setup
 from . import templ_utils, types
-from .types import type_render, Dict, List
-import pprint
 
 
 def visitor(func):
-    setattr(transpiler, func.__name__, func)
-    transpiler.elements[func.__annotations__['tree']] = func
+    setattr(Transpiler, func.__name__, func)
+    Transpiler.elements[func.__annotations__['tree']] = func
     return func
 
 def op_to_str(op):
+    """Return a sign instead of ast"""
     return {
         _ast.Add: '+',     _ast.Sub: '-',
         _ast.Mult: '*',    _ast.Div: '/',
@@ -34,15 +33,8 @@ def op_to_str(op):
 
 
 class _node():
-    def __init__(
-        self, env=None,
-        tmp=None, parts=None,
-        type=None, ctx=None,
-        is_const=None 
-    ):
-        self.tmp = env.tmpls.get(tmp, '') \
-            if isinstance(tmp, str) \
-            else tmp
+    def __init__(self, env=None, tmp=None, parts=None, type=None, ctx=None):
+        self.tmp = env.templates.get(tmp) if isinstance(tmp, str) else tmp
         self.parts = parts
         self.type = type
         self.ctx = ctx
@@ -51,28 +43,33 @@ class _node():
 
     def render(self):
         parts = self.parts
-        for name, part in parts.items():
+        for part in parts.values():
             if isinstance(part, _node):
                 part.render()
             elif isinstance(part, list):
-                [p.render() for p in part]
+                for part_el in part:
+                    part_el.render()
         if not self.tmp:
-             return ''
+            return ''
         self.val = self.tmp.render(
             env=self.env,
-            _type=type_render(self.env, self.type),
+            _type=types.type_render(self.env, self.type),
             isinstance=isinstance,
-            **{'Dict': Dict, 'List': List},
+            **{'Dict': types.Dict, 'List': types.List,
+               'is_const': templ_utils.is_const
+               },
             **parts
         )
+        return self.val
+
+    def __str__(self):
         return self.val
 
     def __call__(self):
         return self.val
 
-
-class transpiler:
-    tmpls = dict.fromkeys([
+class Transpiler:
+    templates = dict.fromkeys([
         'expr', 'assign', 'if', 'elif', 'else',
         'func', 'return', 'while', 'for', 'c_like_for',
         'break', 'continue', 'import', 'body',
@@ -81,17 +78,17 @@ class transpiler:
         'callmethod', 'arg', 'List', 'tuple',
         'dict', 'index', 'slice', 'new_var', 'main',
         'global', 'nonlocal'
-    ],'') | {'types': {}, 'operators': {}} 
+    ],'') | {'types': {}, 'operators': {}}
     elements = {}
 
-    def __init__(self, *tmpls):
+    def __init__(self, *templates):
         self.default_state()
-        for t in tmpls:
-            self.add_templ(t)
+        self.add_templ('\n'.join(templates))
 
     def use(self, name):
         self.used.add(name)
         return ''
+
     def default_state(self):
         self.strings = []
         self.used = set([])
@@ -108,28 +105,28 @@ class transpiler:
             parts=parts, type=type,
             ctx=ctx
         )
-        
-    def add_templ(self, t):
-        tmpls = yaml.load(
-            t.expandtabs(2),
-            Loader=yaml.FullLoader)
-        for name, tmp in tmpls.items():
-            if self.tmpls.get(name) == '':
-                tmpls[name] = Template(tmp)
-                tmpls[name].globals |= {
-                    'is_const': templ_utils.is_const
-                }
-            elif 'code' in tmp:
-                tmpls[name]['code'] = Template(tmp['code'])
-        self.tmpls |= tmpls
 
-    def visit(self, el, **kw):
-        a = self.elements.get(type(el))(
-            self, el,
+    def add_templ(self, templates):
+        templates = yaml.load(
+            templates.expandtabs(2),
+            Loader=yaml.FullLoader
+        )
+        for name, template in templates.items():
+            if self.templates.get(name) == '':
+                templates[name] = Template(template)
+            elif 'code' in template:
+                templates[name]['code'] = Template(
+                    template['code']
+                )
+        self.templates |= templates
+
+    def visit(self, tree, **kw):
+        node = self.elements.get(type(tree))(
+            self, tree,
             **(kw or {})
         )
-        a.ast = el
-        return a
+        node.ast = tree
+        return node
 
     def generate(self, code, lang='py'):
         if lang == 'py':
@@ -140,12 +137,13 @@ class transpiler:
             setup(target='sys')
             astree = ast.parse(parse(code, 'block'))
         body = list(map(self.visit, astree.body))
-        for i in body:
-            self.strings.extend(i.render().split('\n'))
-        if 'main' in self.tmpls:
-            code = self.tmpls.get('main').render(
+        for block in body:
+            self.strings.extend(block.render().split('\n'))
+        if 'main' in self.templates:
+            code = self.templates.get('main').render(
                 body=self.strings,
-                env=self)
+                env=self
+            )
         else:
             code = '\n'.join(self.strings)
         self.default_state()

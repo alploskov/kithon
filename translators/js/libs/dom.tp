@@ -1,11 +1,11 @@
 event:
   args: [el, event_name, fun]
-  code: "{{el()}}.addEventListener({{event_name()}}, {{fun()}})"
+  code: "{{el}}.addEventListener({{event_name}}, {{fun}})"
   rettype: 'None'
 
 check:
   args: [id]
-  code: "document.getElementById({{id()}}).checked"
+  code: "document.getElementById({{id}}).checked"
   rettype: bool
 
 url_param:
@@ -25,9 +25,9 @@ get_by_tagname:
   rettype: "list[dom]"
 
 dom.<=.any:
-  code: "{{left()}}.innerHTML = {{right()}}"
+  code: "{{left}}.innerHTML = {{right}}"
   type: "None"
 
 dom.<<.any:
-  code: "{{left()}}.innerHTML += {{right()}}"
+  code: "{{left}}.innerHTML += {{right}}"
   type: "None"
