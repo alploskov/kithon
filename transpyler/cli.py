@@ -56,12 +56,13 @@ def generate(
         typer.echo('You must send at least one template file')
         raise typer.Abort()
     templates = list(templates)
-    if os.path.isdir(target):
-        for dirr, _, files in os.walk(target):
-            templates += [\
-                open(f'{dirr}/{f}', 'r') \
-                for f in files if f.endswith('.tp')\
-            ]
+    if target:
+        if os.path.isdir(target):
+            for dirr, _, files in os.walk(target):
+                templates += [\
+                    open(f'{dirr}/{f}', 'r') \
+                    for f in files if f.endswith('.tp')\
+                ]
     input_lang = {
         'py': 'py',
         'python': 'py',
@@ -70,6 +71,6 @@ def generate(
         'coco': 'coco',
         'coconut': 'coconut'
     }.get(_file.name.split('.')[-1])
-    transpiler = Transpiler(*list(map(lambda t: t.read(), templates)))
+    transpiler = Transpiler('\n'.join(list(map(lambda t: t.read(), templates))))
     result = transpiler.generate(_file.read(), lang=input_lang)
     print(result, file=out)

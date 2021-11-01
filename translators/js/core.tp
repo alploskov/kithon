@@ -19,9 +19,9 @@ attr: "{{obj}}.{{attr}}"
 callmethod: "{{obj}}.{{attr}}({{args|join(', ')}})"
 arg: "{{name}}"
 
-List: "[{{ls|join(', ')}}]"
-Tuple: "[{{ls|join(', ')}}]"
-Dict: "{{'{'}}{%for i in key_val%}{{i.key}}: {{i.val}},{%endfor%}}"
+list: "[{{ls|join(', ')}}]"
+tuple: "[{{ls|join(', ')}}]"
+dict: "{{'{'}}{%for i in key_val%}{{i.key}}: {{i.val}},{%endfor%}}"
 
 index: "{{obj}}[({{key}}<0)?({{obj}}.length+{{key}}):({{key}})]"
 
@@ -54,7 +54,7 @@ while: "while ({{condition}}) {{body}}"
 
 for: >-
   for (let {{var}}
-  {{'in' if isinstance(obj.type, Dict) else 'of'}}
+  {{'in' if isinstance(obj.type, dict) else 'of'}}
   {{obj}})
   {{body}}
 

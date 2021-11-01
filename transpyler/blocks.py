@@ -17,18 +17,18 @@ def assign(self, tree: _ast.Assign, _type=None):
     value = self.visit(tree.value)
     _type = value.type
     tmp = 'assign'
-    # May be changes array or attributes, etc
     if isinstance(tree.targets[0], _ast.Name):
         full_name = f'{self.namespace}.{tree.targets[0].id}'
         if full_name not in self.variables:
+            var.parts['namespace'] = full_name
             self.variables.update({full_name: {
-                'type': [_type],
+                'type': _type,
                 'own': full_name,
                 'immut': True
             }})
             tmp = 'new_var'
         else:
-            self.variables[full_name]['type'].append(_type)
+            self.variables[full_name]['type'] = _type
     elif isinstance(tree.targets[0], _ast.Subscript):
         full_name = f'{self.namespace}.{tree.targets[0].value.id}'
     elif isinstance(tree.targets[0], _ast.Attribute): ...
@@ -90,9 +90,11 @@ def _while(self, tree: _ast.While):
 
 @visitor
 def _for(self, tree: _ast.For):
-    iter = tree.iter
+    obj = self.visit(tree.iter)
     parts = {}
-    if isinstance(iter, _ast.Call) and iter.func.id == 'range' and 'c_like_for' in self.templates:
+    if (isinstance(tree.iter, _ast.Call)
+        and tree.iter.func.id == 'range'
+        and 'c_like_for' in self.templates):
         tmp = 'c_like_for'
         _type = 'int'
         param = [self.visit(a) for a in tree.iter.args]
@@ -106,7 +108,6 @@ def _for(self, tree: _ast.For):
             'step': param[2]
         }
     else:
-        obj = self.visit(iter)
         tmp = 'for'
         _type = element_type(obj)
         parts |= {'obj': obj}
@@ -114,11 +115,11 @@ def _for(self, tree: _ast.For):
     var_name = f'{self.namespace}.{tree.target.id}'
     if var_name not in self.variables:
         self.variables.update({var_name: {
-            'type': [_type],
+            'type': _type,
             'own': var_name
         }})
     else:
-        self.variables[var_name]['type'].append(_type)
+        self.variables[var_name]['type'] = _type
     return self.node(
         parts = parts | {
             'var': var,
@@ -155,7 +156,7 @@ def arg(self, tree: _ast.arg):
     _type = getattr(tree.annotation, 'id', 'any')
     full_name = f'{self.namespace}.{name}'
     self.variables.update({full_name: {
-        'type': [_type],
+        'type': _type,
         'own': full_name
     }})
     return self.node(
@@ -198,8 +199,14 @@ def _nonlocal(self, tree: _ast.Nonlocal):
     return self.node(
         tmp='nonlocal',
         parts={
-            'vars': list(map(self.visit, tree.names))
-    })
+            'vars': list(map(
+                lambda n: self.visit(
+                    ast.Name(id=n, ctx=ast.Load)
+                ),
+                tree.names
+            ))
+        }
+    )
 
 @visitor
 def _global(self, tree: _ast.Global):

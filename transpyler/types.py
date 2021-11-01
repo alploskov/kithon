@@ -8,7 +8,7 @@ from jinja2 import Template
 class List:
     el_type: Union[typing.Any, str] = 'any'
     def __str__(self):
-        return f'list[{to_string(self.el_type)}]'
+        return f'list[{self.el_type}]'
 
 @dataclass
 class Func:
@@ -16,6 +16,7 @@ class Func:
     def __str__(self):
         return f'func[{to_string(self.ret_type)}]'
 
+@dataclass
 class Dict():
     pass
 
@@ -23,13 +24,19 @@ class Dict():
 class Module:
     name: str = ''
 
+@dataclass
+class Type:
+    name: str = ''
+    def __str__(self):
+        return 'type'
+
 def to_string(_type):
     return getattr(_type, 'to_str', _type)
 
 def type_render(self, _type):
-    types = self.templates['types']
+    types_tmp = self.templates['types']
     if isinstance(_type, List):
-        tmp = types.get('list')
+        tmp = types_tmp.get('list')
         if tmp:
             return Template(tmp).render(
                 el_type=type_render(
@@ -38,7 +45,9 @@ def type_render(self, _type):
                 )
             )
         return to_string(_type)
-    return types.get(_type, _type)
+    elif isinstance(_type, Type):
+        return types_tmp.get(_type.name, _type.name)
+    return types_tmp.get(_type, _type)
 
 def to_any(_type):
     if isinstance(_type, List):
@@ -47,9 +56,17 @@ def to_any(_type):
         return List(to_any(_type.el_type))
     return 'any'
 
-def type_translation(_type):
-    if _type.startswith('list[') and _type[-1] == ']':
-        return List(type_translation(_type[5:-1]))
+
+def type_eval(type_code, parts):
+    """
+    Generate type by dict form config
+    """
+    _type = eval(
+        type_code,
+        types | parts | {'int': 'int'}
+    ) or 'None'
+    if isinstance(_type, type):
+        _type = str(_type)[8:-2]
     return _type
 
 
@@ -58,3 +75,5 @@ def element_type(element):
     if isinstance(_type, List):
         return _type.el_type
     return _type
+
+types = {'list': List, 'dict': Dict}

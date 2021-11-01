@@ -1,20 +1,26 @@
-from .types import List, element_type
+def side_effect(macro, parts):
+    if 'side_effect' in macro:
+        exec(
+            macro['side_effect'],
+            side_effects | parts
+        )
 
-
-side_effects = {}
-def side_effect(func):
-    side_effects.update({
-        func.__name__: func
-    })
-    return func
-
-@side_effect
 def set_el_type(obj, _type='None'):
-    obj_type = obj.env.variables[obj.parts['own']]
-    if isinstance(obj_type, List) and element_type(obj_type) == 'generic':
-        obj.env.variables[obj.parts['own']].el_type = _type
+    if 'own' in obj.parts:
+        obj.env.variables[obj.parts['own']]['type'].el_type = _type
+    obj.type.el_type = _type
+
+def set_type(obj, _type='None'):
+    if 'own' in obj.parts:
+        obj.env.variables[obj.parts['own']] = _type
     obj.type = _type
 
-@side_effect
+
 def set_as_mut(obj):
-    obj.env.variables[obj.parts['own']]['mut'] = True
+    obj.env.variables[obj.parts['own']]['immut'] = False
+
+side_effects = {
+    'set_el_type': set_el_type,
+    'set_as_mut': set_as_mut,
+    'set_type': set_type
+}

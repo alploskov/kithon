@@ -11,22 +11,21 @@ operators:
   "not": "!"
   "is": "=="
 
-bin_op: "({{left()}} {{op}} {{right()}})"
+bin_op: "({{left}} {{op}} {{right}})"
 un_op: "{{op}}{{el()}}"
 
-callfunc: "{{func()}}({{args|map(attribute='val')|join(', ')}})"
+callfunc: "{{func()}}({{args|join(', ')}})"
 attr: "{{obj()}}.{{attr}}"
-callmethod: "{{obj()}}.{{attr}}({{args|map(attribute='val')|join(', ')}})"
+callmethod: "{{obj()}}.{{attr}}({{args|join(', ')}})"
 arg: "{{name}} {{_type}}"
 
-List: "{{_type}}{{'{'}}{{ls|map(attribute='val')|join(', ')}}}"
-Tuple: "[{{ls|map(attribute='val')|join(', ')}}]"
-Dict: "{{'{'}}{%for i in key_val%}{{i.key()}}: {{i.val()}},{%endfor%}}"
+list: "{{_type}}{{'{'}}{{ls|join(', ')}}}"
+dict: "{{'{'}}{%for i in key_val%}{{i.key}}: {{i.val}},{%endfor%}}"
 
 index: |-
   {%- if isinstance(obj.type, List) -%}
     {{- env.use('Index') -}}
-    {{obj()}}[Index({{key()}}, len({{obj()}}))]
+    {{obj()}}[Index({{key}}, len({{obj()}}))]
   {%- endif -%}
 slice: |-
   {%-if step() == '1'-%}
@@ -38,9 +37,9 @@ expr: "{{value()}}"
 assign: "{{var()}} = {{value()}}"
 new_var: "{{var()}} := {{value()}}"
 
-if: "if ({{condition()}}) {{body()}} {{els()}}"
-elif: "else if ({{condition()}}) {{body()}} {{els()}}"
-else: "else {{body()}}"
+if: "if ({{condition}}) {{body}} {{els}}"
+elif: "else if ({{condition}}) {{body}} {{els}}"
+else: "else {{body}}"
 
 func: "{{name}} := func ({{args|map(attribute='val')|join(', ')}}) {{ret_type}} {{body()}}"
 
@@ -68,11 +67,13 @@ body: |-
   {{'    '*nl}}{{st()}}{%endfor%}
   {{'    '*(nl-1)}}}
 
+
+
 main: |-
   package main
-  {% if env.used %}
+  {% if env.used %}  
   import ({%- for used in env.used -%}
-      {% if used.startswith('mod_')%}{{'\n    '}}"{{used[4:]}}"{%endif%}
+  {% if used.startswith('mod_')%}{{'\n    '}}"{{used[4:]}}"{%endif%}
   {%- endfor -%}{{'\n'}})
   {% if 'Index' in env.used %}
   func Index(index, ln int) int {{'{'}}

@@ -2,8 +2,6 @@ import ast
 import _ast
 import yaml
 from jinja2 import Template
-from hy.compiler import hy_compile, hy_parse
-from coconut.convenience import parse, setup
 from . import templ_utils, types
 
 
@@ -31,7 +29,6 @@ def op_to_str(op):
         _ast.And: 'and',   _ast.Or: 'or'
     }.get(type(op))
 
-
 class _node():
     def __init__(self, env=None, tmp=None, parts=None, type=None, ctx=None):
         self.tmp = env.templates.get(tmp) if isinstance(tmp, str) else tmp
@@ -43,6 +40,10 @@ class _node():
 
     def render(self):
         parts = self.parts
+        if parts.get('own'):
+            _type = self.env.variables[parts['own']]['type']
+        else:
+            _type = self.type
         for part in parts.values():
             if isinstance(part, _node):
                 part.render()
@@ -53,11 +54,10 @@ class _node():
             return ''
         self.val = self.tmp.render(
             env=self.env,
-            _type=types.type_render(self.env, self.type),
+            _type=types.type_render(self.env, _type),
             isinstance=isinstance,
-            **{'Dict': types.Dict, 'List': types.List,
-               'is_const': templ_utils.is_const
-               },
+            **types.types,
+            is_const=templ_utils.is_const,
             **parts
         )
         return self.val
@@ -75,15 +75,15 @@ class Transpiler:
         'break', 'continue', 'import', 'body',
         'name', 'Int', 'Float', 'Bool', 'Str',
         'bin_op', 'un_op', 'callfunc', 'attr',
-        'callmethod', 'arg', 'List', 'tuple',
+        'callmethod', 'arg', 'list', 'tuple',
         'dict', 'index', 'slice', 'new_var', 'main',
         'global', 'nonlocal'
     ],'') | {'types': {}, 'operators': {}}
     elements = {}
 
-    def __init__(self, *templates):
+    def __init__(self, templates):
         self.default_state()
-        self.add_templ('\n'.join(templates))
+        self.add_templ(templates)
 
     def use(self, name):
         self.used.add(name)
@@ -95,9 +95,9 @@ class Transpiler:
         self.nl = 0
         self.namespace = 'main'
         self.variables = {
-            'main.str': {'own': 'main.str', 'type': ['type']},
-            'main.int': {'own': 'main.int', 'type': ['type']},
-            'main.float': {'own': 'main.float', 'type': ['type']},
+            'main.str': {'type': types.Type('str')},
+            'main.int': {'type': types.Type('int')},
+            'main.float': {'type': types.Type('float')},
         }
     def node(self, tmp=None, parts=None, type=None, ctx=None):
         return _node(
@@ -128,23 +128,26 @@ class Transpiler:
         node.ast = tree
         return node
 
-    def generate(self, code, lang='py'):
+    def generate(self, code, lang='py', mode='main'):
         if lang == 'py':
             astree = ast.parse(code)
         elif lang == 'hy':
+            from hy.compiler import hy_compile, hy_parse
             astree = hy_compile(hy_parse(code), '__main__')
         elif lang == 'coco':
+            from coconut.convenience import parse, setup
             setup(target='sys')
             astree = ast.parse(parse(code, 'block'))
         body = list(map(self.visit, astree.body))
         for block in body:
             self.strings.extend(block.render().split('\n'))
-        if 'main' in self.templates:
+        if 'main' in self.templates and mode == 'main':
             code = self.templates.get('main').render(
                 body=self.strings,
                 env=self
             )
         else:
             code = '\n'.join(self.strings)
-        self.default_state()
+        if mode != 'block':
+            self.default_state()
         return code
