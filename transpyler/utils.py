@@ -1,10 +1,16 @@
-def getvar(self, name: str):
-    return self.variables.get(
-        f'{self.namespace}.{name}',
-        self.variables.get(
-            f'{self.namespace[:self.namespace.rfind(".")]}.{name}',
-            self.variables.get(
-                f'main.{name}', {}
-            )
-        )
-    )
+def getvar(self, name):
+    path = self.namespace
+    var = self.variables.get(f'{path}.{name}')
+    while not var and path != 'main':
+        path = path[:path.rfind('.')]
+        var = self.variables.get(f'{path}.{name}')
+    return var or {}
+
+def get_ctx(self):
+    path = self.namespace
+    while path != 'main':
+        var = self.variables.get(path, {})
+        if var.get('type') == 'class':
+            return path
+        path = path[:path.rfind('.')]
+    return ''

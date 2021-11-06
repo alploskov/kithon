@@ -1,7 +1,7 @@
 math:
     ignore_import: 1
     alt_name: "Math"
-   
+    type: "module"
     "ceil":
       type: int
 

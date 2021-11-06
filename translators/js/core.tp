@@ -15,7 +15,7 @@ bin_op: "({{left}} {{op}} {{right}})"
 un_op: "{{op}}{{el}}"
 
 callfunc: "{{func}}({{args|join(', ')}})"
-attr: "{{obj}}.{{attr}}"
+getattr: "{{obj}}.{{attr}}"
 callmethod: "{{obj}}.{{attr}}({{args|join(', ')}})"
 arg: "{{name}}"
 
@@ -46,7 +46,7 @@ if: "if ({{condition}}) {{body}} {{els}}"
 elif: "else if ({{condition}}) {{body}} {{els}}"
 else: "else {{body}}"
 
-func: "function {{name}} ({{args|join(', ')}}) {{body}}"
+func: "function {{name}}({{args|join(', ')}}) {{body}}"
 
 return: "return {{value}};"
 
@@ -71,7 +71,18 @@ body: |-
   {{'{'}}{%for st in body%}
   {{'    '*nl}}{{st}}{%endfor%}
   {{'    '*(nl-1)}}}
+class: |-
+  class {{name}} {{'{'}}
+  {{' '*4*nl}}{{attrs|join('\n'+' '*4*(nl))}}
+  {{' '*4*nl}}{{init}}
+  {{' '*4*nl}}{{methods|join('\n'+' '*4*(nl))}}
+  {{' '*4*(nl-1)}}}
 
+init: "constructor({{(args[1:])|join(', ')}}) {{body}}"
+method: "{{name}}({{(args[1:])|join(', ')}}) {{body}}"
+self: "this"
+attr: "{{var}} = {{value}};"
+new: "new {{func}}({{args|join(', ')}})"
 main: |-
   {{';(function(){'}}{%for string in body%}
   {{string}}{%endfor%}

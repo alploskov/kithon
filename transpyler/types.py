@@ -45,6 +45,8 @@ def type_render(self, _type):
                 )
             )
         return to_string(_type)
+    elif isinstance(_type, Module):
+        return _type.name
     elif isinstance(_type, Type):
         return types_tmp.get(_type.name, _type.name)
     return types_tmp.get(_type, _type)

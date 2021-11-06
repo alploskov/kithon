@@ -2,6 +2,7 @@ import ast
 import _ast
 from .types import element_type
 from .core import visitor
+from .utils import get_ctx
 
 
 @visitor
@@ -13,25 +14,35 @@ def expr(self, tree: _ast.Expr):
 
 @visitor
 def assign(self, tree: _ast.Assign, _type=None):
-    var = self.visit(tree.targets[0])
+    variable = tree.targets[0]
+    var = self.visit(variable)
     value = self.visit(tree.value)
-    _type = value.type
-    tmp = 'assign'
-    if isinstance(tree.targets[0], _ast.Name):
-        full_name = f'{self.namespace}.{tree.targets[0].id}'
-        if full_name not in self.variables:
-            var.parts['namespace'] = full_name
-            self.variables.update({full_name: {
-                'type': _type,
-                'own': full_name,
-                'immut': True
-            }})
-            tmp = 'new_var'
+    _type = _type or value.type
+    tmp = 'new_var'
+    if isinstance(variable, _ast.Name):
+        full_name = f'{self.namespace}.{variable.id}'
+    elif isinstance(variable, _ast.Subscript):
+        full_name = f'{self.namespace}.{variable.value.id}'
+        self.variables[full_name]['type'].el_type = _type
+    elif isinstance(variable, _ast.Attribute):
+        obj_name = variable.value.id
+        if obj_name == 'self':
+            full_name = f'{get_ctx(self)}.{variable.attr}'
         else:
-            self.variables[full_name]['type'] = _type
-    elif isinstance(tree.targets[0], _ast.Subscript):
-        full_name = f'{self.namespace}.{tree.targets[0].value.id}'
-    elif isinstance(tree.targets[0], _ast.Attribute): ...
+            full_name = f'{self.namespace}.{obj_name}'
+    if full_name not in self.variables:
+        if get_ctx(self):
+            tmp = 'attr'
+        var.parts['own'] = full_name
+        self.variables.update({full_name: {
+            'type': _type,
+            'own': full_name,
+            'immut': True
+        }})
+    else:
+        tmp = 'assign'
+        self.variables[full_name]['immut'] = False
+        self.variables[full_name]['type'] = _type
     return self.node(
         parts={
             'var': var,
@@ -41,6 +52,10 @@ def assign(self, tree: _ast.Assign, _type=None):
         type=_type,
         tmp=tmp
     )
+
+@visitor
+def ann_assign(self, tree: _ast.AnnAssign):
+    pass
 
 @visitor
 def aug_assign(self, tree: _ast.AugAssign):
@@ -93,6 +108,7 @@ def _for(self, tree: _ast.For):
     obj = self.visit(tree.iter)
     parts = {}
     if (isinstance(tree.iter, _ast.Call)
+        and isinstance(tree.iter.func, _ast.Name)
         and tree.iter.func.id == 'range'
         and 'c_like_for' in self.templates):
         tmp = 'c_like_for'
@@ -131,39 +147,91 @@ def _for(self, tree: _ast.For):
 @visitor
 def define_function(self, tree: _ast.FunctionDef):
     name = tree.name
+    parts = {}
+    if get_ctx(self):
+        attrs = []
+        for attr in self.variables:
+            if (attr.startswith(self.namespace)
+                and self.variables[attr]['type'] != 'func'):
+                attrs.append(attr[len(self.namespace)+1:])
+        parts = {
+            'attrs': attrs,
+            'class_name': self.namespace.split('.')[-1]
+        }
+        if name == '__init__':
+            tmp = 'init'
+        else:
+            tmp =  'method'
+    else:
+        tmp = 'func'
     self.namespace += f'.{name}'
     args = list(map(self.visit, tree.args.args))
-    ret_t = getattr(tree.returns, 'id', [])
+    ret_t = getattr(tree.returns, 'id', '')
     self.variables.update({self.namespace: {
         'type': 'func',
         'ret_type': ret_t
     }})
     func = self.node(
-        tmp='func',
+        tmp=tmp,
+        type='func',
         parts={
             'name': name,
             'args': args,
             'ret_type': ret_t,
-            'body': expression_block(self, tree.body)
-        }
+            'body': expression_block(self, tree.body),
+            'nl': self.nl
+        } | parts
     )
-    self.namespace = self.namespace.replace('.'+name, '')
+    self.namespace = self.namespace[:-len(name)-1]
     return func
 
 @visitor
 def arg(self, tree: _ast.arg):
     name = tree.arg
     _type = getattr(tree.annotation, 'id', 'any')
-    full_name = f'{self.namespace}.{name}'
-    self.variables.update({full_name: {
-        'type': _type,
-        'own': full_name
-    }})
+    if name != 'self':
+        full_name = f'{self.namespace}.{name}'
+        self.variables.update({full_name: {
+            'type': _type,
+            'own': full_name
+        }})
     return self.node(
         tmp='arg',
         type=_type,
         parts={'name': name}
     )
+
+@visitor
+def define_class(self, tree: _ast.ClassDef):
+    name = tree.name
+    self.namespace += f'.{name}'
+    self.variables.update({self.namespace: {
+        'type': 'class'
+    }})
+    self.nl += 1
+    node = self.node(
+        tmp='class',
+        type='class',
+        parts={
+            'name': name,
+            'attrs': [],
+            'methods': [],
+            'init': None,
+            'nl': self.nl
+        }
+    )
+    self.ctx = node
+    for field in map(self.visit, tree.body):
+        if isinstance(field.ast, _ast.Assign):
+            node.parts['attrs'].append(field)
+        elif isinstance(field.ast, _ast.FunctionDef):
+            if field.ast.name == '__init__':
+                node.parts['init'] = field
+            else:
+                node.parts['methods'].append(field)
+    self.nl -= 1
+    self.namespace = self.namespace[:-len(name)-1]
+    return node
 
 def overload(function, args_types):
     pass
@@ -183,7 +251,8 @@ def expression_block(self, body):
         tmp='body',
         parts={
             'body': list(map(self.visit, body)),
-            'nl': self.nl}
+            'nl': self.nl
+        }
     )
     self.nl -= 1
     return body

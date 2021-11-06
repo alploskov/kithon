@@ -2,6 +2,7 @@ import ast
 import math
 from itertools import product
 import _ast
+from jinja2 import Template
 from . import types
 from .types import to_any, to_string, type_eval
 from .utils import getvar
@@ -123,7 +124,7 @@ def match_args(macro, args):
 
 @visitor
 def attribute(self, tree: _ast.Attribute, args=None, call=False):
-    tmp = 'callmethod' if call else 'attr'
+    tmp = 'callmethod' if call else 'getattr'
     obj = self.visit(tree.value)
     _type = 'None'
     attr = tree.attr
@@ -143,7 +144,8 @@ def attribute(self, tree: _ast.Attribute, args=None, call=False):
             )
     if macro:
         parts['attr'] = macro.get('alt_name', attr)
-        tmp = macro.get('code', 'callmethod')
+        if 'code' in macro:
+            tmp = Template(macro['code'])
         parts.update(match_args(macro, args))
         side_effect(macro, parts)
         _type = types.type_eval(
@@ -165,6 +167,8 @@ def function_call(self, tree: _ast.Call):
     ret_type = 'None'
     tmp = 'callfunc'
     parts = {'func': func, 'args': args}
+    if func.type == 'class':
+        tmp = 'new'
     if (isinstance(tree.func, _ast.Name)
         and tree.func.id in self.templates):
         macro = self.templates.get(tree.func.id)
@@ -233,11 +237,11 @@ def name(self, tree: _ast.Name):
         _ast.Load: 'load'
     }.get(type(tree.ctx))
     var_info = getvar(self, _name)
-    if var_info:
+    if _name == 'self':
+        _name = self.templates.get('self', 'self')
+    elif var_info:
         _type = var_info['type']
-        if isinstance(tree.ctx, _ast.Store):
-            self.variables[var_info['own']]['immut'] = False
-    elif isinstance(tree.ctx, _ast.Load) and (_name in self.templates):
+    elif _name in self.templates:
         macr = self.templates[_name]
         _type = macr.get('type', _type)
         if _type == 'module':

@@ -49,7 +49,8 @@ class _node():
                 part.render()
             elif isinstance(part, list):
                 for part_el in part:
-                    part_el.render()
+                    if not isinstance(part_el, str):
+                        part_el.render()
         if not self.tmp:
             return ''
         self.val = self.tmp.render(
@@ -74,11 +75,12 @@ class Transpiler:
         'func', 'return', 'while', 'for', 'c_like_for',
         'break', 'continue', 'import', 'body',
         'name', 'Int', 'Float', 'Bool', 'Str',
-        'bin_op', 'un_op', 'callfunc', 'attr',
+        'bin_op', 'un_op', 'callfunc', 'getattr',
         'callmethod', 'arg', 'list', 'tuple',
         'dict', 'index', 'slice', 'new_var', 'main',
-        'global', 'nonlocal'
-    ],'') | {'types': {}, 'operators': {}}
+        'global', 'nonlocal',
+        'class', 'init', 'attr', 'method', 'new'
+    ], '') | {'types': {}, 'operators': {}}
     elements = {}
 
     def __init__(self, templates):

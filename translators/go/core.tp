@@ -15,7 +15,7 @@ bin_op: "({{left}} {{op}} {{right}})"
 un_op: "{{op}}{{el()}}"
 
 callfunc: "{{func()}}({{args|join(', ')}})"
-attr: "{{obj()}}.{{attr}}"
+getattr: "{{obj()}}.{{attr}}"
 callmethod: "{{obj()}}.{{attr}}({{args|join(', ')}})"
 arg: "{{name}} {{_type}}"
 
@@ -41,7 +41,7 @@ if: "if ({{condition}}) {{body}} {{els}}"
 elif: "else if ({{condition}}) {{body}} {{els}}"
 else: "else {{body}}"
 
-func: "{{name}} := func ({{args|map(attribute='val')|join(', ')}}) {{ret_type}} {{body()}}"
+func: "func {{name}}({{args|map(attribute='val')|join(', ')}}) {{ret_type}} {{body()}}"
 
 return: "return {{value()}}"
 
@@ -61,13 +61,32 @@ continue: "continue;"
 types:
   list: "[]{{el_type}}"
   str: string
+  float: float64
 
 body: |-
   {{'{'}}{%for st in body%}
   {{'    '*nl}}{{st()}}{%endfor%}
   {{'    '*(nl-1)}}}
 
+class: |-
+  type {{name}} struct {{'{'}}
+  {{' '*4*(nl)}}{{attrs|join('\n'+' '*4*(nl))}}
+  }
+  {{init}}
+  {{methods|join('\n')}}
 
+init: |-
+  func init_{{class_name}}({{(args[1:])|join(', ')}}) {{class_name}}{{'{'}}
+  {{' '*4*nl}}self := {{class_name+'{}'}}
+  {{' '*4*(nl)}}{{body.parts.body|join('\n'+' '*4*(nl-1))}}
+  {{' '*4*(nl)}}return self
+  }
+method: |-
+  func (self {{class_name}}) {{name}}({{(args[1:])|join(', ')}}) {{ret_type}} {{'{'}}
+  {{' '*4*(nl)}}{{body.parts.body|join('\n'+' '*4*(nl-1))}}
+  }
+attr: "{{var}} {{_type}}"
+new: "init_{{func}}({{args|join(', ')}})"
 
 main: |-
   package main
@@ -84,6 +103,4 @@ main: |-
   }
   {% endif %}
   {% endif %}
-  {{'func main(){'}}{%for st in body%}
-      {{st}}{%endfor%}
-  }
+  {{body|join('\n')}}
