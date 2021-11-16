@@ -2,8 +2,13 @@ list[any].append:
   side_effect: |-
     set_el_type(obj, args[0].type)
     set_as_mut(obj)
-  code: "append({{obj}}, {{args[0]}})"
-  ret_type: "None"
+  code: |-
+    {%-if parent.name != 'expr'-%}
+      {{'func()error{'}}{{obj}} = append({{obj}}, {{args[0]}}){{';return nil}()'}}
+    {%-else-%}
+      {{obj}} = append({{obj}}, {{args[0]}})
+    {%-endif-%}
+  rettype: "None"
 
 list[generic].*.type:
   side_effect: |-
@@ -19,3 +24,16 @@ list[any].+.list[any]:
       set_el_type(left, right.type.el_type)
   code: "append({{left}}, {{right}}...)"
   type: "left.type"
+
+list[any].index:
+  code: |-
+    {{- env.use('mod_errors') -}}
+    func() int {{'{'}}
+    {{'    '*nl}}    for i, el := range {{obj}} {{'{'}}
+    {{'    '*nl}}        if el == {{args[0]}} {{'{'}}
+    {{'    '*nl}}            return i
+    {{'    '*nl}}        {{'}'}}
+    {{'    '*nl}}    {{'}'}}
+    {{'    '*nl}}    {{'panic(errors.New("ValueError: "+fmt.Sprintf("%v",'}}{{args[0]}}){{'+" is not in list"))'}}
+    {{'    '*nl}}{{'}()'}}
+  rettype: int

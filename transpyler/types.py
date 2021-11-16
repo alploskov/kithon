@@ -7,18 +7,64 @@ from jinja2 import Template
 @dataclass
 class List:
     el_type: Union[typing.Any, str] = 'any'
+
     def __str__(self):
         return f'list[{self.el_type}]'
 
-@dataclass
-class Func:
-    ret_type: Union[typing.Any, str] = 'any'
-    def __str__(self):
-        return f'func[{to_string(self.ret_type)}]'
+    def render(self, env):
+        tmp = env.templates['types'].get('list')
+        if tmp:
+            return Template(tmp).render(
+                el_type=type_render(env, self.el_type)
+            )
+        return str(self)
+    def to_any(self):
+        if self.el_type == 'any':
+            return 'any'
+        return List(to_any(self.el_type))
 
 @dataclass
-class Dict():
-    pass
+class Func:
+    args: tuple[Union[typing.Any, str]] = ()
+    ret_type: Union[typing.Any, str] = 'any'
+
+    def __str__(self):
+        return f'func[{self.args}]{self.ret_type}'
+
+    def render(self, env):
+        tmp = env.templates['types'].get('func')
+        if tmp:
+            return Template(tmp).render(
+                args=tuple(map(lambda a: type_render(env, a), self.args)),
+                ret_type=type_render(env, self.ret_type)
+            )
+        return str(self)
+
+@dataclass
+class Dict:
+    key_type: Union[typing.Any, str] = 'generic'
+    val_type: Union[typing.Any, str] = 'generic'
+
+    def __str__(self):
+        return f'dict[{self.key_type}]{self.val_type}'
+
+    def render(self, env):
+        tmp = env.templates['types'].get('dict')
+        if tmp:
+            return Template(tmp).render(
+                key_type=type_render(env, self.key_type),
+                val_type=type_render(env, self.val_type)
+            )
+        return str(self)
+
+    def to_any(self):
+        if self.key_type == self.val_type == 'any':
+            return 'any'
+        if self.val_type == 'any':
+            return Dict(to_any(self.key_type), 'any')
+        if self.key_type == 'any':
+            return Dict('any', to_any(self.val_type))
+        return Dict(self.key_type, to_any(self.val_type))
 
 @dataclass
 class Module:
@@ -27,35 +73,21 @@ class Module:
 @dataclass
 class Type:
     name: str = ''
+
     def __str__(self):
         return 'type'
 
-def to_string(_type):
-    return getattr(_type, 'to_str', _type)
+    def render(self, env):
+        return env.templates['types'].get(self.name, self.name)
 
 def type_render(self, _type):
-    types_tmp = self.templates['types']
-    if isinstance(_type, List):
-        tmp = types_tmp.get('list')
-        if tmp:
-            return Template(tmp).render(
-                el_type=type_render(
-                    self,
-                    _type.el_type
-                )
-            )
-        return to_string(_type)
-    elif isinstance(_type, Module):
-        return _type.name
-    elif isinstance(_type, Type):
-        return types_tmp.get(_type.name, _type.name)
-    return types_tmp.get(_type, _type)
+    if hasattr(_type, 'render'):
+        return _type.render(self)
+    return self.templates['types'].get(_type, _type)
 
 def to_any(_type):
-    if isinstance(_type, List):
-        if _type.el_type == 'any':
-            return 'any'
-        return List(to_any(_type.el_type))
+    if hasattr(_type, 'to_any'):
+        return _type.to_any()
     return 'any'
 
 

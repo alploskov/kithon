@@ -31,3 +31,6 @@ dom.<=.any:
 dom.<<.any:
   code: "{{left}}.innerHTML += {{right}}"
   type: "None"
+
+document:
+  type: dom

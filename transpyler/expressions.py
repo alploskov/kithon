@@ -4,7 +4,7 @@ from itertools import product
 import _ast
 from jinja2 import Template
 from . import types
-from .types import to_any, to_string, type_eval
+from .types import to_any, type_eval
 from .utils import getvar
 from .core import visitor, op_to_str
 from .side_effects import side_effect
@@ -17,14 +17,10 @@ def un_op(self, tree: _ast.UnaryOp):
     _type = el_type = el.type
     tmp = 'un_op'
     op = op_to_str(tree.op)
-    overload = self.templates.get(
-        f'{op}.{to_string(_type)}'
-    )
+    overload = self.templates.get(f'{op}.{_type}')
     while el_type != 'any' and not overload:
         el_type = to_any(el_type)
-        overload = self.templates.get(
-            f'{op}.{to_string(el_type)}'
-        )
+        overload = self.templates.get(f'{op}.{el_type}')
     if overload:
         tmp = overload.get('code', tmp)
         _type = type_eval(
@@ -76,15 +72,15 @@ def _bin_op(self, left, right, op):
     tmp = 'bin_op'
     left_t = left.type
     right_t = right.type
-    left_possible_types = [to_string(left_t)]
-    right_possible_types = [to_string(right_t)]
+    left_possible_types = [str(left_t)]
+    right_possible_types = [str(right_t)]
     _type = 'None'
     while left_t != 'any':
         left_t = to_any(left_t)
-        left_possible_types.append(to_string(left_t))
+        left_possible_types.append(str(left_t))
     while right_t != 'any':
         right_t = to_any(right_t)
-        right_possible_types.append(to_string(right_t))
+        right_possible_types.append(str(right_t))
     possible_type_pairs = product(
         left_possible_types,
         right_possible_types
@@ -134,18 +130,13 @@ def attribute(self, tree: _ast.Attribute, args=None, call=False):
         macro = self.templates[obj.type.name].get(attr)
     if not macro:
         obj_type = obj.type
-        macro = self.templates.get(
-            f'{to_string(obj_type)}.{attr}'
-        )
+        macro = self.templates.get(f'{obj_type}.{attr}')
         while obj_type != 'any' and not macro:
             obj_type = to_any(obj_type)
-            macro = self.templates.get(
-                f'{to_string(obj_type)}.{attr}'
-            )
+            macro = self.templates.get(f'{obj_type}.{attr}')
     if macro:
         parts['attr'] = macro.get('alt_name', attr)
-        if 'code' in macro:
-            tmp = Template(macro['code'])
+        tmp = macro.get('code', tmp)
         parts.update(match_args(macro, args))
         side_effect(macro, parts)
         _type = types.type_eval(
@@ -173,13 +164,16 @@ def function_call(self, tree: _ast.Call):
         and tree.func.id in self.templates):
         macro = self.templates.get(tree.func.id)
         parts.update(match_args(macro, args))
-#        ret_type = macro.get('rettype', ret_type)
         tmp = macro.get('code', 'callfunc')
         side_effect(macro, parts)
+        _type = types.type_eval(
+            macro.get('rettype', 'None'),
+            parts
+        )
     return self.node(
+        tmp=tmp,
         type=ret_type,
-        parts=parts,
-        tmp=tmp
+        parts=parts
     )
 
 @visitor
@@ -197,7 +191,23 @@ def _list(self, tree: _ast.List):
 
 @visitor
 def _dict(self, tree: _ast.Dict):
-    pass
+    keys = list(map(self.visit, tree.keys))
+    values = list(map(self.visit, tree.values))
+    if len(keys):
+        el_type = values[0].type
+        key_type = keys[0].type
+    else:
+        el_type = 'generic'
+        key_type = 'generic'
+    return self.node(
+        tmp='dict',
+        type=types.Dict(key_type, el_type),
+        parts={
+            'keys': keys,
+            'values': values,
+            'keys_val': list(zip(keys, values))
+        }
+    )
 
 @visitor
 def slice(self, tree: _ast.Subscript):

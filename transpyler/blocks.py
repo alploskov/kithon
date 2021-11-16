@@ -2,7 +2,7 @@ import ast
 import _ast
 from .types import element_type
 from .core import visitor
-from .utils import get_ctx
+from .utils import get_ctx, previous_ns
 
 
 @visitor
@@ -18,19 +18,21 @@ def assign(self, tree: _ast.Assign, _type=None):
     var = self.visit(variable)
     value = self.visit(tree.value)
     _type = _type or value.type
-    tmp = 'new_var'
     if isinstance(variable, _ast.Name):
+        tmp = 'assign'
         full_name = f'{self.namespace}.{variable.id}'
     elif isinstance(variable, _ast.Subscript):
+        tmp = 'assignment_by_key'
         full_name = f'{self.namespace}.{variable.value.id}'
-        self.variables[full_name]['type'].el_type = _type
     elif isinstance(variable, _ast.Attribute):
+        tmp = 'set_attr'
         obj_name = variable.value.id
         if obj_name == 'self':
             full_name = f'{get_ctx(self)}.{variable.attr}'
         else:
             full_name = f'{self.namespace}.{obj_name}'
     if full_name not in self.variables:
+        tmp = 'new_var'
         if get_ctx(self):
             tmp = 'attr'
         var.parts['own'] = full_name
@@ -40,14 +42,16 @@ def assign(self, tree: _ast.Assign, _type=None):
             'immut': True
         }})
     else:
-        tmp = 'assign'
         self.variables[full_name]['immut'] = False
-        self.variables[full_name]['type'] = _type
+        if tmp in ('assign', 'set_attr'):
+            self.variables[full_name]['type'] = _type
+        elif tmp == 'assignment_by_key':
+            self.variables[full_name]['type'].el_type = _type
     return self.node(
         parts={
             'var': var,
             'value': value,
-            'own': self.variables[full_name]['own'],
+            'own': self.variables[full_name]['own']
         },
         type=_type,
         tmp=tmp
@@ -73,7 +77,6 @@ def _if(self, tree: _ast.If, is_elif=False):
         parts={
             'condition': self.visit(tree.test),
             'body': expression_block(self, tree.body),
-            'nl': self.nl + 1,
             'els': _else(self, tree.orelse)
         },
         tmp = 'elif' if is_elif else 'if'
@@ -87,7 +90,6 @@ def _else(self, body):
     return self.node(
         parts={
             'body': expression_block(self, body),
-            'nl': self.nl + 1,
         },
         tmp='else'
     )
@@ -98,7 +100,6 @@ def _while(self, tree: _ast.While):
         parts={
             'condition': self.visit(tree.test),
             'body': expression_block(self, tree.body),
-            'nl': self.nl + 1,
         },
         tmp = 'while'
     )
@@ -148,7 +149,7 @@ def _for(self, tree: _ast.For):
 def define_function(self, tree: _ast.FunctionDef):
     name = tree.name
     parts = {}
-    if get_ctx(self):
+    if self.variables[self.namespace]['type'] == 'class':
         attrs = []
         for attr in self.variables:
             if (attr.startswith(self.namespace)
@@ -179,7 +180,6 @@ def define_function(self, tree: _ast.FunctionDef):
             'args': args,
             'ret_type': ret_t,
             'body': expression_block(self, tree.body),
-            'nl': self.nl
         } | parts
     )
     self.namespace = self.namespace[:-len(name)-1]
@@ -217,7 +217,6 @@ def define_class(self, tree: _ast.ClassDef):
             'attrs': [],
             'methods': [],
             'init': None,
-            'nl': self.nl
         }
     )
     self.ctx = node
@@ -251,7 +250,6 @@ def expression_block(self, body):
         tmp='body',
         parts={
             'body': list(map(self.visit, body)),
-            'nl': self.nl
         }
     )
     self.nl -= 1
@@ -259,11 +257,10 @@ def expression_block(self, body):
 
 @visitor
 def _nonlocal(self, tree: _ast.Nonlocal):
-    for i in tree.names:
-        full_name = f'{self.namespace}.{i}'
-        previous_ns = self.namespace[:self.namespace.rfind('.')]
+    for name in tree.names:
+        full_name = f'{self.namespace}.{name}'
         self.variables.update({
-            full_name: self.variables[f'{previous_ns}.{i}']
+            full_name: self.variables[f'{previous_ns(self)}.{name}']
         })
     return self.node(
         tmp='nonlocal',
@@ -279,10 +276,10 @@ def _nonlocal(self, tree: _ast.Nonlocal):
 
 @visitor
 def _global(self, tree: _ast.Global):
-    for i in tree.names:
-        full_name = f'{self.namespace}.{i}'
+    for _name in tree.names:
+        full_name = f'{self.namespace}.{_name}'
         self.variables.update({
-            full_name: self.variables[f'main.{i}']
+            full_name: self.variables[f'__main__.{_name}']
         })
     return self.node(
         tmp='global',

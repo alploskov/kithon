@@ -20,22 +20,27 @@ callmethod: "{{obj()}}.{{attr}}({{args|join(', ')}})"
 arg: "{{name}} {{_type}}"
 
 list: "{{_type}}{{'{'}}{{ls|join(', ')}}}"
-dict: "{{'{'}}{%for i in key_val%}{{i.key}}: {{i.val}},{%endfor%}}"
+dict: "{{_type}}{{'{'}}{%for item in keys_val%}{{item[0]}}: {{item[1]}},{%endfor%}}"
 
 index: |-
-  {%- if isinstance(obj.type, List) -%}
+  {%- if isinstance(obj.type, list) -%}
     {{- env.use('Index') -}}
-    {{obj()}}[Index({{key}}, len({{obj()}}))]
+    {{obj}}[Index({{key}}, len({{obj}}))]
+  {%- else -%}
+    {{obj}}[{{key}}]
   {%- endif -%}
+
 slice: |-
-  {%-if step() == '1'-%}
+  {%- if step() == '1' -%}
     {{-env.use('Index')-}}
-    {{obj()}}[{{low()}}:Index({{up()}}, len({{obj()}}))]
+    {{obj}}[{{low}}:Index({{up}}, len({{obj}}))]
   {%-endif-%}
 
-expr: "{{value()}}"
-assign: "{{var()}} = {{value()}}"
-new_var: "{{var()}} := {{value()}}"
+expr: "{{value}}"
+assign: &assign "{{var}} = {{value}}"
+set_attr: *assign
+assignment_by_key: *assign
+new_var: "{{var}} := {{value}}"
 
 if: "if ({{condition}}) {{body}} {{els}}"
 elif: "else if ({{condition}}) {{body}} {{els}}"
@@ -47,12 +52,26 @@ return: "return {{value()}}"
 
 while: "for {{condition()}} {{body()}}"
 
-for: for _, {{var()}} := range {{obj()}} {{body()}}
+for: |-
+  {%- if obj.type == 'str' -%}
+    {{- env.use('mod_strings') -}}
+    for _, {{var}} := range strings.Split({{obj}}, "")
+  {%- elif isinstance(obj.type, dict) -%}
+    for {{var}}, _ := range {{obj}}
+  {%- else -%}
+    for _, {{var}} := range {{obj}}
+  {%- endif -%} {{body}}
 
 c_like_for: >-
-  for {{var()}} := {{start()}};
-  ({{step()}} < 0 && {{var()}} > {{finish()}}) || ({{var()}} < {{finish()}});
-  {{var()}} += {{step()}}
+  for {{var()}} := {{start()}};{{' '}}
+  {%- if get_val(step) < 0 -%}
+    {{var}} > {{finish}};
+  {%- elif get_val(step) >= 0 -%}
+    {{var}} < {{finish}};
+  {%- else -%}
+    ({{step}} < 0 && {{var}} > {{finish}}) || ({{var}} < {{finish}});
+  {%- endif -%}
+  {{' '}}{{var()}} += {{step()}}
   {{body()}}
 
 break: "break;"
@@ -62,6 +81,7 @@ types:
   list: "[]{{el_type}}"
   str: string
   float: float64
+  dict: "map[{{key_type}}]{{val_type}}"
 
 body: |-
   {{'{'}}{%for st in body%}

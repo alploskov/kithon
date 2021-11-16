@@ -30,14 +30,20 @@ def op_to_str(op):
     }.get(type(op))
 
 class _node():
-    def __init__(self, env=None, tmp=None, parts=None, type=None, ctx=None):
-        self.tmp = env.templates.get(tmp) if isinstance(tmp, str) else tmp
+    def __init__(self, env=None, tmp=None, parts=None, type=None, ctx=None, nl=1):
+        if isinstance(tmp, str):
+            self.name = tmp
+            self.tmp = env.templates.get(tmp)
+        else:
+            self.name = 'unknown'
+            self.tmp = tmp
         self.parts = parts
         self.type = type
         self.ctx = ctx
         self.env = env
         self.val = ''
-
+        self.nl = nl
+        self.parent = None
     def render(self):
         parts = self.parts
         if parts.get('own'):
@@ -46,19 +52,23 @@ class _node():
             _type = self.type
         for part in parts.values():
             if isinstance(part, _node):
+                part.parent = self
                 part.render()
             elif isinstance(part, list):
                 for part_el in part:
-                    if not isinstance(part_el, str):
+                    if not isinstance(part_el, (str, tuple)):
+                        part_el.parent = self
                         part_el.render()
         if not self.tmp:
             return ''
         self.val = self.tmp.render(
             env=self.env,
+            nl=self.nl,
+            parent=self.parent,
             _type=types.type_render(self.env, _type),
             isinstance=isinstance,
             **types.types,
-            is_const=templ_utils.is_const,
+            **templ_utils.utils,
             **parts
         )
         return self.val
@@ -78,8 +88,9 @@ class Transpiler:
         'bin_op', 'un_op', 'callfunc', 'getattr',
         'callmethod', 'arg', 'list', 'tuple',
         'dict', 'index', 'slice', 'new_var', 'main',
-        'global', 'nonlocal',
-        'class', 'init', 'attr', 'method', 'new'
+        'global', 'nonlocal', 'assignment_by_key',
+        'class', 'init', 'attr', 'method', 'new',
+        'set_attr'
     ], '') | {'types': {}, 'operators': {}}
     elements = {}
 
@@ -95,17 +106,18 @@ class Transpiler:
         self.strings = []
         self.used = set([])
         self.nl = 0
-        self.namespace = 'main'
+        self.namespace = '__main__'
         self.variables = {
-            'main.str': {'type': types.Type('str')},
-            'main.int': {'type': types.Type('int')},
-            'main.float': {'type': types.Type('float')},
+            '__main__': {'type': types.Module('__main__')},
+            '__main__.str': {'type': types.Type('str')},
+            '__main__.int': {'type': types.Type('int')},
+            '__main__.float': {'type': types.Type('float')},
         }
     def node(self, tmp=None, parts=None, type=None, ctx=None):
         return _node(
             env=self, tmp=tmp,
             parts=parts, type=type,
-            ctx=ctx
+            ctx=ctx, nl=self.nl
         )
 
     def add_templ(self, templates):
