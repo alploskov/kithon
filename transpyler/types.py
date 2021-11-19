@@ -70,6 +70,17 @@ class Dict:
 class Module:
     name: str = ''
 
+    def __str__(self):
+        return f'mod_{self.name}'
+
+    def render(self, env):
+        tmp = env.templates['types'].get('module')
+        if tmp:
+            return Template(tmp).render(
+                name=self.name
+            )
+        return str(self)
+
 @dataclass
 class Type:
     name: str = ''

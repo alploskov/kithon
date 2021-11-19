@@ -30,7 +30,7 @@ def op_to_str(op):
     }.get(type(op))
 
 class _node():
-    def __init__(self, env=None, tmp=None, parts=None, type=None, ctx=None, nl=1):
+    def __init__(self, env=None, tmp=None, parts={}, type=None, ctx=None, nl=1):
         if isinstance(tmp, str):
             self.name = tmp
             self.tmp = env.templates.get(tmp)
@@ -44,6 +44,7 @@ class _node():
         self.val = ''
         self.nl = nl
         self.parent = None
+
     def render(self):
         parts = self.parts
         if parts.get('own'):
@@ -113,7 +114,7 @@ class Transpiler:
             '__main__.int': {'type': types.Type('int')},
             '__main__.float': {'type': types.Type('float')},
         }
-    def node(self, tmp=None, parts=None, type=None, ctx=None):
+    def node(self, tmp=None, parts={}, type=None, ctx=None):
         return _node(
             env=self, tmp=tmp,
             parts=parts, type=type,
@@ -135,6 +136,8 @@ class Transpiler:
         self.templates |= templates
 
     def visit(self, tree, **kw):
+        if type(tree) not in self.elements:
+            return None
         node = self.elements.get(type(tree))(
             self, tree,
             **(kw or {})
@@ -154,6 +157,8 @@ class Transpiler:
             astree = ast.parse(parse(code, 'block'))
         body = list(map(self.visit, astree.body))
         for block in body:
+            if not block:
+                continue
             self.strings.extend(block.render().split('\n'))
         if 'main' in self.templates and mode == 'main':
             code = self.templates.get('main').render(
