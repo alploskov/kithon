@@ -30,21 +30,21 @@ def op_to_str(op):
     }.get(type(op))
 
 class Transpiler:
-    templates = dict.fromkeys([
-        'expr', 'assign', 'if', 'elif', 'else',
-        'func', 'return', 'while', 'for', 'c_like_for',
-        'break', 'continue', 'import', 'body',
-        'name', 'Int', 'Float', 'Bool', 'Str',
-        'bin_op', 'un_op', 'callfunc', 'getattr',
-        'callmethod', 'arg', 'List', 'Tuple',
-        'Dict', 'index', 'slice', 'new_var', 'Main',
-        'global', 'nonlocal', 'assignment_by_key',
-        'class', 'init', 'attr', 'method', 'new',
-        'set_attr', 'new_attr', 'new_key'
-    ], '') | {'types': {}, 'operators': {}}
     elements = {}
 
     def __init__(self, templates):
+        self.templates = dict.fromkeys([
+            'expr', 'assign', 'if', 'elif', 'else',
+            'func', 'return', 'while', 'for', 'c_like_for',
+            'break', 'continue', 'import', 'body',
+            'name', 'Int', 'Float', 'Bool', 'Str',
+            'bin_op', 'un_op', 'callfunc', 'getattr',
+            'callmethod', 'arg', 'List', 'Tuple',
+            'Dict', 'index', 'slice', 'new_var', 'Main',
+            'global', 'nonlocal', 'assignment_by_key',
+            'class', 'init', 'attr', 'method', 'new',
+            'set_attr', 'new_attr', 'new_key'
+        ], '') | {'types': {}, 'operators': {}}
         self.default_state()
         self.add_templ(templates)
 
@@ -112,7 +112,6 @@ class Transpiler:
             if not block:
                 continue
             self.strings.extend(block.render().split('\n'))
-        import pprint;pprint.pprint(self.variables)
         if isinstance(self.templates['Main'], Template) and mode == 'Main':
             code = self.templates.get('Main').render(
                 _body=self.strings,

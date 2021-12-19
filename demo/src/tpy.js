@@ -1,6 +1,28 @@
 var pyodide = null;
+var lang = document.getElementById('chose-lang').value;
+document.getElementById('chose-lang').addEventListener('change', (event) => {
+    lang = event.target.value;
+    if(lang == 'js'){
+	output.getSession().setMode("ace/mode/javascript");
+    } else if(lang == 'go'){
+	output.getSession().setMode("ace/mode/golang");
+    }
+    output.setValue(generate(editor.getValue()));
+    output.clearSelection();
+    output.setHighlightActiveLine(false);
+});
 async function main(){
-    tpy_config = `
+    pyodide = await loadPyodide({
+        indexURL : "https://cdn.jsdelivr.net/pyodide/v0.18.0/full/"
+    });
+    await pyodide.loadPackage("micropip");
+    await pyodide.runPythonAsync(`
+import micropip
+await micropip.install('src/transPYler-0.0.1-py-none-any.whl')
+`);
+    await pyodide.runPythonAsync(`
+import transpyler
+transpiler_js = transpyler.Transpiler('''
 name: "{{name}}"
 const: &const "{{val}}"
 Int: *const
@@ -9,100 +31,117 @@ Bool: "{{val|lower}}"
 Str: "'{{val}}'"
 
 operators:
-  "+": "+"
-  "-": "-"
-  "*": "*"
-  "/": "/"
-  "**": "**"
-  "==": "=="
-  "!=": "!="
-  ">": ">"
-  "<": "<"
-  ">=": ">="
-  "<=": "<="
   "or": "||"
   "and": "&&"
-  "|": "|"
-  "&": "&"
-  "%": "%"
   "not": "!"
   "is": "==="
 
-bin_op: "({{left()}} {{op}} {{right()}})"
-un_op: "{{op}}{{el()}}"
+bin_op: "({{left}} {{op}} {{right}})"
+un_op: "{{op}}{{el}}"
 
-callfunc: "{{func()}}({{args|map(attribute='val')|join(', ')}})"
-attr: "{{obj()}}.{{attr}}"
-callmethod: "{{obj()}}.{{attr}}({{args|map(attribute='val')|join(', ')}})"
-arg: "{{arg}}"
+callfunc: "{{func}}({{args|join(', ')}})"
+getattr: "{{obj}}.{{attr}}"
+callmethod: "{{obj}}.{{attr}}({{args|join(', ')}})"
+arg: "{{name}}"
 
-List: "[{{ls|map(attribute='val')|join(', ')}}]"
-Tuple: "[{{ls|map(attribute='val')|join(', ')}}]"
-Dict: "{{'{'}}{%for i in key_val%}{{i.key()}}: {{i.val()}},{%endfor%}}"
+List: "[{{ls|join(', ')}}]"
+Tuple: "[{{ls|join(', ')}}]"
+Dict: >-
+  new Map([
+  {%-set _dict = []-%}
+  {%-for kw in keys_val-%}
+    {{_dict.append('['+kw|join(', ')+']') or ''}}
+  {%-endfor-%}
+  {{_dict|join(', ')}}])
 
-index: "{{obj()}}[{{key()}}<0?{{obj()}}.length+{{key()}}:{{key()}}]"
-slice: |-
-  {%-if step() == '1'-%}
-    {{obj()}}.slice({{low()}}, {{up()}})
-  {%-elif step() != '0'-%}
-    ({{step()}}<0?Array.from({{obj()}}).reverse():{{obj()}})
-    {%-if low() != '' or up() != ''-%}
-      .slice(...({{step()}}<0?[{{up()}}, {{low()}}]:[{{low()}}, {{up()}}]))
+index: >-
+  {{obj}}
+  {%- if isinstance(obj.type, list) -%}[
+    {%- if get_val(key) != 'unknown' -%}
+      {%- if get_val(key) < 0 -%}
+        {{obj}}.length+{{key}}
+      {%-else-%}
+        {{key}}
+      {%- endif -%}
+    {%- else -%}
+      ({{key}}<0)?({{obj}}.length+{{key}}):({{key}})
+    {%-endif-%}]
+  {%- elif isinstance(obj.type, dict) -%}
+    {%- if ctx == 'load' -%}
+    .get({{key}})|| (()=>{throw "key error"})()
+    {%-else-%}
+    [{{key}}]
     {%-endif-%}
-    {%-if step() != '1' and step() != '-1'-%}
-      .filter((_,i)=>(i%{{step()}})==0)
+  {%- endif -%}
+
+slice: |-
+  {%- if step() == '1' -%}
+    {{obj}}.slice({{low}}, {{up}})
+  {%-elif step() != '0'-%}
+    {%- if get_val(step) != 'unknown' -%}
+      {%- if get_val(step) < 0 -%}
+        [...{{obj}}].reverse()
+      {%- else -%}
+        {{obj}}
+      {%- endif -%}
+    {%- else -%}
+      ({{step}}<0?[...{{obj}}].reverse():{{obj}})
+    {%- endif -%}
+    {%-if low() != '' or up() != ''-%}
+      .slice(...({{step}}<0?[{{up}}, {{low}}]:[{{low}}, {{up}}]))
+    {%-endif-%}
+    {%-if step() != '-1'-%}
+      .filter((_,i)=>(i%{{step}})==0)
     {%-endif-%}
   {%-endif-%}
 
-expr: "{{value()}};"
-assign: "{{var()}} = {{value()}};"
-new_var: "let {{var()}} = {{value()}};"
+expr: "{{value}};"
+assign: &assign "{{var}} = {{value}};"
+set_attr: *assign
+assignment_by_key: *assign
+new_var: "let {{var}} = {{value}};"
 
-if: "if ({{condition()}}) {{body()}} {{els()}}"
-elif: "else if ({{condition()}}) {{body()}} {{els()}}"
-else: "else {{body()}}"
+if: "if ({{condition}}) {{body}} {{els}}"
+elif: "else if ({{condition}}) {{body}} {{els}}"
+else: "else {{body}}"
 
-func: "function {{name}} ({{args|map(attribute='val')|join(', ')}}) {{body()}}"
+func: "function {{name}}({{args|join(', ')}}) {{body}}"
 
-return: "return {{value()}};"
+return: "return {{value}};"
 
-while: "while ({{condition()}}) {{body}}"
+while: "while ({{condition}}) {{body}}"
 
 for: >-
-  for (let {{var()}}
-  {{'in' if isinstance(obj.type, Dict) else 'of'}}
-  {{obj()}})
-  {{body()}}
+  for (let {{var}}
+  {{'in' if isinstance(obj.type, dict) else 'of'}}
+  {{obj}})
+  {{body}}
 
 c_like_for: >-
-  for (let {{var()}} = {{start()}};
-  ({{step()}}<0?{{var()}}>{{finish()}}:{{var()}}<{{finish()}});
-  {{var()}} += {{step()}})
-  {{body()}}
+  for (let {{var}} = {{start}};
+  ({{step}}<0?{{var}}>{{finish}}:{{var}}<{{finish}});
+  {{var}} += {{step}})
+  {{body}}
 
 break: "break;"
 continue: "continue;"
 
-import: "const {{alias}} = require('{{module}}');"
-
 body: |-
   {{'{'}}{%for st in body%}
-  {{'    '*nl}}{{st()}}{%endfor%}
+  {{'    '*nl}}{{st}}{%endfor%}
+  {{'    '*(nl-1)}}}
+class: |-
+  class {{name}} {{'{'}}
+  {{'    '*nl}}{{attrs|join("\\\n"+'    '*nl)}}
+  {{'    '*nl}}{{init}}
+  {{'    '*nl}}{{methods|join("\\\n"+'    '*(nl))}}
   {{'    '*(nl-1)}}}
 
-main: |-
-  {{';(function(){'}}{%for st in body%}
-  {{st}}{%endfor%}
-  })();
-event:
-  args: [el, event_name, fun]
-  code: "{{el()}}.addEventListener({{event_name()}}, {{fun()}})"
-  rettype: 'None'
-
-check:
-  args: [id]
-  code: "document.getElementById({{id()}}).checked"
-  rettype: bool
+init: "constructor({{(args[1:])|join(', ')}}) {{body}}"
+method: "{{name}}({{(args[1:])|join(', ')}}) {{body}}"
+self: "this"
+attr: "{{var}} = {{value}};"
+new: "new {{func}}({{args|join(', ')}})"
 
 min:
   alt_name: "Math.min"
@@ -114,19 +153,19 @@ max:
 
 round:
   args: [num, ndigits]
-  code: "+{{num()}}.toFixed({{ndigits()}})"
+  code: "+{{num}}.toFixed({{ndigits}})"
 
 print:
   alt_name: "console.log"
-  ret_type: "None"
+  rettype: "None"
 
 input:
   alt_name: "prompt"
-  type: "Func"
+  type: "func"
   rettype: "str"
 
 len:
-  code: "{{args[0]()}}.length"
+  code: "{{args[0]}}.length"
   rettype: int
 
 interval:
@@ -134,59 +173,18 @@ interval:
   type: "Func"
   ret_type: "None"
 
-url_param:
-  alt_name: "new URL(window.location.href).searchParams.get"
-  type: str
-
-get_by_id:
-  alt_name: "document.getElementById"
-  type: dom
-
 any.//.any:
-  code: "Math.floor({{left()}}/{{right()}})"
+  code: "Math.floor({{left}}/{{right}})"
   type: "int"
-json:
-  type: module
-  alt_name: "JSON"
-  dumps:
-    alt_name: "stringify"
-    ret_type: "any"
-  loads:
-    alt_name: "parse"
-    ret_type: "str"
-event:
-  args: [el, event_name, fun]
-  code: "{{el()}}.addEventListener({{event_name()}}, {{fun()}})"
-  rettype: 'None'
 
-check:
-  args: [id]
-  code: "document.getElementById({{id()}}).checked"
-  rettype: bool
-
-url_param:
-  alt_name: "new URL(window.location.href).searchParams.get"
-  type: str
-
-get_by_id:
-  alt_name: "document.getElementById"
-  rettype: dom
-
-get_by_class:
-  alt_name: "document.getElementsByClassName"
-  rettype: "list[dom]"
-
-get_by_tagname:
-  alt_name: "document.getElementsByTagName"
-  rettype: "list[dom]"
-
-dom.<=.any:
-  code: "{{left()}}.innerHTML = {{right()}}"
-  type: "None"
-
-dom.<<.any:
-  code: "{{left()}}.innerHTML += {{right()}}"
-  type: "None"
+setattr:
+  args: ["obj", "name", "val"]
+  code: |-
+    {%-if parent.name == 'expr'-%}
+      {{obj}}[{{name}}] = {{val}}
+    {%-else-%}
+      (()=>{{obj}}[{{name}}] = {{val}})
+    {%-endif-%}
 list[any].append:
   side_effect: |-
     set_el_type(obj, args[0].type)
@@ -198,11 +196,11 @@ list[None].*.type:
   side_effect: |-
     set_el_type(obj, as=args[0])
     set_as_mut(obj)
-  code: "{{left()}}"
+  code: "{{left}}"
   type: "List[{{right.type}}]"
 
 list[any].*.int:
-  code: 'Array({{right()}}).fill({{left()}}).flat()'
+  code: 'Array({{right}}).fill({{left}}).flat()'
   type: 'left.type'
 
 list[any].==.list[any]:
@@ -210,7 +208,7 @@ list[any].==.list[any]:
     {%- if left() == right()-%}
       true
     {%- else -%}
-      (JSON.stringify({{left()}})==JSON.stringify({{right()}}))
+      (JSON.stringify({{left}})==JSON.stringify({{right}}))
     {%- endif -%}
   type: 'bool'
 
@@ -219,39 +217,218 @@ list[any].index:
   type: 'int'
 
 list[any].+.list[any]:
-  code: "{{left()}}.concat({{right()}})"
+  code: "{{left}}.concat({{right}})"
   type: "left.type"
 
 any.in.list[any]:
-  code: "{{right()}}.includes({{left()}})"
+  code: "{{right}}.includes({{left}})"
   type: "bool"
-
-str.*.int:
-  code: "{{left()}}.repeat({{right()}})"
-  type: "str"
-`
-
-    pyodide = await loadPyodide({
-        indexURL : "https://cdn.jsdelivr.net/pyodide/v0.18.0/full/"
-    });
-    await pyodide.loadPackage("micropip");
-    await pyodide.runPythonAsync(`
-import micropip
-await micropip.install('src/transpyler-0.0.1-py3-none-any.whl')
+''')
 `);
-    await pyodide.runPythonAsync(`
-import transPYler
-transpiler = transPYler.transpiler('''${tpy_config}''')
+await pyodide.runPythonAsync(`
+import transpyler
+transpiler_go = transpyler.Transpiler('''
+name: "{{name}}"
+const: &const "{{val}}"
+Int: *const
+Float: *const
+Bool: "{{val|lower}}"
+
+operators:
+  "or": "||"
+  "and": "&&"
+  "not": "!"
+  "is": "=="
+
+bin_op: |-
+  {%- if parent.name == 'bin_op' -%}
+    ({{left}} {{op}} {{right}})
+  {%- else -%}
+    {{left}} {{op}} {{right}}
+  {%- endif -%}
+
+un_op: "{{op}}{{el()}}"
+
+callfunc: "{{func()}}({{args|join(', ')}})"
+getattr: "{{obj()}}.{{attr}}"
+callmethod: "{{obj()}}.{{attr}}({{args|join(', ')}})"
+arg: "{{name}} {{_type}}"
+
+List: "{{_type}}{{'{'}}{{ls|join(', ')}}}"
+Dict: "{{_type}}{{'{'}}{%for item in keys_val%}{{item[0]}}: {{item[1]}},{%endfor%}}"
+
+index: |-
+  {%- if isinstance(obj.type, list) -%}
+    {{- env.use('Index') -}}
+    {{obj}}[Index({{key}}, len({{obj}}))]
+  {%- else -%}
+    {{obj}}[{{key}}]
+  {%- endif -%}
+
+slice: |-
+  {%- if step() == '1' -%}
+    {{-env.use('Index')-}}
+    {{obj}}[{{low}}:Index({{up}}, len({{obj}}))]
+  {%-endif-%}
+
+expr: "{{value}}"
+assign: &assign "{{var}} = {{value}}"
+set_attr: *assign
+assignment_by_key: *assign
+new_var: "{{var}} := {{value}}"
+
+if: "if ({{condition}}) {{body}} {{els}}"
+elif: "else if ({{condition}}) {{body}} {{els}}"
+else: "else {{body}}"
+
+func: "func {{name}}({{args|map(attribute='val')|join(', ')}}) {{ret_type}} {{body()}}"
+
+return: "return {{value}}"
+
+while: "for {{condition()}} {{body()}}"
+
+for: |-
+  {%- if obj.type == 'str' -%}
+    {{- env.use('mod_strings') -}}
+    for _, {{var}} := range strings.Split({{obj}}, "")
+  {%- elif isinstance(obj.type, dict) -%}
+    for {{var}}, _ := range {{obj}}
+  {%- else -%}
+    for _, {{var}} := range {{obj}}
+  {%- endif -%} {{body}}
+
+c_like_for: >-
+  for {{var()}} := {{start()}};{{' '}}
+  {%- if get_val(step) < 0 -%}
+    {{var}} > {{finish}};
+  {%- elif get_val(step) >= 0 -%}
+    {{var}} < {{finish}};
+  {%- else -%}
+    ({{step}} < 0 && {{var}} > {{finish}}) || ({{var}} < {{finish}});
+  {%- endif -%}
+  {{' '}}{{var()}} += {{step()}}
+  {{body()}}
+
+break: "break;"
+continue: "continue;"
+
+types:
+  list: "[]{{el_type}}"
+  str: string
+  float: float64
+  dict: "map[{{key_type}}]{{el_type}}"
+
+body: |-
+  {{'{'}}{%for st in body%}
+  {{'    '*nl}}{{st()}}{%endfor%}
+  {{'    '*(nl-1)}}}
+
+class: |-
+  type {{name}} struct {{'{'}}
+  {{' '*4*(nl)}}{{attrs|join('\\\n'+' '*4*(nl))}}
+  }
+  {{init}}
+  {{methods|join('\\\n')}}
+
+init: |-
+  func init_{{class_name}}({{(args[1:])|join(', ')}}) {{class_name}}{{'{'}}
+  {{' '*4*nl}}self := {{class_name+'{}'}}
+  {{' '*4*(nl)}}{{body.parts.body|join('\\\n'+' '*4*(nl-1))}}
+  {{' '*4*(nl)}}return self
+  }
+method: |-
+  func (self {{class_name}}) {{name}}({{(args[1:])|join(', ')}}) {{ret_type}} {{'{'}}
+  {{' '*4*(nl)}}{{body.parts.body|join('\\\n'+' '*4*(nl-1))}}
+  }
+attr: "{{var}} {{_type}}"
+new: "init_{{func}}({{args|join(', ')}})"
+
+Main: |-
+  package main
+  {% if env.used %}  
+  import ({%- for used in env.used -%}
+  {% if used.startswith('mod_')%}{{'\\\n'+'    '}}"{{used[4:]}}"{%endif%}
+  {%- endfor -%}
+  )
+  {% if 'Index' in env.used %}
+  func Index(index, ln int) int {{'{'}}
+      if index < 0 {{'{'}}
+          return ln + index
+      }
+      return index
+  }
+  {% endif %}
+  {% endif %}
+  {{body|join('\\\n')}}
+
+print:
+  code: |-
+    {{-env.use('mod_fmt')-}}
+    fmt.Println({{args|join(', ')}})
+  ret_type: "None"
+
+str:
+  code: |-
+    {{-env.use('mod_fmt')-}}
+    fmt.Sprintf("%v", {{args[0]}})
+  ret_type: "str"
+
+main:
+  code: ""
+
+len:
+  ret_type: int
+
+list[any].append:
+  side_effect: |-
+    set_el_type(obj, args[0].type)
+    set_as_mut(obj)
+  code: |-
+    {%-if parent.name != 'expr'-%}
+      {{'func()error{'}}{{obj}} = append({{obj}}, {{args[0]}}){{';return nil}()'}}
+    {%-else-%}
+      {{obj}} = append({{obj}}, {{args[0]}})
+    {%-endif-%}
+  ret_type: "None"
+
+list[generic].*.type:
+  side_effect: |-
+    set_el_type(left, right.type)
+  code: "{{left}}"
+  type: "left.type"
+
+list[any].+.list[any]:
+  side_effect: |-
+    if left.type.el_type != 'generic':
+      set_el_type(right, left.type.el_type)
+    else:
+      set_el_type(left, right.type.el_type)
+  code: "append({{left}}, {{right}}...)"
+  type: "left.type"
+
+list[any].index:
+  code: |-
+    {{- env.use('mod_errors') -}}
+    func() int {{'{'}}
+    {{'    '*nl}}    for i, el := range {{obj}} {{'{'}}
+    {{'    '*nl}}        if el == {{args[0]}} {{'{'}}
+    {{'    '*nl}}            return i
+    {{'    '*nl}}        {{'}'}}
+    {{'    '*nl}}    {{'}'}}
+    {{'    '*nl}}    {{'panic(errors.New("ValueError: "+fmt.Sprintf("%v",'}}{{args[0]}}){{'+" is not in list"))'}}
+    {{'    '*nl}}{{'}()'}}
+  ret_type: int
+''')
 `);
 }
 main();
 var saved_code = 'error';
 function generate(code){
     try{
-	code = pyodide.runPython(`transpiler.generate('''${code}''')`);
-	saved_code = code;
+	out_code = pyodide.runPython(`transpiler_${lang}.generate('''${code}''')`);
+	saved_code = out_code;
     }catch{
-	code = saved_code;
+	out_code = saved_code;
     }
-    return code;
+    return out_code;
 }
