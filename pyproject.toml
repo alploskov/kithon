@@ -1,16 +1,14 @@
 [tool.poetry]
 name = "transPYler"
-version = "1.1.0"
+version = "0.0.1"
 description = ""
-authors = ["Aleksey Plskov"]
+authors = ["Aleksey Ploskov"]
 license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.9"
 Jinja2 = "^3.0.2"
-PyYAML = "^6.0"
-typer = "^0.4.0"
-coconut = "^1.5.0"
+PyYaml = "^5.4.0"
 
 [tool.poetry.scripts]
 tpy = "transpyler.cli:tpy"

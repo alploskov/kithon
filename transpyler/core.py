@@ -2,7 +2,7 @@ import ast
 import _ast
 import yaml
 from jinja2 import Template
-from . import templ_utils, types
+from . import types, node
 
 
 def visitor(func):
@@ -29,57 +29,6 @@ def op_to_str(op):
         _ast.And: 'and',   _ast.Or: 'or'
     }.get(type(op))
 
-class _node():
-    def __init__(self, env=None, tmp=None, parts={}, type=None, ctx=None, nl=1):
-        if isinstance(tmp, str):
-            self.name = tmp
-            self.tmp = env.templates.get(tmp)
-        else:
-            self.name = 'unknown'
-            self.tmp = tmp
-        self.parts = parts
-        self.type = type
-        self.ctx = ctx
-        self.env = env
-        self.val = ''
-        self.nl = nl
-        self.parent = None
-
-    def render(self):
-        parts = self.parts
-        if parts.get('own'):
-            _type = self.env.variables[parts['own']]['type']
-        else:
-            _type = self.type
-        for part in parts.values():
-            if isinstance(part, _node):
-                part.parent = self
-                part.render()
-            elif isinstance(part, list):
-                for part_el in part:
-                    if not isinstance(part_el, (str, tuple)):
-                        part_el.parent = self
-                        part_el.render()
-        if not self.tmp:
-            return ''
-        self.val = self.tmp.render(
-            env=self.env,
-            nl=self.nl,
-            parent=self.parent,
-            _type=types.type_render(self.env, _type),
-            isinstance=isinstance,
-            **types.types,
-            **templ_utils.utils,
-            **parts
-        )
-        return self.val
-
-    def __str__(self):
-        return self.val
-
-    def __call__(self):
-        return self.val
-
 class Transpiler:
     templates = dict.fromkeys([
         'expr', 'assign', 'if', 'elif', 'else',
@@ -87,11 +36,11 @@ class Transpiler:
         'break', 'continue', 'import', 'body',
         'name', 'Int', 'Float', 'Bool', 'Str',
         'bin_op', 'un_op', 'callfunc', 'getattr',
-        'callmethod', 'arg', 'list', 'tuple',
-        'dict', 'index', 'slice', 'new_var', 'main',
+        'callmethod', 'arg', 'List', 'Tuple',
+        'Dict', 'index', 'slice', 'new_var', 'Main',
         'global', 'nonlocal', 'assignment_by_key',
         'class', 'init', 'attr', 'method', 'new',
-        'set_attr'
+        'set_attr', 'new_attr', 'new_key'
     ], '') | {'types': {}, 'operators': {}}
     elements = {}
 
@@ -114,11 +63,12 @@ class Transpiler:
             '__main__.int': {'type': types.Type('int')},
             '__main__.float': {'type': types.Type('float')},
         }
-    def node(self, tmp=None, parts={}, type=None, ctx=None):
-        return _node(
+    def node(self, tmp=None, parts={}, type=None, ctx=None, own=None, obj=None):
+        return node._node(
             env=self, tmp=tmp,
             parts=parts, type=type,
-            ctx=ctx, nl=self.nl
+            ctx=ctx, nl=self.nl,
+            own=own, obj=obj
         )
 
     def add_templ(self, templates):
@@ -137,7 +87,7 @@ class Transpiler:
 
     def visit(self, tree, **kw):
         if type(tree) not in self.elements:
-            return None
+            return self.node()
         node = self.elements.get(type(tree))(
             self, tree,
             **(kw or {})
@@ -145,7 +95,8 @@ class Transpiler:
         node.ast = tree
         return node
 
-    def generate(self, code, lang='py', mode='main'):
+    def generate(self, code, lang='py', mode='Main'):
+        
         if lang == 'py':
             astree = ast.parse(code)
         elif lang == 'hy':
@@ -155,14 +106,17 @@ class Transpiler:
             from coconut.convenience import parse, setup
             setup(target='sys')
             astree = ast.parse(parse(code, 'block'))
+        body = []
         body = list(map(self.visit, astree.body))
         for block in body:
             if not block:
                 continue
             self.strings.extend(block.render().split('\n'))
-        if 'main' in self.templates and mode == 'main':
-            code = self.templates.get('main').render(
-                body=self.strings,
+        import pprint;pprint.pprint(self.variables)
+        if isinstance(self.templates['Main'], Template) and mode == 'Main':
+            code = self.templates.get('Main').render(
+                _body=self.strings,
+                body='\n'.join(self.strings),
                 env=self
             )
         else:

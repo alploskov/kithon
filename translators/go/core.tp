@@ -11,7 +11,13 @@ operators:
   "not": "!"
   "is": "=="
 
-bin_op: "({{left}} {{op}} {{right}})"
+bin_op: |-
+  {%- if parent.name == 'bin_op' -%}
+    ({{left}} {{op}} {{right}})
+  {%- else -%}
+    {{left}} {{op}} {{right}}
+  {%- endif -%}
+
 un_op: "{{op}}{{el()}}"
 
 callfunc: "{{func()}}({{args|join(', ')}})"
@@ -19,8 +25,8 @@ getattr: "{{obj()}}.{{attr}}"
 callmethod: "{{obj()}}.{{attr}}({{args|join(', ')}})"
 arg: "{{name}} {{_type}}"
 
-list: "{{_type}}{{'{'}}{{ls|join(', ')}}}"
-dict: "{{_type}}{{'{'}}{%for item in keys_val%}{{item[0]}}: {{item[1]}},{%endfor%}}"
+List: "{{_type}}{{'{'}}{{ls|join(', ')}}}"
+Dict: "{{_type}}{{'{'}}{%for item in keys_val%}{{item[0]}}: {{item[1]}},{%endfor%}}"
 
 index: |-
   {%- if isinstance(obj.type, list) -%}
@@ -48,7 +54,7 @@ else: "else {{body}}"
 
 func: "func {{name}}({{args|map(attribute='val')|join(', ')}}) {{ret_type}} {{body()}}"
 
-return: "return {{value()}}"
+return: "return {{value}}"
 
 while: "for {{condition()}} {{body()}}"
 
@@ -81,7 +87,7 @@ types:
   list: "[]{{el_type}}"
   str: string
   float: float64
-  dict: "map[{{key_type}}]{{val_type}}"
+  dict: "map[{{key_type}}]{{el_type}}"
 
 body: |-
   {{'{'}}{%for st in body%}
@@ -108,7 +114,7 @@ method: |-
 attr: "{{var}} {{_type}}"
 new: "init_{{func}}({{args|join(', ')}})"
 
-main: |-
+Main: |-
   package main
   {% if env.used %}  
   import ({%- for used in env.used -%}
@@ -123,4 +129,4 @@ main: |-
   }
   {% endif %}
   {% endif %}
-  {{body|join('\n')}}
+  {{body}}

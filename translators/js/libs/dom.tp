@@ -1,12 +1,12 @@
 event:
   args: [el, event_name, fun]
   code: "{{el}}.addEventListener({{event_name}}, {{fun}})"
-  rettype: 'None'
+  ret_type: 'None'
 
 check:
   args: [id]
   code: "document.getElementById({{id}}).checked"
-  rettype: bool
+  ret_type: bool
 
 url_param:
   alt_name: "new URL(window.location.href).searchParams.get"
@@ -14,15 +14,15 @@ url_param:
 
 get_by_id:
   alt_name: "document.getElementById"
-  rettype: dom
+  ret_type: "dom"
 
 get_by_class:
   alt_name: "document.getElementsByClassName"
-  rettype: "list[dom]"
+  ret_type: "list[dom]"
 
 get_by_tagname:
   alt_name: "document.getElementsByTagName"
-  rettype: "list[dom]"
+  ret_type: "list[dom]"
 
 dom.<=.any:
   code: "{{left}}.innerHTML = {{right}}"

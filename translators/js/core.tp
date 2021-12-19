@@ -19,9 +19,9 @@ getattr: "{{obj}}.{{attr}}"
 callmethod: "{{obj}}.{{attr}}({{args|join(', ')}})"
 arg: "{{name}}"
 
-list: "[{{ls|join(', ')}}]"
-tuple: "[{{ls|join(', ')}}]"
-dict: >-
+List: "[{{ls|join(', ')}}]"
+Tuple: "[{{ls|join(', ')}}]"
+Dict: >-
   new Map([
   {%-set _dict = []-%}
   {%-for kw in keys_val-%}
@@ -32,44 +32,47 @@ dict: >-
 index: >-
   {{obj}}
   {%- if isinstance(obj.type, list) -%}[
-    {%- if get_val(key) != 'unknown' -%}
-      {%- if get_val(key) < 0 -%}
+     {%- if key < 0 -%}
         {{obj}}.length+{{key}}
-      {%-else-%}
+     {%- elif key >= 0 -%}
         {{key}}
-      {%- endif -%}
-    {%- else -%}
+     {%- else -%}
       ({{key}}<0)?({{obj}}.length+{{key}}):({{key}})
     {%-endif-%}]
   {%- elif isinstance(obj.type, dict) -%}
+    {%- if ctx == 'load' -%}
     .get({{key}})|| (()=>{throw "key error"})()
+    {%-else-%}
+    [{{key}}]
+    {%-endif-%}
   {%- endif -%}
 
 slice: |-
-  {%- if step() == '1' -%}
+  {%- if step == 1 -%}
     {{obj}}.slice({{low}}, {{up}})
-  {%-elif step() != '0'-%}
-    {%- if get_val(step) != 'unknown' -%}
-      {%- if get_val(step) < 0 -%}
+  {%- elif step != 0 -%}
+    {%- if step < 0 -%}
         [...{{obj}}].reverse()
-      {%- else -%}
+    {%- elif step > 0 -%}
         {{obj}}
-      {%- endif -%}
     {%- else -%}
       ({{step}}<0?[...{{obj}}].reverse():{{obj}})
     {%- endif -%}
     {%-if low() != '' or up() != ''-%}
       .slice(...({{step}}<0?[{{up}}, {{low}}]:[{{low}}, {{up}}]))
     {%-endif-%}
-    {%-if step() != '-1'-%}
+    {%-if step != -1-%}
       .filter((_,i)=>(i%{{step}})==0)
     {%-endif-%}
   {%-endif-%}
 
 expr: "{{value}};"
+
 assign: &assign "{{var}} = {{value}};"
 set_attr: *assign
+new_attr: *assign
 assignment_by_key: *assign
+new_key: *assign
 new_var: "let {{var}} = {{value}};"
 
 if: "if ({{condition}}) {{body}} {{els}}"
@@ -89,8 +92,14 @@ for: >-
   {{body}}
 
 c_like_for: >-
-  for (let {{var}} = {{start}};
-  ({{step}}<0?{{var}}>{{finish}}:{{var}}<{{finish}});
+  for (let {{var}} = {{start}}; 
+  {%- if step < 0-%}
+    {{var}} > {{finish}}
+  {%- elif step > 0 -%}
+    {{var}} < {{finish}}
+  {%- else -%}
+    ({{step}}<0?{{var}}>{{finish}}:{{var}}<{{finish}})
+  {%- endif -%};
   {{var}} += {{step}})
   {{body}}
 
@@ -99,10 +108,10 @@ continue: "continue;"
 
 class: |-
   class {{name}} {{'{'}}
-  {{' '*4*nl}}{{attrs|join('\n'+' '*4*(nl))}}
-  {{' '*4*nl}}{{init}}
-  {{' '*4*nl}}{{methods|join('\n'+' '*4*(nl))}}
-  {{' '*4*(nl-1)}}}
+  {{'    '*nl}}{{attrs|join('\n'+'    '*(nl))}}
+  {{'    '*nl}}{{init}}
+  {{'    '*nl}}{{methods|join('\n'+'    '*(nl))}}
+  {{'    '*(nl-1)}}}
 
 init: "constructor({{(args[1:])|join(', ')}}) {{body}}"
 method: "{{name}}({{(args[1:])|join(', ')}}) {{body}}"
@@ -114,8 +123,3 @@ body: |-
   {{'{'}}{%for st in body%}
   {{'    '*nl}}{{st}}{%endfor%}
   {{'    '*(nl-1)}}}
-
-main: |-
-  {{';(function(){'}}{%for string in body%}
-  {{string}}{%endfor%}
-  })();

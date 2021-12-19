@@ -2,10 +2,16 @@ print:
   code: |-
     {{-env.use('mod_fmt')-}}
     fmt.Println({{args|join(', ')}})
-  rettype: "None"
+  ret_type: "None"
 
 str:
   code: |-
     {{-env.use('mod_fmt')-}}
     fmt.Sprintf("%v", {{args[0]}})
-  rettype: "str"
+  ret_type: "str"
+
+main:
+  code: ""
+
+len:
+  ret_type: int

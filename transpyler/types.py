@@ -43,28 +43,28 @@ class Func:
 @dataclass
 class Dict:
     key_type: Union[typing.Any, str] = 'generic'
-    val_type: Union[typing.Any, str] = 'generic'
+    el_type: Union[typing.Any, str] = 'generic'
 
     def __str__(self):
-        return f'dict[{self.key_type}]{self.val_type}'
+        return f'dict[{self.key_type}]{self.el_type}'
 
     def render(self, env):
         tmp = env.templates['types'].get('dict')
         if tmp:
             return Template(tmp).render(
                 key_type=type_render(env, self.key_type),
-                val_type=type_render(env, self.val_type)
+                el_type=type_render(env, self.el_type)
             )
         return str(self)
 
     def to_any(self):
-        if self.key_type == self.val_type == 'any':
+        if self.key_type == self.el_type == 'any':
             return 'any'
-        if self.val_type == 'any':
+        if self.el_type == 'any':
             return Dict(to_any(self.key_type), 'any')
         if self.key_type == 'any':
-            return Dict('any', to_any(self.val_type))
-        return Dict(self.key_type, to_any(self.val_type))
+            return Dict('any', to_any(self.el_type))
+        return Dict(self.key_type, to_any(self.el_type))
 
 @dataclass
 class Module:
@@ -101,20 +101,6 @@ def to_any(_type):
         return _type.to_any()
     return 'any'
 
-
-def type_eval(type_code, parts):
-    """
-    Generate type by dict form config
-    """
-    _type = eval(
-        type_code,
-        types | parts | {'int': 'int'}
-    ) or 'None'
-    if isinstance(_type, type):
-        _type = str(_type)[8:-2]
-    return _type
-
-
 def element_type(element):
     _type = element.type
     if isinstance(_type, List):
@@ -122,3 +108,29 @@ def element_type(element):
     return _type
 
 types = {'list': List, 'dict': Dict}
+
+def type_eval(type_code, parts):
+    """
+    Generate type from macros
+    """
+    if type_code.startswith('class_'):
+        return type_code[6:]
+    if type_code == 'module':
+        return 'module'
+    try:
+        _type = eval(
+            type_code,
+            types | parts | {'int': 'int'}
+        ) or 'None'
+    except:
+        return type_code
+    if isinstance(_type, type):
+        _type = str(_type)[8:-2]
+    return _type
+
+# matrix:
+#   attrs:
+#     el_type: generic
+#   str:
+#     matrix[{{el_type}}]
+#

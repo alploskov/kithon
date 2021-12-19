@@ -18,5 +18,4 @@ def get_ctx(self):
 def previous_ns(self):
     if self.namespace == '__main__':
         return '__main__'
-    print(self.namespace)
     return self.namespace[:self.namespace.rfind('.')]

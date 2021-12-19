@@ -1,6 +1,6 @@
 import ast
 import _ast
-from .types import element_type
+from .types import element_type, type_render
 from .core import visitor
 from .utils import get_ctx, previous_ns
 
@@ -20,10 +20,12 @@ def assign(self, tree: _ast.Assign, _type=None):
     _type = _type or value.type
     if isinstance(variable, _ast.Name):
         tmp = 'assign'
-        full_name = f'{self.namespace}.{variable.id}'
+        full_name = var.own or f'{self.namespace}.{variable.id}'
     elif isinstance(variable, _ast.Subscript):
         tmp = 'assignment_by_key'
-        full_name = f'{self.namespace}.{variable.value.id}'
+        full_name = var.own
+        var.obj.type.el_type = _type
+        _type = var.obj.type
     elif isinstance(variable, _ast.Attribute):
         tmp = 'set_attr'
         obj_name = variable.value.id
@@ -32,10 +34,16 @@ def assign(self, tree: _ast.Assign, _type=None):
         else:
             full_name = f'{self.namespace}.{obj_name}'
     if full_name not in self.variables:
-        tmp = 'new_var'
-        if get_ctx(self):
-            tmp = 'attr'
-        var.parts['own'] = full_name
+        if tmp == 'assign':
+            if self.variables[self.namespace]['type'] == 'class':
+                tmp = 'attr'
+            else:
+                tmp = 'new_var'
+        elif tmp == 'assignment_by_key':
+            tmp = 'new_key'
+        elif tmp == 'set_attr':
+            tmp = 'new_attr'
+        var.own = full_name
         self.variables.update({full_name: {
             'type': _type,
             'own': full_name,
@@ -43,10 +51,6 @@ def assign(self, tree: _ast.Assign, _type=None):
         }})
     else:
         self.variables[full_name]['immut'] = False
-        if tmp in ('assign', 'set_attr'):
-            self.variables[full_name]['type'] = _type
-        elif tmp == 'assignment_by_key':
-            self.variables[full_name]['type'].el_type = _type
     return self.node(
         parts={
             'var': var,
@@ -170,16 +174,20 @@ def define_function(self, tree: _ast.FunctionDef):
     ret_t = getattr(tree.returns, 'id', '')
     self.variables.update({self.namespace: {
         'type': 'func',
-        'ret_type': ret_t
+        'ret_type': ret_t,
+        'own': self.namespace,
     }})
+    _body = expression_block(self, tree.body)
+    ret_t = ret_t or self.variables[self.namespace]['ret_type']
     func = self.node(
         tmp=tmp,
         type='func',
         parts={
             'name': name,
             'args': args,
-            'ret_type': ret_t,
-            'body': expression_block(self, tree.body),
+            'ret_type': type_render(self, ret_t),
+            'body': _body,
+            'own': self.namespace,
         } | parts
     )
     self.namespace = self.namespace[:-len(name)-1]
@@ -206,7 +214,8 @@ def define_class(self, tree: _ast.ClassDef):
     name = tree.name
     self.namespace += f'.{name}'
     self.variables.update({self.namespace: {
-        'type': 'class'
+        'type': 'class',
+        'own': self.namespace
     }})
     self.nl += 1
     node = self.node(
@@ -229,7 +238,7 @@ def define_class(self, tree: _ast.ClassDef):
             else:
                 node.parts['methods'].append(field)
     self.nl -= 1
-    self.namespace = self.namespace[:-len(name)-1]
+    self.namespace = self.namespace[:-len(name) - 1]
     return node
 
 def overload(function, args_types):

@@ -17,7 +17,7 @@ def set_type(obj, _type='None'):
 
 
 def set_as_mut(obj):
-    obj.env.variables[obj.parts['own']]['immut'] = False
+    obj.env.variables[obj.own]['immut'] = False
 
 side_effects = {
     'set_el_type': set_el_type,

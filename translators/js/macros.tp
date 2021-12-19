@@ -12,16 +12,16 @@ round:
 
 print:
   alt_name: "console.log"
-  rettype: "None"
+  ret_type: "None"
 
 input:
   alt_name: "prompt"
   type: "func"
-  rettype: "str"
+  ret_type: "str"
 
 len:
   code: "{{args[0]}}.length"
-  rettype: int
+  ret_type: int
 
 interval:
   alt_name: "setInterval"
@@ -31,3 +31,12 @@ interval:
 any.//.any:
   code: "Math.floor({{left}}/{{right}})"
   type: "int"
+
+setattr:
+  args: ["obj", "name", "val"]
+  code: |-
+    {%-if parent.name == 'expr'-%}
+      {{obj}}[{{name}}] = {{val}}
+    {%-else-%}
+      (()=>{{obj}}[{{name}}] = {{val}})
+    {%-endif-%}
