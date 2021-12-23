@@ -10,8 +10,14 @@ tpy_gen = typer.Typer()
 tpy_new = typer.Typer()
 
 @tpy_new.command()
-@tpy.command()
-def new():
+@tpy.command('new')
+def new(
+    name: str = typer.Argument(
+        '',
+        metavar='Name',
+        help='Name of new language'
+    ),
+):
     """
     Create template for new language
     """
@@ -52,9 +58,6 @@ def generate(
     """
     Transpile python code into chose language
     """
-    if not(templates or target):
-        typer.echo('You must send at least one template file')
-        raise typer.Abort()
     templates = list(templates)
     if target:
         if os.path.isdir(target):

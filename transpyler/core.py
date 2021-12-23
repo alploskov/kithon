@@ -2,7 +2,7 @@ import ast
 import _ast
 import yaml
 from jinja2 import Template
-from . import types, node
+from . import types, node, transpiler_templates
 
 
 def visitor(func):
@@ -33,18 +33,7 @@ class Transpiler:
     elements = {}
 
     def __init__(self, templates):
-        self.templates = dict.fromkeys([
-            'expr', 'assign', 'if', 'elif', 'else',
-            'func', 'return', 'while', 'for', 'c_like_for',
-            'break', 'continue', 'import', 'body',
-            'name', 'Int', 'Float', 'Bool', 'Str',
-            'bin_op', 'un_op', 'callfunc', 'getattr',
-            'callmethod', 'arg', 'List', 'Tuple',
-            'Dict', 'index', 'slice', 'new_var', 'Main',
-            'global', 'nonlocal', 'assignment_by_key',
-            'class', 'init', 'attr', 'method', 'new',
-            'set_attr', 'new_attr', 'new_key'
-        ], '') | {'types': {}, 'operators': {}}
+        self.templates =  transpiler_templates.default
         self.default_state()
         self.add_templ(templates)
 
@@ -76,8 +65,10 @@ class Transpiler:
             templates.expandtabs(2),
             Loader=yaml.FullLoader
         )
+        if not templates:
+            return
         for name, template in templates.items():
-            if self.templates.get(name) == '':
+            if isinstance(template, str):
                 templates[name] = Template(template)
             elif 'code' in template:
                 templates[name]['code'] = Template(
