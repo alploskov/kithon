@@ -1,5 +1,6 @@
 import ast
 import _ast
+from collections import defaultdict
 import yaml
 from jinja2 import Template
 from . import types, node, transpiler_templates
@@ -41,8 +42,14 @@ class Transpiler:
         self.used.add(name)
         return ''
 
+    def get_temp_var(self, base_name="temp"):
+        """Get a unique temporary variable name."""
+        self.temp_var_counts[base_name] += 1
+        return f'{base_name}_{self.temp_var_counts[base_name]}'
+
     def default_state(self):
         self.strings = []
+        self.temp_var_counts = defaultdict(int)
         self.used = set([])
         self.nl = 0
         self.namespace = '__main__'
@@ -52,6 +59,7 @@ class Transpiler:
             '__main__.int': {'type': types.Type('int')},
             '__main__.float': {'type': types.Type('float')},
         }
+
     def node(self, tmp=None, parts={}, type=None, ctx=None, own=None, obj=None):
         return node._node(
             env=self, tmp=tmp,
@@ -86,8 +94,7 @@ class Transpiler:
         node.ast = tree
         return node
 
-    def generate(self, code, lang='py', mode='Main'):
-        
+    def generate(self, code, lang='py', mode='Main'):        
         if lang == 'py':
             astree = ast.parse(code)
         elif lang == 'hy':

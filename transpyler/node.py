@@ -1,9 +1,9 @@
 import ast
 import _ast
-from . import templ_utils, types
+from . import types
 
 
-class _node():
+class _node:
     def __init__(self, env=None, tmp=None, parts={}, type=None, ctx=None, nl=1, own=None, obj=None):
         if isinstance(tmp, str):
             self.name = tmp
@@ -20,8 +20,11 @@ class _node():
         self.parent = None
         self.own = own
         self.obj = obj
+        self.code_before = []
+        self.prefix = '    '
 
     def render(self):
+        _get_val = lambda el: el.render() if isinstance(el, _node) else el
         parts = self.parts
         if parts.get('own'):
             _type = self.env.variables[parts['own']]['type']
@@ -33,21 +36,37 @@ class _node():
                 part.render()
             elif isinstance(part, list):
                 for part_el in part:
-                    if not isinstance(part_el, (str, tuple)):
+                    if isinstance(part_el, _node):
                         part_el.parent = self
                         part_el.render()
-        if not self.tmp:
-            return ''
-        self.val = self.tmp.render(
-            env=self.env,
-            nl=self.nl,
-            parent=self.parent,
-            _type=types.type_render(self.env, _type),
-            isinstance=isinstance,
-            **types.types,
-            **templ_utils.utils,
-            **parts
-        )
+        if self.tmp:
+            self.val = self.tmp.render(
+                env=self.env,
+                node=self,
+                nl=self.nl,
+                parent=self.parent,
+                _type=types.type_render(self.env, _type),
+                isinstance=isinstance,
+                **types.types,
+                **parts
+            )
+        if self.name in [
+            'expr', 'assign', 'set_attr',
+            'new_attr', 'assignment_by_key',
+            'new_key', 'new_var', 'if',
+            'elif', 'else', 'func',
+            'return', 'while', 'for',
+            'c_like_for', 'class', 'init',
+            'method', 'attr', 'new'
+        ]:
+            if self.code_before:
+                before = _get_val(self.code_before[0]) + '\n'
+                for part in self.code_before[1:]:
+                    before += self.prefix * self.nl
+                    before += _get_val(part) + '\n'
+                self.val = before +  self.prefix * self.nl + self.val
+        elif self.parent:
+            self.parent.code_before.extend(self.code_before)
         return self.val
 
     def is_const(node):
@@ -61,6 +80,14 @@ class _node():
         if not self.is_const():
             return 'unknown'
         return ast.literal_eval(self.ast)
+
+    def add_code_before(self, code):
+        self.code_before.append(code)
+        return ''
+
+    def del_code_before(self, where='all'):
+        self.code_before = []
+        return ''
 
     def __str__(self):
         return self.val
@@ -109,4 +136,3 @@ class _node():
                 return self.get_val() != other.get_val()
             return self.get_val() != other
         return False
-    

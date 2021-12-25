@@ -33,8 +33,8 @@ conf = {
     'new_var': '{{var}} = {{value}}',
 
     'if': "if {{condition}}{{body}}{%if els%}{{'\n'}}{{els}}{%endif%}",
-    'elif': "elif {{condition}}{{body}}{{'\n'}}{{els}}",
-    'else': "else{{body}}",
+    'elif': "{{'    '*nl}}elif {{condition}}{{body}}{{'\n'}}{{els}}",
+    'else': "{{'    '*nl}}else{{body}}",
 
     'func': "{{'\n'}}def {{name}}({{args|join(', ')}}){{body}}{{'\n'}}",
 
