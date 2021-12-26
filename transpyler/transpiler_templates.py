@@ -6,15 +6,19 @@ conf = {
     'Int': '{{val}}',
     'Float': '{{val}}',
     'Bool': '{{val}}',
-    'Str': "'{{val}}'",
+    'Str': "\"{{val}}\"",
 
-    'bin_op': '({{left}} {{op}} {{right}})',
+    'bin_op': '''{%-if parent.name == "bin_op"-%}
+({{left}} {{op}} {{right}})
+{%-else-%}
+{{left}} {{op}} {{right}}
+{%-endif-%}''',
     'un_op': '{{op}}({{el}})',
 
     'callfunc': "{{func}}({{args|join(', ')}})",
     'getattr': "{{obj}}.{{attr}}",
     'callmethod': "{{obj}}.{{attr}}({{args|join(', ')}})",
-    'arg': '{{name}}: {{_type}}',
+    'arg': '{{name}}',
 
     'List': "[{{ls|join(', ')}}]",
     'Tuple': "({{ls|join(', ')}})",
@@ -37,7 +41,7 @@ conf = {
     'else': "{{'    '*nl}}else{{body}}",
 
     'func': "{{'\n'}}def {{name}}({{args|join(', ')}}){{body}}{{'\n'}}",
-
+    'lambda': 'lambda {{args|join(", ")}}: {{body}}',
     'return': "return {{value}}",
 
     'while': "while {{condition}} {{body}}",
@@ -59,15 +63,32 @@ conf = {
 
     'body': ''':{%for st in body%}
 {{'    '*nl}}{{st}}{%endfor%}''',
-
     'global': 'global {{vars|join(", ")}}',
     'nonlocal': 'nonlocal {{vars|join(", ")}}',
     'import': '',
     'Main': '{{_body|join("\n")}}'
 }
 
-default = {name: Template(code) for name, code in conf.items()} | {
-    'types': {},
-    'operators': {},
+macros = {
+    'int': {
+        'type': 'type',
+        'ret_type': 'int'
+    },
+    'str': {
+        'type': 'type',
+        'ret_type': 'str'
+    },
+    'float': {
+        'type': 'type',
+        'ret_type': 'float'
+    },
+    'bool': {
+        'type': 'type',
+        'ret_type': 'bool'
+    }
 }
-
+default = (
+    {name: Template(code) for name, code in conf.items()}
+    | {'types': {},'operators': {}}
+    | macros
+)

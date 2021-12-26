@@ -1,9 +1,4 @@
-name: "{{name}}"
-const: &const "{{val}}"
-Int: *const
-Float: *const
 Bool: "{{val|lower}}"
-Str: "\"{{val}}\""
 
 operators:
   "or": "||"
@@ -11,18 +6,6 @@ operators:
   "not": "!"
   "is": "=="
 
-bin_op: |-
-  {%- if parent.name == 'bin_op' -%}
-    ({{left}} {{op}} {{right}})
-  {%- else -%}
-    {{left}} {{op}} {{right}}
-  {%- endif -%}
-
-un_op: "{{op}}{{el()}}"
-
-callfunc: "{{func()}}({{args|join(', ')}})"
-getattr: "{{obj()}}.{{attr}}"
-callmethod: "{{obj()}}.{{attr}}({{args|join(', ')}})"
 arg: "{{name}} {{_type}}"
 
 List: "{{_type}}{{'{'}}{{ls|join(', ')}}}"
@@ -42,10 +25,6 @@ slice: |-
     {{obj}}[{{low}}:Index({{up}}, len({{obj}}))]
   {%-endif-%}
 
-expr: "{{value}}"
-assign: &assign "{{var}} = {{value}}"
-set_attr: *assign
-assignment_by_key: *assign
 new_var: "{{var}} := {{value}}"
 
 if: "if ({{condition}}) {{body}} {{els}}"
@@ -53,8 +32,6 @@ elif: "else if ({{condition}}) {{body}} {{els}}"
 else: "else {{body}}"
 
 func: "func {{name}}({{args|map(attribute='val')|join(', ')}}) {{ret_type}} {{body()}}"
-
-return: "return {{value}}"
 
 while: "for {{condition()}} {{body()}}"
 
@@ -79,9 +56,6 @@ c_like_for: >-
   {%- endif -%}
   {{' '}}{{var()}} += {{step()}}
   {{body()}}
-
-break: "break;"
-continue: "continue;"
 
 types:
   list: "[]{{el_type}}"
@@ -111,6 +85,7 @@ method: |-
   func (self {{class_name}}) {{name}}({{(args[1:])|join(', ')}}) {{ret_type}} {{'{'}}
   {{' '*4*(nl)}}{{body.parts.body|join('\n'+' '*4*(nl-1))}}
   }
+
 attr: "{{var}} {{_type}}"
 new: "init_{{func}}({{args|join(', ')}})"
 

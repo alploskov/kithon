@@ -21,7 +21,7 @@ Status
 ------
 
 The project is under active development.
-Now the ability to add translation of basic python constructs into any other language(in this repo js only) is supported.
+Now the ability to add translation of basic python constructs into any other language(in this repo js and go only) is supported.
 
 There are plans to develop a number of supported languages and expand support for python syntax
 

@@ -54,10 +54,7 @@ class Transpiler:
         self.nl = 0
         self.namespace = '__main__'
         self.variables = {
-            '__main__': {'type': types.Module('__main__')},
-            '__main__.str': {'type': types.Type('str')},
-            '__main__.int': {'type': types.Type('int')},
-            '__main__.float': {'type': types.Type('float')},
+            '__main__': {'type': types.Module('__main__')}
         }
 
     def node(self, tmp=None, parts={}, type=None, ctx=None, own=None, obj=None):

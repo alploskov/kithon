@@ -1,33 +1,10 @@
-name: "{{name}}"
-const: &const "{{val}}"
-Int: *const
-Float: *const
 Bool: "{{val|lower}}"
-Str: "'{{val}}'"
 
 operators:
   "or": "||"
   "and": "&&"
   "not": "!"
   "is": "==="
-
-bin_op: "({{left}} {{op}} {{right}})"
-un_op: "{{op}}{{el}}"
-
-callfunc: "{{func}}({{args|join(', ')}})"
-getattr: "{{obj}}.{{attr}}"
-callmethod: "{{obj}}.{{attr}}({{args|join(', ')}})"
-arg: "{{name}}"
-
-List: "[{{ls|join(', ')}}]"
-Tuple: "[{{ls|join(', ')}}]"
-Dict: >-
-  new Map([
-  {%-set _dict = []-%}
-  {%-for kw in keys_val-%}
-    {{_dict.append('['+kw|join(', ')+']') or ''}}
-  {%-endfor-%}
-  {{_dict|join(', ')}}])
 
 index: >-
   {{obj}}
