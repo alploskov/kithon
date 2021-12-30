@@ -1,3 +1,4 @@
+import codecs
 import os
 import sys
 from typing import List, Optional
@@ -25,7 +26,7 @@ def new(
 @tpy_gen.command()
 @tpy.command('gen')
 def generate(
-    _file: typer.FileText = typer.Argument(
+    file_name: str = typer.Argument(
         None,
         metavar='FILE',
         help='Name of file for transpilation'
@@ -66,14 +67,20 @@ def generate(
                     open(f'{dirr}/{f}', 'r') \
                     for f in files if f.endswith('.tp')\
                 ]
+    ext = file_name.split('.')[-1]
+    if ext.endswith('x'):
+        ext = ext[:-1]
+        source = open(file_name, 'r', encoding='pyxl').read()
+    else:
+        source = open(file_name, 'r').read()
     input_lang = {
         'py': 'py',
         'python': 'py',
         'hy': 'hy',
         'hylang': 'hy',
         'coco': 'coco',
-        'coconut': 'coconut'
-    }.get(_file.name.split('.')[-1])
+        'coconut': 'coco'
+    }.get(ext)
     transpiler = Transpiler('\n'.join(list(map(lambda t: t.read(), templates))))
-    result = transpiler.generate(_file.read(), lang=input_lang)
+    result = transpiler.generate(source, lang=input_lang)
     print(result, file=out)

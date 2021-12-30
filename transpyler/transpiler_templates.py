@@ -15,11 +15,11 @@ conf = {
 {%-endif-%}''',
     'un_op': '{{op}}({{el}})',
 
-    'callfunc': "{{func}}({{args|join(', ')}})",
+    'callfunc': "{{func}}({{args|join(', ')}}, {{kwargs|join(', ')}})",
     'getattr': "{{obj}}.{{attr}}",
     'callmethod': "{{obj}}.{{attr}}({{args|join(', ')}})",
     'arg': '{{name}}',
-
+    'kwarg': '{{name}}={{value}}',
     'List': "[{{ls|join(', ')}}]",
     'Tuple': "({{ls|join(', ')}})",
     'Dict': "{{'{'}}{%-set _dict = []-%}{%-for kw in keys_val-%}{{_dict.append(+kw|join(', ')+']') or ''}}{%-endfor-%}{{_dict|join(', ')}}])",
@@ -87,8 +87,22 @@ macros = {
         'ret_type': 'bool'
     }
 }
+
+type_inference_rules = {rule: {'type': res} for rule, res in {
+    'int.+.int':   'int',
+    'int.-.int':   'int',
+    'int./.int':   'float',
+    'int.*.int':   'int',
+    'int.//.int':  'int',
+    'int.%.int':   'int',
+    'int.<<.int': 'int',
+    'int.>>.int': 'int',
+    'int.|.int': 'int'
+}.items()}
+
 default = (
     {name: Template(code) for name, code in conf.items()}
     | {'types': {},'operators': {}}
     | macros
+    | type_inference_rules
 )

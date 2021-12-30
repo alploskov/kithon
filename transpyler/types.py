@@ -18,6 +18,7 @@ class List:
                 el_type=type_render(env, self.el_type)
             )
         return str(self)
+
     def to_any(self):
         if self.el_type == 'any':
             return 'any'
@@ -25,11 +26,13 @@ class List:
 
 @dataclass
 class Func:
-    args: tuple[Union[typing.Any, str]] = ()
-    ret_type: Union[typing.Any, str] = 'any'
+    def __init__(self, name, args, ret_type):
+        self.name = name
+        self.args = tuple([a.type for a in args])
+        self.ret_type = ret_type
 
     def __str__(self):
-        return f'func[{self.args}]{self.ret_type}'
+        return f'func[{", ".join(self.args)}]{self.ret_type}'
 
     def render(self, env):
         tmp = env.templates['types'].get('func')

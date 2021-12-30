@@ -4,7 +4,6 @@ from itertools import product
 import _ast
 from jinja2 import Template
 from . import types
-from .utils import getvar, get_ctx
 from .core import visitor, op_to_str
 from .side_effects import side_effect
 
@@ -112,7 +111,7 @@ def _bin_op(self, left, right, op):
         type=_type
     )
 
-def match_args(macro, args):
+def match_args(macro, args, kwargs):
     """
     Match args names with their values
     """
@@ -121,7 +120,16 @@ def match_args(macro, args):
     return dict(list(zip(macro['args'], args)))
 
 @visitor
-def attribute(self, tree: _ast.Attribute, args=None, call=False):
+def kwarg(self, tree: _ast.keyword):
+    value = self.visit(tree.value)
+    return self.node(
+        tmp='kwarg',
+        type=value.type,
+        parts={'name': tree.arg, 'value': value}
+    )
+
+@visitor
+def attribute(self, tree: _ast.Attribute, args=None, kwargs=None, call=False):
     tmp = 'callmethod' if call else 'getattr'
     obj = self.visit(tree.value)
     attr = tree.attr
@@ -146,7 +154,7 @@ def attribute(self, tree: _ast.Attribute, args=None, call=False):
         parts['attr'] = macro.get('alt_name', attr)
         if 'code' in macro:
             tmp = Template(macro['code'])
-        parts.update(match_args(macro, args))
+        parts.update(match_args(macro, args, kwargs))
         side_effect(macro, parts)
         _type = types.type_eval(
             macro.get('ret_type' if call else 'type', _type),
@@ -163,20 +171,25 @@ def attribute(self, tree: _ast.Attribute, args=None, call=False):
 
 @visitor
 def function_call(self, tree: _ast.Call):
-    args = [self.visit(a) for a in tree.args]
+    args = list(map(self.visit, tree.args))
+    kwargs = list(map(self.visit, tree.keywords))
     if isinstance(tree.func, _ast.Attribute):
-        return self.attribute(tree.func, args=args, call=True)
+        return self.attribute(tree.func, args=args, kwargs=kwargs, call=True)
     func = self.visit(tree.func)
-    ret_type = self.variables.get(func.own, {}).get('ret_type', 'None')
+    ret_type = getattr(func.type, 'ret_type', 'None')
     tmp = 'callfunc'
-    parts = {'func': func, 'args': args}
-    if func.type == 'class':
-        tmp = 'new'
-        ret_type = func.own
+    parts = {'func': func, 'args': args, 'kwargs': kwargs}
+    macro = None
     if (isinstance(tree.func, _ast.Name)
         and tree.func.id in self.templates):
         macro = self.templates.get(tree.func.id)
-        parts.update(match_args(macro, args))
+    elif str(func.type) in self.templates:
+        macro = self.templates.get(str(func.type))
+    elif func.type == 'class':
+        tmp = 'new'
+        ret_type = func.own 
+    if macro:
+        parts.update(match_args(macro, args, kwargs))
         tmp = macro.get('code', 'callfunc')
         side_effect(macro, parts)
         ret_type = types.type_eval(
@@ -263,6 +276,8 @@ def slice(self, tree: _ast.Subscript):
 @visitor
 def name(self, tree: _ast.Name):
     _name = tree.id
+    if _name.startswith('x_'):
+        _name = _name[2:]
     _type = 'None'
     ctx = {
         _ast.Store: 'store',
@@ -270,17 +285,17 @@ def name(self, tree: _ast.Name):
     }.get(type(tree.ctx))
     if _name == 'self':
         _name = self.templates.get('self', 'self')
-        var_info = self.variables[get_ctx(self)]
+        var_info = self.variables[self.get_ctx()]
     else:
-        var_info = getvar(self, _name)
+        var_info = self.getvar(_name)
     if var_info:
         _type = var_info['type']
     elif _name in self.templates:
-        macr = self.templates[_name]
-        _type = macr.get('type', _type)
+        macro = self.templates[_name]
+        _type = macro.get('type', _type)
         if _type == 'module':
             _type = types.Module(_name)
-        _name = macr.get('alt_name', _name)
+        _name = macro.get('alt_name', _name)
     return self.node(
         type=_type,
         tmp='name',

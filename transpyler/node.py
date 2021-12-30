@@ -25,12 +25,11 @@ class _node:
 
     def render(self):
         _get_val = lambda el: el.render() if isinstance(el, _node) else el
-        parts = self.parts
-        if parts.get('own'):
-            _type = self.env.variables[parts['own']]['type']
+        if self.own and self.own in self.env.variables:
+            _type = self.env.variables[self.own]['type']
         else:
             _type = self.type
-        for part in parts.values():
+        for part in self.parts.values():
             if isinstance(part, _node):
                 part.parent = self
                 part.render()
@@ -48,7 +47,7 @@ class _node:
                 _type=types.type_render(self.env, _type),
                 isinstance=isinstance,
                 **types.types,
-                **parts
+                **self.parts
             )
         if self.name in [
             'expr', 'assign', 'set_attr',
@@ -89,11 +88,19 @@ class _node:
         self.code_before = []
         return ''
 
+    def inc_nl(self):
+        self.nl += 1
+        return ''
+
+    def dec_nl(self):
+        self.nl -= 1
+        return ''
+
     def __str__(self):
         return self.val
 
     def __call__(self):
-        return self.val
+        return self.render()
 
     def __gt__(self, other):
         if self.get_val() != 'unknown':

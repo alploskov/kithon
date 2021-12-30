@@ -1,8 +1,7 @@
 import ast
 import _ast
-from .types import element_type, type_render
+from .types import element_type, type_render, Func
 from .core import visitor
-from .utils import get_ctx, previous_ns
 
 
 @visitor
@@ -30,7 +29,7 @@ def assign(self, tree: _ast.Assign, _type=None):
         tmp = 'set_attr'
         obj_name = variable.value.id
         if obj_name == 'self':
-            full_name = f'{get_ctx(self)}.{variable.attr}'
+            full_name = f'{self.get_ctx()}.{variable.attr}'
         else:
             full_name = f'{self.namespace}.{obj_name}'
     if full_name not in self.variables:
@@ -173,21 +172,20 @@ def define_function(self, tree: _ast.FunctionDef):
     args = list(map(self.visit, tree.args.args))
     ret_t = getattr(tree.returns, 'id', '')
     self.variables.update({self.namespace: {
-        'type': 'func',
-        'ret_type': ret_t,
+        'type': Func(name, args, ret_t),
         'own': self.namespace,
     }})
     _body = expression_block(self, tree.body)
-    ret_t = ret_t or self.variables[self.namespace]['ret_type']
+    ret_t = ret_t or self.variables[self.namespace]['type'].ret_type
     func = self.node(
         tmp=tmp,
-        type='func',
+        type=Func(name, args, ret_t),
+        own=self.namespace,
         parts={
             'name': name,
             'args': args,
             'ret_type': type_render(self, ret_t),
             'body': _body,
-            'own': self.namespace,
         } | parts
     )
     self.namespace = self.namespace[:-len(name)-1]
@@ -247,7 +245,7 @@ def overload(function, args_types):
 @visitor
 def ret(self, tree: _ast.Return):
     val = self.visit(tree.value)
-    self.variables[self.namespace]['ret_type'] = val.type
+    self.variables[self.namespace]['type'].ret_type = val.type
     return self.node(
         tmp='return',
         parts={'value': val}
@@ -269,7 +267,7 @@ def _nonlocal(self, tree: _ast.Nonlocal):
     for name in tree.names:
         full_name = f'{self.namespace}.{name}'
         self.variables.update({
-            full_name: self.variables[f'{previous_ns(self)}.{name}']
+            full_name: self.variables[f'{self.previous_ns()}.{name}']
         })
     return self.node(
         tmp='nonlocal',
