@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import typing
-from typing import Union
+from typing import Union, Any
 from jinja2 import Template
 
 
@@ -25,10 +25,26 @@ class List:
         return List(to_any(self.el_type))
 
 @dataclass
+class Tuple:
+    el_type: tuple[Any] = ()
+    els_types: Any = None
+
+    def __str__(self):
+        return f'tuple[{", ".join(self.els_types)}]'
+
+    def render(self, env):
+        tmp = env.templates['types'].get('tuple')
+        if tmp:
+            return Template(tmp).render(
+                els_types=type_render(env, self.els_types)
+            )
+        return str(self)
+
+@dataclass
 class Func:
     def __init__(self, name, args, ret_type):
         self.name = name
-        self.args = tuple([a.type for a in args])
+        self.args = tuple(a.type for a in args)
         self.ret_type = ret_type
 
     def __str__(self):
@@ -110,12 +126,15 @@ def element_type(element):
         return _type.el_type
     return _type
 
-types = {'list': List, 'dict': Dict}
+types = {'list': List, 'dict': Dict, 'tuple': Tuple}
 
-def type_eval(type_code, parts):
+def type_eval(type_code, parts={}):
     """
     Generate type from macros
     """
+    if isinstance(type_code, list):
+        _types = tuple(map(type_eval, type_code))
+        return Tuple(tuple(set(_types)), _types)
     if type_code.startswith('class_'):
         return type_code[6:]
     if type_code == 'module':
@@ -131,6 +150,7 @@ def type_eval(type_code, parts):
         _type = str(_type)[8:-2]
     return _type
 
+# creating new types in config
 # matrix:
 #   attrs:
 #     el_type: generic

@@ -1,25 +1,29 @@
 import ast
 import _ast
+from jinja2 import Template
 from . import types
 
 
 class _node:
-    def __init__(self, env=None, tmp=None, parts={}, type=None, ctx=None, nl=1, own=None, obj=None):
-        if isinstance(tmp, str):
+    def __init__(self, env=None, tmp=None, parts={}, type=None, ctx=None, nl=1, own=None):
+        if tmp in env.templates:
             self.name = tmp
             self.tmp = env.templates.get(tmp)
         else:
             self.name = 'unknown'
-            self.tmp = tmp
+            if isinstance(tmp, str):
+                self.tmp = Template(tmp)
+            else:
+                self.tmp = tmp
         self.parts = parts
         self.type = type
         self.ctx = ctx
         self.env = env
         self.val = ''
         self.nl = nl
+        self.ast = None
         self.parent = None
         self.own = own
-        self.obj = obj
         self.code_before = []
         self.prefix = '    '
 
@@ -68,11 +72,11 @@ class _node:
             self.parent.code_before.extend(self.code_before)
         return self.val
 
-    def is_const(node):
-        tree = node.ast
+    def is_const(self):
         return (
-            isinstance(tree, _ast.Constant)
-            or isinstance(tree, _ast.UnaryOp) and isinstance(tree.operand, _ast.Constant)
+            isinstance(self.ast, _ast.Constant)
+            or isinstance(self.ast, _ast.UnaryOp)
+            and isinstance(self.ast.operand, _ast.Constant)
         )
 
     def get_val(self):
@@ -84,7 +88,7 @@ class _node:
         self.code_before.append(code)
         return ''
 
-    def del_code_before(self, where='all'):
+    def del_code_before(self):
         self.code_before = []
         return ''
 

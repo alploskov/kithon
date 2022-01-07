@@ -2,7 +2,6 @@ import ast
 import math
 from itertools import product
 import _ast
-from jinja2 import Template
 from . import types
 from .core import visitor, op_to_str
 from .side_effects import side_effect
@@ -134,7 +133,7 @@ def attribute(self, tree: _ast.Attribute, args=None, kwargs=None, call=False):
     obj = self.visit(tree.value)
     attr = tree.attr
     macro = ''
-    parts = {'obj': obj, 'attr': attr, 'args': args}
+    parts = {'obj': obj, 'attr': attr, 'args': args, 'kwargs': kwargs}
     _type = 'None'
     if isinstance(obj.type, types.Module):
         module_name = obj.type.name.split('.')
@@ -143,7 +142,9 @@ def attribute(self, tree: _ast.Attribute, args=None, kwargs=None, call=False):
             module = module[part]
         macro = module.get(attr)
     elif isinstance(obj.type, str) and obj.type in self.variables:
-        _type = self.variables[f'{obj.type}.{attr}']['ret_type' if call else 'type']
+        _type = self.variables[f'{obj.type}.{attr}']['type']
+        if call:
+            _type = _type.ret_type
     if not macro:
         obj_type = obj.type
         macro = self.templates.get(f'{obj_type}.{attr}')
@@ -152,8 +153,7 @@ def attribute(self, tree: _ast.Attribute, args=None, kwargs=None, call=False):
             macro = self.templates.get(f'{obj_type}.{attr}')
     if macro:
         parts['attr'] = macro.get('alt_name', attr)
-        if 'code' in macro:
-            tmp = Template(macro['code'])
+        tmp = macro.get('code', tmp)
         parts.update(match_args(macro, args, kwargs))
         side_effect(macro, parts)
         _type = types.type_eval(
@@ -183,11 +183,11 @@ def function_call(self, tree: _ast.Call):
     if (isinstance(tree.func, _ast.Name)
         and tree.func.id in self.templates):
         macro = self.templates.get(tree.func.id)
-    elif str(func.type) in self.templates:
-        macro = self.templates.get(str(func.type))
     elif func.type == 'class':
         tmp = 'new'
-        ret_type = func.own 
+        ret_type = func.own
+    elif str(func.type) in self.templates:
+        macro = self.templates.get(str(func.type))
     if macro:
         parts.update(match_args(macro, args, kwargs))
         tmp = macro.get('code', 'callfunc')
@@ -212,6 +212,19 @@ def _list(self, tree: _ast.List):
     return self.node(
         tmp='List',
         type=types.List(el_type),
+        parts={'ls': elements}
+    )
+
+@visitor
+def _tuple(self, tree: _ast.Tuple):
+    elements = list(map(self.visit, tree.elts))
+    # Used if we can find out which element we are taking
+    els_types = tuple(e.type for e in elements)
+    # Used in other cases
+    el_type = tuple(set(els_types))
+    return self.node(
+        tmp='Tuple',
+        type=types.Tuple(el_type, els_types),
         parts={'ls': elements}
     )
 
@@ -245,7 +258,6 @@ def slice(self, tree: _ast.Subscript):
     }.get(type(tree.ctx))
     if not isinstance(_slice, _ast.Slice):
         return self.node(
-            obj=obj,
             type=getattr(obj.type, 'el_type', 'None'),
             tmp='index',
             own=obj.own,
@@ -253,7 +265,6 @@ def slice(self, tree: _ast.Subscript):
         )
     return self.node(
         tmp = 'slice',
-        obj=obj,
         type = obj.type,
         own=obj.own,
         parts = {
@@ -265,7 +276,8 @@ def slice(self, tree: _ast.Subscript):
             'up': self.visit(
                 _slice.upper or ast.Call(
                     func=ast.Name(id='len', ctx=_ast.Load),
-                    args=[tree.value]
+                    args=[tree.value],
+                    keywords=[]
             )),
             'step': self.visit(
                 _slice.step or ast.Constant(value=1)
@@ -284,7 +296,7 @@ def name(self, tree: _ast.Name):
         _ast.Load: 'load'
     }.get(type(tree.ctx))
     if _name == 'self':
-        _name = self.templates.get('self', 'self')
+        tmp = self.templates.get('self', 'name')
         var_info = self.variables[self.get_ctx()]
     else:
         var_info = self.getvar(_name)

@@ -15,14 +15,14 @@ conf = {
 {%-endif-%}''',
     'un_op': '{{op}}({{el}})',
 
-    'callfunc': "{{func}}({{args|join(', ')}}, {{kwargs|join(', ')}})",
+    'callfunc': "{{func}}({{args|join(', ')}}{%if kwargs%}, {{kwargs|join(', ')}}{%endif%})",
     'getattr': "{{obj}}.{{attr}}",
-    'callmethod': "{{obj}}.{{attr}}({{args|join(', ')}})",
+    'callmethod': "{{obj}}.{{attr}}({{args|join(', ')}}{%if kwargs%}, {{kwargs|join(', ')}}{%endif%})",
     'arg': '{{name}}',
     'kwarg': '{{name}}={{value}}',
     'List': "[{{ls|join(', ')}}]",
     'Tuple': "({{ls|join(', ')}})",
-    'Dict': "{{'{'}}{%-set _dict = []-%}{%-for kw in keys_val-%}{{_dict.append(+kw|join(', ')+']') or ''}}{%-endfor-%}{{_dict|join(', ')}}])",
+    'Dict': "{{'{'}}{%for item in keys_val%}{{item[0]}}: {{item[1]}},{%endfor%}}",
 
     'index': '{{obj}}[{{key}}]',
     'slice': '{% if step == 1 %}{{obj}}[{{low}}:{{up}}]{% else %}{{obj}}[{{low}}:{{up}}:{{step}}]{%endif%}',
@@ -30,6 +30,8 @@ conf = {
     'expr': '{{value}}',
 
     'assign': '{{var}} = {{value}}',
+    'unpack': '{{vars|join(", ")}} = {{value}}',
+    'unpack_to_new': '{{vars|join(", ")}} = {{value}}',    
     'set_attr': '{{var}} = {{value}}',
     'new_attr': '{{var}} = {{value}}',
     'assignment_by_key': '{{var}} = {{value}}',
@@ -56,9 +58,9 @@ conf = {
 {{'    '*nl}}{{init}}
 {{'    '*nl}}{{methods|join('\n'+'    '*(nl))}}''',
 
-    'init': "def __init__({{args|join(', ')}}) {{body}}",
-    'method': "def {{name}}({{args|join(', ')}}) {{body}}",
-    'attr': '{{var}} = {{value}}',
+    'init': "def __init__({{args|join(', ')}}){{body}}",
+    'method': "def {{name}}({{args|join(', ')}}){{body}}",
+    'static_attr': '{{var}} = {{value}}',
     'new': "{{func}}({{args|join(', ')}})",
 
     'body': ''':{%for st in body%}

@@ -86,7 +86,7 @@ method: |-
   {{' '*4*(nl)}}{{body.parts.body|join('\n'+' '*4*(nl-1))}}
   }
 
-attr: "{{var}} {{_type}}"
+static_attr: "{{var}} {{_type}}"
 new: "init_{{func}}({{args|join(', ')}})"
 
 Main: |-

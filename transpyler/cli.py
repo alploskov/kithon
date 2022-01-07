@@ -1,4 +1,3 @@
-import codecs
 import os
 import sys
 from typing import List, Optional
@@ -60,13 +59,12 @@ def generate(
     Transpile python code into chose language
     """
     templates = list(templates)
-    if target:
-        if os.path.isdir(target):
-            for dirr, _, files in os.walk(target):
-                templates += [\
-                    open(f'{dirr}/{f}', 'r') \
-                    for f in files if f.endswith('.tp')\
-                ]
+    if target and os.path.isdir(target):
+        for dirr, _, files in os.walk(target):
+            templates += [\
+                open(f'{dirr}/{f}', 'r') \
+                for f in files if f.endswith('.tp')\
+            ]
     ext = file_name.split('.')[-1]
     if ext.endswith('x'):
         ext = ext[:-1]

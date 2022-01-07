@@ -1,6 +1,6 @@
 import ast
 import _ast
-from .types import element_type, type_render, Func
+from .types import element_type, type_render, Func, List, Dict, Tuple
 from .core import visitor
 
 
@@ -11,53 +11,71 @@ def expr(self, tree: _ast.Expr):
         tmp='expr'
     )
 
+def create_var(self, var, _type):
+    """
+    returns True if var is new, otherwise returns False
+    """
+    if isinstance(var.ast, _ast.Name):
+        var.own = f'{self.namespace}.{var.ast.id}'
+    elif isinstance(var.ast, _ast.Subscript):
+        self.variables[var.own]['type'].el_type = _type
+    if var.own in self.variables:
+        self.variables[var.own]['immut'] = False
+        return False
+    self.variables.update({var.own: {
+        'type': _type,
+        'own': var.own,
+        'immut': True
+    }})
+    return True
+
 @visitor
 def assign(self, tree: _ast.Assign, _type=None):
-    variable = tree.targets[0]
-    var = self.visit(variable)
+    var = self.visit(tree.targets[0])
     value = self.visit(tree.value)
+    if isinstance(var.ast, _ast.Tuple):
+        return unpack(self, var, value)
     _type = _type or value.type
-    if isinstance(variable, _ast.Name):
-        tmp = 'assign'
-        full_name = var.own or f'{self.namespace}.{variable.id}'
-    elif isinstance(variable, _ast.Subscript):
-        tmp = 'assignment_by_key'
-        full_name = var.own
-        var.obj.type.el_type = _type
-        _type = var.obj.type
-    elif isinstance(variable, _ast.Attribute):
-        tmp = 'set_attr'
-        obj_name = variable.value.id
-        if obj_name == 'self':
-            full_name = f'{self.get_ctx()}.{variable.attr}'
-        else:
-            full_name = f'{self.namespace}.{obj_name}'
-    if full_name not in self.variables:
+    tmp = {
+        _ast.Name: 'assign',
+        _ast.Subscript: 'assignment_by_key',
+        _ast.Attribute: 'set_attr'
+    }.get(type(var.ast))
+    if create_var(self, var, _type):
         if tmp == 'assign':
-            if self.variables[self.namespace]['type'] == 'class':
-                tmp = 'attr'
-            else:
-                tmp = 'new_var'
-        elif tmp == 'assignment_by_key':
-            tmp = 'new_key'
+            tmp = 'new_var'
         elif tmp == 'set_attr':
             tmp = 'new_attr'
-        var.own = full_name
-        self.variables.update({full_name: {
-            'type': _type,
-            'own': full_name,
-            'immut': True
-        }})
-    else:
-        self.variables[full_name]['immut'] = False
+    if self.variables[self.namespace]['type'] == 'class':
+        tmp = 'static_attr'
     return self.node(
         parts={
             'var': var,
             'value': value,
-            'own': self.variables[full_name]['own']
+            'own': var.own
         },
         type=_type,
         tmp=tmp
+    )
+
+def unpack(self, _vars, value):
+    vars_names = _vars.parts['ls']
+    is_new = 0
+    _type = None
+    if isinstance(value.type, List):
+        _type = value.type.el_type
+    elif isinstance(value.type, Dict):
+        _type = value.type.key_type
+    for pos, var in enumerate(vars_names):
+        is_new += create_var(
+            self, var,
+            _type or value.type.els_types[pos]
+        )
+    if 0 < is_new < len(vars_names):
+        print(f'\033[32mWarning:\033[38m possible declaring error in line {_vars.ast.lineno}')
+    return self.node(
+        tmp='unpack_to_new' if is_new else 'unpack',
+        parts={'vars': vars_names, 'value': value}
     )
 
 @visitor
@@ -88,7 +106,7 @@ def _if(self, tree: _ast.If, is_elif=False):
 def _else(self, body):
     if not body:
         return ''
-    elif isinstance(body[0], _ast.If):
+    if isinstance(body[0], _ast.If):
         return _if(self, body[0], is_elif=True)
     return self.node(
         parts={

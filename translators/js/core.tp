@@ -6,6 +6,9 @@ operators:
   "not": "!"
   "is": "==="
 
+Tuple: "[{{ls|join(', ')}}]"
+unpack: "[{{vars|join(', ')}}] = {{value}}"
+unpack_to_new: "let [{{vars|join(', ')}}] = {{value}}"
 index: >-
   {{obj}}
   {%- if isinstance(obj.type, list) -%}[
@@ -18,10 +21,12 @@ index: >-
     {%-endif-%}]
   {%- elif isinstance(obj.type, dict) -%}
     {%- if ctx == 'load' -%}
-    .get({{key}})|| (()=>{throw "key error"})()
+    [{{key}}] || (()=>{throw "key error"})()
     {%-else-%}
     [{{key}}]
     {%-endif-%}
+  {%- else -%}
+    [{{key}}]
   {%- endif -%}
 
 slice: |-
@@ -93,10 +98,13 @@ class: |-
 init: "constructor({{(args[1:])|join(', ')}}) {{body}}"
 method: "{{name}}({{(args[1:])|join(', ')}}) {{body}}"
 self: "this"
-attr: "{{var}} = {{value}};"
+static_attr: "{{var}} = {{value}};"
 new: "new {{func}}({{args|join(', ')}})"
 
 body: |-
   {{'{'}}{%for st in body%}
   {{'    '*nl}}{{st}}{%endfor%}
   {{'    '*(nl-1)}}}
+
+global: no
+nonlocal: no

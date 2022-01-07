@@ -36,3 +36,11 @@ list[any].+.list[any]:
 any.in.list[any]:
   code: "{{right}}.includes({{left}})"
   type: "bool"
+
+list[any].pop:
+  code: |-
+    {%- if args|length > 0 -%}
+      {{obj}}.splice({{args[0]}}, 1)
+    {%- else -%}
+      {{obj}}.pop()
+    {%- endif -%}

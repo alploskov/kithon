@@ -1,0 +1,82 @@
+html:
+  type: module
+
+  x_h1:
+    ret_type: tag
+
+  x_p:
+    ret_type: tag
+
+  x_div:
+    ret_type: tag
+
+  x_button:
+    ret_type: tag
+  rawhtml:
+    code: "{{args[0]}}"
+
+  x_input:
+    ret_type: tag
+
+  x_li:
+    ret_type: tag
+
+  x_a:
+    ret_type: tag
+
+  x_ul:
+    ret_type: tag
+
+  x_strong:
+    ret_type: tag
+    
+  x_br:
+    ret_type: tag
+
+  x_del:
+    ret_type: tag
+  
+tag:
+  code: |-
+    (
+    {%- if func.parts.obj|string == 'html' -%}
+      {%- set tag_name = func.parts.attr[2:]-%}
+    {%- elif func.name == 'callfunc'-%}
+      {%- set tag_name = func.parts.func() -%}
+    {%- endif -%}
+    {%- set kwargs -%}
+      {%- for kw in func.parts.kwargs -%}
+        {%- if kw.parts.name == 'onclick'-%}
+          {{- ' onClick={'+ kw.parts.value() + '}' -}}
+        {%- elif kw.parts.value.name == 'Str' -%}
+	  {{- ' ' + kw() -}}
+        {%- else -%}
+	  {{- ' '+ kw.parts.name + '={' + kw.parts.value() + '}' -}}
+        {%- endif -%}
+      {%- endfor -%}
+    {%- endset -%}
+    {{'\n'+'    '*(nl+1)}}<{{tag_name}}{{kwargs}}>{{'\n'}}
+    {%- for child in args -%}
+        {%- if child.name == 'Str' -%}
+            {{'    '*(nl+2)}}{{child()[1:-1]}}{{'\n'}}
+        {%- elif child.type == 'tag' -%}
+            {%-for st in child()[2:-1].split('\n')[:-1]-%}
+                  {{'    '*(nl)}}{{st}}{{'\n'}}
+            {%- endfor -%}
+        {%- else -%}
+            {{'    '*(nl+2)}}{{'{'}}{{child}}{{'}'}}{{'\n'}}
+        {%- endif -%}
+    {%- endfor %}{{'    '*(nl+1)}}</{{tag_name}}>
+    {{'    '*nl}})
+  ret_type: tag
+
+react_render:
+  code: |-
+    {{- env.strings.insert(0, "import React from 'react';\nimport ReactDOM from 'react-dom';\n\n") or ''-}}
+    ReactDOM.render({{args|join(', ')}})
+
+React:
+  type: module
+
+  useState:
+    ret_type: ["args[0].type", "Func('', args[0].type, None)"]

@@ -1,6 +1,6 @@
 import ast
-import _ast
 from collections import defaultdict
+import _ast
 import yaml
 from jinja2 import Template
 from . import types, node, transpiler_templates
@@ -79,12 +79,12 @@ class Transpiler:
             return '__main__'
         return self.namespace[:self.namespace.rfind('.')]
 
-    def node(self, tmp=None, parts={}, type=None, ctx=None, own=None, obj=None):
+    def node(self, tmp=None, parts={}, type=None, ctx=None, own=None):
         return node._node(
             env=self, tmp=tmp,
             parts=parts, type=type,
             ctx=ctx, nl=self.nl,
-            own=own, obj=obj
+            own=own
         )
 
     def add_templ(self, templates):
@@ -97,6 +97,8 @@ class Transpiler:
         for name, template in templates.items():
             if isinstance(template, str):
                 templates[name] = Template(template)
+            elif isinstance(template, bool):
+                templates[name] = template
             elif 'code' in template:
                 templates[name]['code'] = Template(
                     template['code']
@@ -113,7 +115,7 @@ class Transpiler:
         node.ast = tree
         return node
 
-    def generate(self, code, lang='py', mode='Main'):        
+    def generate(self, code, lang='py', mode='Main'):
         if lang == 'py':
             astree = ast.parse(code)
         elif lang == 'hy':
@@ -123,7 +125,6 @@ class Transpiler:
             from coconut.convenience import parse, setup
             setup(target='sys')
             astree = ast.parse(parse(code, 'block'))
-        body = []
         body = list(map(self.visit, astree.body))
         for block in body:
             if not block:
