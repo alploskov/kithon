@@ -1,8 +1,24 @@
-**transPYler** is a project that provides the ability to translate python and python-family language such as
+**Kithon** is a project that provides the ability to translate python and python-family language such as
 [hy-lang](https://github.com/hylang/hy) and [coconut](https://github.com/evhub/coconut)
 into human-readable code in any other programming languages.
 
-[Try out the web demo](https://alploskov.github.io/transPYler/demo/)
+[Try out the web demo](https://alploskov.github.io/kithon/demo/)
+
+or 
+
+```bash
+pip install kithon
+
+echo "print('Hello World')" > test.py
+
+kithon gen --target js test.py
+```
+
+Output:
+
+```js
+console.log("Hello World");
+```
 
 For what?
 ---------
@@ -14,7 +30,7 @@ Also for supporting program written on in unpopular programming languages (very 
 How it works?
 -------------
 
-transPYler uses a dsl based on yaml and jinja to apply the rules described on it to the nodes of the ast tree. 
+Kithon uses a dsl based on yaml and jinja to apply the rules described on it to the nodes of the ast tree. 
 Using this dsl you can add new languages or extensions to those already added.
 
 Status
