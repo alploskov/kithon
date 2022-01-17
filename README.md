@@ -11,7 +11,7 @@ pip install kithon
 
 echo "print('Hello World')" > test.py
 
-kithon gen --target js test.py
+kithon gen --js test.py
 ```
 
 Output:

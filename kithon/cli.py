@@ -3,8 +3,9 @@ from os import path
 import sys
 from typing import List, Optional
 import typer
+from .commands import get_lang
 from .core import Transpiler
-from . import __path__
+from . import supported_languages
 
 
 tpy = typer.Typer()
@@ -46,6 +47,8 @@ def generate(
         help='Output file',
         show_default='stdout'
     ),
+    _js: Optional[bool] = typer.Option(False, '--js'),
+    _go: Optional[bool] = typer.Option(False, '--go'),
     input_lang: Optional[str] = typer.Option(
         '',
         '-l',
@@ -63,19 +66,17 @@ def generate(
     Transpile python code into chose language
     """
     templates = list(templates)
-    translators_dirr = path.join(path.split(__path__[0])[0], 'translators')
+    for lang, value in {'js': _js, 'go': _go}.items():
+        if value:
+            target = lang
     if target and path.isdir(target):
         for dirr, _, files in os.walk(target):
             templates += [\
                 open(f'{dirr}/{f}', 'r') \
                 for f in files if f.endswith('.tp')\
             ]
-    elif target in os.listdir(translators_dirr):
-        for dirr, _, files in os.walk(path.join(translators_dirr, target)):
-            templates += [\
-                open(f'{dirr}/{f}', 'r') \
-                for f in files
-            ]
+    elif target in supported_languages:
+        templates += get_lang(target)
     ext = file_name.split('.')[-1]
     if ext.endswith('x'):
         ext = ext[:-1]
