@@ -3,7 +3,7 @@ from collections import defaultdict
 import _ast
 import yaml
 from jinja2 import Template
-from . import types, node, transpiler_templates
+from . import types, node as _node, transpiler_templates
 
 
 def visitor(func):
@@ -34,9 +34,9 @@ class Transpiler:
     elements = {}
 
     def __init__(self, templates):
-        self.templates =  transpiler_templates.default
-        self.default_state()
+        self.templates = defaultdict(dict) | transpiler_templates.default
         self.add_templ(templates)
+        self.default_state()
 
     def use(self, name):
         self.used.add(name)
@@ -80,7 +80,7 @@ class Transpiler:
         return self.namespace[:self.namespace.rfind('.')]
 
     def node(self, tmp=None, parts={}, type=None, ctx=None, own=None):
-        return node._node(
+        return _node.node(
             env=self, tmp=tmp,
             parts=parts, type=type,
             ctx=ctx, nl=self.nl,
@@ -96,14 +96,11 @@ class Transpiler:
             return
         for name, template in templates.items():
             if isinstance(template, str):
-                templates[name] = Template(template)
-            elif isinstance(template, bool):
-                templates[name] = template
-            elif 'code' in template:
-                templates[name]['code'] = Template(
-                    template['code']
-                )
-        self.templates |= templates
+                self.templates[name].update({'tmp': Template(template)})
+            elif not template:
+                self.templates[name] = template
+            elif isinstance(template, dict):
+                self.templates[name].update(template)
 
     def visit(self, tree, **kw):
         if type(tree) not in self.elements:
@@ -130,14 +127,12 @@ class Transpiler:
             if not block:
                 continue
             self.strings.extend(block.render().split('\n'))
-        if isinstance(self.templates['Main'], Template) and mode == 'Main':
-            code = self.templates.get('Main').render(
+        if mode == 'Main':
+            code = self.templates['Main']['tmp'].render(
                 _body=self.strings,
                 body='\n'.join(self.strings),
                 env=self
             )
-        else:
-            code = '\n'.join(self.strings)
         if mode != 'block':
             self.default_state()
         return code

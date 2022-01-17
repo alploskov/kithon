@@ -43,14 +43,19 @@ setattr:
 
 int:
   alt_name: 'Number'
-  ret_type: int
 
 str:
   code: '({{args[0]}}).toString()'
-  ret_type: str
 
 map:
   code: "{{args[1]}}.map({{args[0]}})"
 
 filter:
   code: "{{args[1]}}.filter({{args[0]}})"
+
+require:
+  code: "{{args[0]}}"
+  ret_type: "class_require"
+
+require.to:
+  code: "import {{args[0]}} from {{obj}}"

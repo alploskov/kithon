@@ -180,8 +180,7 @@ def function_call(self, tree: _ast.Call):
     tmp = 'callfunc'
     parts = {'func': func, 'args': args, 'kwargs': kwargs}
     macro = None
-    if (isinstance(tree.func, _ast.Name)
-        and tree.func.id in self.templates):
+    if getattr(tree.func, 'id', ...) in self.templates:
         macro = self.templates.get(tree.func.id)
     elif func.type == 'class':
         tmp = 'new'
@@ -287,9 +286,9 @@ def slice(self, tree: _ast.Subscript):
 
 @visitor
 def name(self, tree: _ast.Name):
+    if tree.id.startswith('x_'):
+        tree.id = tree.id[2:]
     _name = tree.id
-    if _name.startswith('x_'):
-        _name = _name[2:]
     _type = 'None'
     ctx = {
         _ast.Store: 'store',
@@ -302,7 +301,7 @@ def name(self, tree: _ast.Name):
         var_info = self.getvar(_name)
     if var_info:
         _type = var_info['type']
-    elif _name in self.templates:
+    if _name in self.templates:
         macro = self.templates[_name]
         _type = macro.get('type', _type)
         if _type == 'module':

@@ -15,9 +15,9 @@ conf = {
 {%-endif-%}''',
     'un_op': '{{op}}({{el}})',
 
-    'callfunc': "{{func}}({{args|join(', ')}}{%if kwargs%}, {{kwargs|join(', ')}}{%endif%})",
+    'callfunc': "{{func}}({{args|join(', ')}}{%if args and kwargs%}, {%endif%}{{kwargs|join(', ')}})",
     'getattr': "{{obj}}.{{attr}}",
-    'callmethod': "{{obj}}.{{attr}}({{args|join(', ')}}{%if kwargs%}, {{kwargs|join(', ')}}{%endif%})",
+    'callmethod': "{{obj}}.{{attr}}({{args|join(', ')}}{%if args and kwargs%}, {%endif%}{{kwargs|join(', ')}})",
     'arg': '{{name}}',
     'kwarg': '{{name}}={{value}}',
     'List': "[{{ls|join(', ')}}]",
@@ -68,7 +68,7 @@ conf = {
     'global': 'global {{vars|join(", ")}}',
     'nonlocal': 'nonlocal {{vars|join(", ")}}',
     'import': '',
-    'Main': '{{_body|join("\n")}}'
+    'Main': '{{body}}'
 }
 
 macros = {
@@ -97,13 +97,13 @@ type_inference_rules = {rule: {'type': res} for rule, res in {
     'int.*.int':   'int',
     'int.//.int':  'int',
     'int.%.int':   'int',
-    'int.<<.int': 'int',
-    'int.>>.int': 'int',
-    'int.|.int': 'int'
+    'int.<<.int':  'int',
+    'int.>>.int':  'int',
+    'int.|.int':   'int'
 }.items()}
 
 default = (
-    {name: Template(code) for name, code in conf.items()}
+    {name: {'tmp': Template(code)} for name, code in conf.items()}
     | {'types': {},'operators': {}}
     | macros
     | type_inference_rules

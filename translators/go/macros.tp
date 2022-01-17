@@ -8,7 +8,6 @@ str:
   code: |-
     {{-env.use('mod_fmt')-}}
     fmt.Sprintf("%v", {{args[0]}})
-  ret_type: "str"
 
 main:
   code: ""

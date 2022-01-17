@@ -4,6 +4,9 @@ html:
   x_h1:
     ret_type: tag
 
+  x_h2:
+    ret_type: tag
+
   x_p:
     ret_type: tag
 
@@ -46,8 +49,13 @@ tag:
     {%- endif -%}
     {%- set kwargs -%}
       {%- for kw in func.parts.kwargs -%}
-        {%- if kw.parts.name == 'onclick'-%}
-          {{- ' onClick={'+ kw.parts.value() + '}' -}}
+        {%- if kw.parts.name in ['onclick', 'helpertext', 'onchange']-%}
+          {{- ' '+ {
+	    'onclick': 'onClick',
+	    'helpertext': 'helperText',
+	    'onchange': 'onChange',
+	    'maxrows': 'maxRows'
+	  }[kw.parts.name] + '={'+ kw.parts.value() + '}' -}}
         {%- elif kw.parts.value.name == 'Str' -%}
 	  {{- ' ' + kw() -}}
         {%- else -%}

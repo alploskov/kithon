@@ -4,17 +4,14 @@ from jinja2 import Template
 from . import types
 
 
-class _node:
+class node:
     def __init__(self, env=None, tmp=None, parts={}, type=None, ctx=None, nl=1, own=None):
+        self.name = 'unknown'
         if tmp in env.templates:
             self.name = tmp
-            self.tmp = env.templates.get(tmp)
-        else:
-            self.name = 'unknown'
-            if isinstance(tmp, str):
-                self.tmp = Template(tmp)
-            else:
-                self.tmp = tmp
+            self.tmp = env.templates.get(tmp)['tmp']
+        elif tmp:
+            self.tmp = Template(tmp)
         self.parts = parts
         self.type = type
         self.ctx = ctx
@@ -28,21 +25,21 @@ class _node:
         self.prefix = '    '
 
     def render(self):
-        _get_val = lambda el: el.render() if isinstance(el, _node) else el
+        _get_val = lambda el: el.render() if isinstance(el, node) else el
         if self.own and self.own in self.env.variables:
             _type = self.env.variables[self.own]['type']
         else:
             _type = self.type
         for part in self.parts.values():
-            if isinstance(part, _node):
+            if isinstance(part, node):
                 part.parent = self
                 part.render()
             elif isinstance(part, list):
                 for part_el in part:
-                    if isinstance(part_el, _node):
+                    if isinstance(part_el, node):
                         part_el.parent = self
                         part_el.render()
-        if self.tmp:
+        if getattr(self, 'tmp', None):
             self.val = self.tmp.render(
                 env=self.env,
                 node=self,
@@ -108,42 +105,42 @@ class _node:
 
     def __gt__(self, other):
         if self.get_val() != 'unknown':
-            if isinstance(other, _node) and other.get_val() != 'unknown':
+            if isinstance(other, node) and other.get_val() != 'unknown':
                 return self.get_val() > other.get_val()
             return self.get_val() > other
         return False
 
     def __ge__(self, other):
         if self.get_val() != 'unknown':
-            if isinstance(other, _node) and other.get_val() != 'unknown':
+            if isinstance(other, node) and other.get_val() != 'unknown':
                 return self.get_val() >= other.get_val()
             return self.get_val() >= other
         return False
 
     def __le__(self, other):
         if self.get_val() != 'unknown':
-            if isinstance(other, _node) and other.get_val() != 'unknown':
+            if isinstance(other, node) and other.get_val() != 'unknown':
                 return self.get_val() <= other.get_val()
             return self.get_val() <= other
         return False
 
     def __lt__(self, other):
         if self.get_val() != 'unknown':
-            if isinstance(other, _node) and other.get_val() != 'unknown':
+            if isinstance(other, node) and other.get_val() != 'unknown':
                 return self.get_val() < other.get_val()
             return self.get_val() < other
         return False
 
     def __eq__(self, other):
         if self.get_val() != 'unknown':
-            if isinstance(other, _node) and other.get_val() != 'unknown':
+            if isinstance(other, node) and other.get_val() != 'unknown':
                 return self.get_val() == other.get_val()
             return self.get_val() == other
         return False
 
     def __nq__(self, other):
         if self.get_val() != 'unknown':
-            if isinstance(other, _node) and other.get_val() != 'unknown':
+            if isinstance(other, node) and other.get_val() != 'unknown':
                 return self.get_val() != other.get_val()
             return self.get_val() != other
         return False
