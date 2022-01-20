@@ -1,6 +1,7 @@
 from . import (
     expressions,
     blocks,
+    controls,
     core
 )
 

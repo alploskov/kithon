@@ -2,13 +2,19 @@ import ast
 from collections import defaultdict
 import _ast
 import yaml
+from hy.lex import hy_parse
 from jinja2 import Template
 from . import types, node as _node, transpiler_templates
 
 
 def visitor(func):
     setattr(Transpiler, func.__name__, func)
-    Transpiler.elements[func.__annotations__['tree']] = func
+    annotations = func.__annotations__['tree']
+    if isinstance(annotations, tuple):
+        for ann in annotations:
+            Transpiler.elements[ann] = func
+    else:
+        Transpiler.elements[annotations] = func
     return func
 
 def op_to_str(op):
@@ -114,15 +120,14 @@ class Transpiler:
 
     def generate(self, code, lang='py', mode='Main'):
         if lang == 'py':
-            astree = ast.parse(code)
+            tree = ast.parse(code).body
         elif lang == 'hy':
-            from hy.compiler import hy_compile, hy_parse
-            astree = hy_compile(hy_parse(code), '__main__')
+            tree = hy_parse(code)[1:]
         elif lang == 'coco':
             from coconut.convenience import parse, setup
             setup(target='sys')
-            astree = ast.parse(parse(code, 'block'))
-        body = list(map(self.visit, astree.body))
+            tree = ast.parse(parse(code, 'block')).body
+        body = list(map(self.visit, tree))
         for block in body:
             if not block:
                 continue

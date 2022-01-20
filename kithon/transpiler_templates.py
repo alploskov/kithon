@@ -31,7 +31,7 @@ conf = {
 
     'assign': '{{var}} = {{value}}',
     'unpack': '{{vars|join(", ")}} = {{value}}',
-    'unpack_to_new': '{{vars|join(", ")}} = {{value}}',    
+    'unpack_to_new': '{{vars|join(", ")}} = {{value}}',
     'set_attr': '{{var}} = {{value}}',
     'new_attr': '{{var}} = {{value}}',
     'assignment_by_key': '{{var}} = {{value}}',

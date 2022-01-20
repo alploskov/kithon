@@ -13,4 +13,4 @@ def get_lang(lang):
             open(f'{dirr}/{f}', 'r') \
             for f in files
         ]
-    return conf 
+    return conf

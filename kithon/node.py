@@ -58,13 +58,12 @@ class node:
             'return', 'while', 'for',
             'c_like_for', 'class', 'init',
             'method', 'attr', 'new'
-        ]:
-            if self.code_before:
-                before = _get_val(self.code_before[0]) + '\n'
-                for part in self.code_before[1:]:
-                    before += self.prefix * self.nl
-                    before += _get_val(part) + '\n'
-                self.val = before +  self.prefix * self.nl + self.val
+        ] and self.code_before:
+            before = _get_val(self.code_before[0]) + '\n'
+            for part in self.code_before[1:]:
+                before += self.prefix * self.nl
+                before += _get_val(part) + '\n'
+            self.val = before +  self.prefix * self.nl + self.val
         elif self.parent:
             self.parent.code_before.extend(self.code_before)
         return self.val
