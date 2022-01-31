@@ -65,16 +65,16 @@ def generate(
     """
     Transpile python code into chose language
     """
-    templates = list(templates)
+    templates = '\n'.join(list(templates))
     for lang, value in {'js': _js, 'go': _go}.items():
         if value:
             target = lang
     if target and path.isdir(target):
         for dirr, _, files in os.walk(target):
-            templates += [\
-                open(f'{dirr}/{f}', 'r') \
-                for f in files if f.endswith('.tp')\
-            ]
+            templates += '\n'.join([
+                open(f'{dirr}/{f}', 'r').read()
+                for f in files if f.endswith('.tp')
+            ])
     elif target in supported_languages:
         templates += get_lang(target)
     ext = file_name.split('.')[-1]
@@ -83,14 +83,16 @@ def generate(
         source = open(file_name, 'r', encoding='pyxl').read()
     else:
         source = open(file_name, 'r').read()
-    input_lang = {
-        'py': 'py',
-        'python': 'py',
-        'hy': 'hy',
-        'hylang': 'hy',
-        'coco': 'coco',
-        'coconut': 'coco'
-    }.get(input_lang or ext)
-    transpiler = Transpiler('\n'.join(list(map(lambda t: t.read(), templates))))
-    result = transpiler.generate(source, lang=input_lang)
-    print(result, file=out)
+    print(
+        Transpiler(templates).generate(
+            source,
+            lang={
+                'py': 'py',
+                'python': 'py',
+                'hy': 'hy',
+                'hylang': 'hy',
+                'coco': 'coco',
+                'coconut': 'coco'
+            }.get(input_lang or ext)
+        ),
+        file=out)

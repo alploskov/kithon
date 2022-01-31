@@ -23,6 +23,7 @@ Jinja2 = ">=2.11.2,<4.0.0"
 PyYaml = ">=5.4.0"
 typer = "^0.4.0"
 hy = {git = "https://github.com/hylang/hy", rev = "master"}
+pexpect = "^4.8.0"
 
 [tool.poetry.scripts]
 kithon = "kithon.cli:tpy"

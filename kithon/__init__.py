@@ -5,6 +5,5 @@ from . import (
     core
 )
 
-
 supported_languages = ['js', 'go']
 Transpiler = core.Transpiler

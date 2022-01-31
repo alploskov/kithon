@@ -7,10 +7,10 @@ translators_dirr = path.join(path.split(ROOT_DIR[0])[0], 'translators')
 def get_lang(lang):
     if lang not in listdir(translators_dirr):
         raise ValueError(f'{lang} is not supported')
-    conf = []
+    conf = ''
     for dirr, _, files in walk(path.join(translators_dirr, lang)):
-        conf += [\
-            open(f'{dirr}/{f}', 'r') \
+        conf += '\n'.join([
+            open(f'{dirr}/{f}', 'r').read()
             for f in files
-        ]
+        ]) + '\n'
     return conf

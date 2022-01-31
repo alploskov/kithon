@@ -53,15 +53,18 @@ class Transpiler:
         self.temp_var_counts[base_name] += 1
         return f'{base_name}_{self.temp_var_counts[base_name]}'
 
-    def default_state(self):
+    def default_state(self, mode='main'):
+        if mode != 'block':
+            self.variables = {
+                '__main__': {'type': types.Module('__main__')}
+            }
+        self.nl = 0
+        self.namespace = '__main__'
         self.strings = []
         self.temp_var_counts = defaultdict(int)
         self.used = set([])
         self.nl = 0
         self.namespace = '__main__'
-        self.variables = {
-            '__main__': {'type': types.Module('__main__')}
-        }
 
     def getvar(self, name):
         path = self.namespace
@@ -85,12 +88,11 @@ class Transpiler:
             return '__main__'
         return self.namespace[:self.namespace.rfind('.')]
 
-    def node(self, tmp=None, parts={}, type=None, ctx=None, own=None):
+    def node(self, tmp=None, parts={}, type=None, own=None):
         return _node.node(
             env=self, tmp=tmp,
             parts=parts, type=type,
-            ctx=ctx, nl=self.nl,
-            own=own
+            nl=self.nl, own=own
         )
 
     def add_templ(self, templates):
@@ -118,7 +120,7 @@ class Transpiler:
         node.ast = tree
         return node
 
-    def generate(self, code, lang='py', mode='Main'):
+    def generate(self, code, lang='py', mode='main'):
         if lang == 'py':
             tree = ast.parse(code).body
         elif lang == 'hy':
@@ -132,12 +134,14 @@ class Transpiler:
             if not block:
                 continue
             self.strings.extend(block.render().split('\n'))
-        if mode == 'Main':
+        if mode == 'main':
             code = self.templates['Main']['tmp'].render(
                 _body=self.strings,
                 body='\n'.join(self.strings),
                 env=self
             )
-        if mode != 'block':
             self.default_state()
+        else:
+            code = '\n'.join(self.strings)
+            self.default_state(mode='block')
         return code
