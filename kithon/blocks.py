@@ -1,6 +1,6 @@
 import ast
 import _ast
-from .types import element_type, type_render, Func, List, Dict, Tuple
+from .types import types
 from .core import visitor
 
 
@@ -62,9 +62,11 @@ def unpack(self, _vars, value):
     vars_names = _vars.parts['ls']
     is_new = 0
     _type = None
-    if isinstance(value.type, List):
+    if value.type == 'str':
+        _type = 'str'
+    elif isinstance(value.type, types['list']):
         _type = value.type.el_type
-    elif isinstance(value.type, Dict):
+    elif isinstance(value.type, types['dict']):
         _type = value.type.key_type
     for pos, var in enumerate(vars_names):
         is_new += create_var(
@@ -147,7 +149,7 @@ def _for(self, tree: _ast.For):
         }
     else:
         tmp = 'for'
-        _type = element_type(obj)
+        _type = getattr(obj, 'el_type', 'None')
         parts |= {'obj': obj}
     var = self.visit(tree.target)
     var_name = f'{self.namespace}.{tree.target.id}'
@@ -190,19 +192,19 @@ def define_function(self, tree: _ast.FunctionDef):
     args = list(map(self.visit, tree.args.args))
     ret_t = getattr(tree.returns, 'id', '')
     self.variables.update({self.namespace: {
-        'type': Func(name, args, ret_t),
+        'type': types['func'](name, args, ret_t),
         'own': self.namespace,
     }})
     _body = expression_block(self, tree.body)
     ret_t = ret_t or self.variables[self.namespace]['type'].ret_type
     func = self.node(
         tmp=tmp,
-        type=Func(name, args, ret_t),
+        type=types['func'](name, args, ret_t),
         own=self.namespace,
         parts={
             'name': name,
             'args': args,
-            'ret_type': type_render(self, ret_t),
+            'ret_type': ret_t,
             'body': _body,
         } | parts
     )
@@ -244,7 +246,6 @@ def define_class(self, tree: _ast.ClassDef):
             'init': None,
         }
     )
-    self.ctx = node
     for field in map(self.visit, tree.body):
         if isinstance(field.ast, _ast.Assign):
             node.parts['attrs'].append(field)
@@ -279,6 +280,11 @@ def expression_block(self, body):
     )
     self.nl -= 1
     return body
+
+@visitor
+def _import(self, tree: _ast.Import):
+    return self.node(
+    )
 
 @visitor
 def _nonlocal(self, tree: _ast.Nonlocal):

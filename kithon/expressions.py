@@ -2,7 +2,7 @@ import ast
 import math
 from itertools import product
 import _ast
-from . import types
+from .types import types, type_eval, to_any
 from .core import visitor, op_to_str
 from .side_effects import side_effect
 
@@ -16,12 +16,12 @@ def un_op(self, tree: _ast.UnaryOp):
     op = op_to_str(tree.op)
     overload = self.templates.get(f'{op}.{_type}')
     while el_type != 'any' and not overload:
-        el_type = types.to_any(el_type)
+        el_type = to_any(el_type)
         overload = self.templates.get(f'{op}.{el_type}')
     if overload:
         tmp = overload.get('code', tmp)
-        _type = types.type_eval(
-            overload,
+        _type = type_eval(
+            overload.get('type', _type),
             {'op': op, 'el': el}
         )
         side_effect(overload, {'op': op, 'el': el})
@@ -76,10 +76,10 @@ def _bin_op(self, left, right, op):
     right_possible_types = [str(right_t)]
     _type = 'None'
     while left_t != 'any':
-        left_t = types.to_any(left_t)
+        left_t = to_any(left_t)
         left_possible_types.append(str(left_t))
     while right_t != 'any':
-        right_t = types.to_any(right_t)
+        right_t = to_any(right_t)
         right_possible_types.append(str(right_t))
     possible_type_pairs = product(
         left_possible_types,
@@ -95,8 +95,8 @@ def _bin_op(self, left, right, op):
                 overload,
                 {'left': left, 'right': right}
             )
-            _type = types.type_eval(
-                overload.get('type', 'None'),
+            _type = type_eval(
+                overload.get('type', _type),
                 {'left': left, 'right': right}
             )
             break
@@ -135,7 +135,7 @@ def attribute(self, tree: _ast.Attribute, args=None, kwargs=None, call=False):
     macro = ''
     parts = {'obj': obj, 'attr': attr, 'args': args, 'kwargs': kwargs}
     _type = 'None'
-    if isinstance(obj.type, types.Module):
+    if isinstance(obj.type, types['module']):
         module_name = obj.type.name.split('.')
         module = self.templates[module_name[0]]
         for part in module_name[1:]:
@@ -149,19 +149,19 @@ def attribute(self, tree: _ast.Attribute, args=None, kwargs=None, call=False):
         obj_type = obj.type
         macro = self.templates.get(f'{obj_type}.{attr}')
         while obj_type != 'any' and not macro:
-            obj_type = types.to_any(obj_type)
+            obj_type = to_any(obj_type)
             macro = self.templates.get(f'{obj_type}.{attr}')
     if macro:
         parts['attr'] = macro.get('alt_name', attr)
         tmp = macro.get('code', tmp)
         parts.update(match_args(macro, args, kwargs))
         side_effect(macro, parts)
-        _type = types.type_eval(
+        _type = type_eval(
             macro.get('ret_type' if call else 'type', _type),
             parts
         )
         if _type == 'module':
-            _type = types.Module(f'{obj.type.name}.{attr}')
+            _type = types['module'](f'{obj.type.name}.{attr}')
     return self.node(
         own=f'{obj.own}.{attr}',
         type=_type,
@@ -191,7 +191,7 @@ def function_call(self, tree: _ast.Call):
         parts.update(match_args(macro, args, kwargs))
         tmp = macro.get('code', 'callfunc')
         side_effect(macro, parts)
-        ret_type = types.type_eval(
+        ret_type = type_eval(
             macro.get('ret_type', 'None'),
             parts
         )
@@ -210,7 +210,7 @@ def _list(self, tree: _ast.List):
         el_type = 'generic'
     return self.node(
         tmp='List',
-        type=types.List(el_type),
+        type=types['list'](el_type),
         parts={'ls': elements}
     )
 
@@ -223,7 +223,7 @@ def _tuple(self, tree: _ast.Tuple):
     el_type = tuple(set(els_types))
     return self.node(
         tmp='Tuple',
-        type=types.Tuple(el_type, els_types),
+        type=types['tuple'](el_type, els_types),
         parts={'ls': elements}
     )
 
@@ -239,7 +239,7 @@ def _dict(self, tree: _ast.Dict):
         key_type = 'generic'
     return self.node(
         tmp='Dict',
-        type=types.Dict(key_type, el_type),
+        type=types['dict'](key_type, el_type),
         parts={
             'keys': keys,
             'values': values,
@@ -263,10 +263,10 @@ def slice(self, tree: _ast.Subscript):
             parts={'obj': obj, 'key': self.visit(_slice), 'ctx': ctx}
         )
     return self.node(
-        tmp = 'slice',
-        type = obj.type,
+        tmp='slice',
+        type=obj.type,
         own=obj.own,
-        parts = {
+        parts={
             'obj': obj,
             'ctx': ctx,
             'low': self.visit(
@@ -290,13 +290,14 @@ def name(self, tree: _ast.Name):
         tree.id = tree.id[2:]
     _name = tree.id
     _type = 'None'
+    tmp = 'name'
     ctx = {
         _ast.Store: 'store',
         _ast.Load: 'load'
     }.get(type(tree.ctx))
     if _name == 'self':
         tmp = self.templates.get('self', 'name')
-        var_info = self.variables[self.get_ctx()]
+        # var_info = self.variables[]
     else:
         var_info = self.getvar(_name)
     if var_info:
@@ -305,11 +306,11 @@ def name(self, tree: _ast.Name):
         macro = self.templates[_name]
         _type = macro.get('type', _type)
         if _type == 'module':
-            _type = types.Module(_name)
+            _type = types['module'](_name)
         _name = macro.get('alt_name', _name)
     return self.node(
         type=_type,
-        tmp='name',
+        tmp=tmp,
         own=var_info.get('own'),
         parts={
             'name': _name,

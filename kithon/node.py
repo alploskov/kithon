@@ -1,20 +1,20 @@
 import ast
+from operator import (lt, le, eq, ne, ge, gt)
 import _ast
 from jinja2 import Template
-from . import types
-
+from .types import types
 
 class node:
-    def __init__(self, env=None, tmp=None, parts={}, type=None, ctx=None, nl=1, own=None):
+    def __init__(self, env=None, tmp=None, parts={}, type=None, nl=1, own=None):
         self.name = 'unknown'
+        self.tmp = None
         if tmp in env.templates:
             self.name = tmp
-            self.tmp = env.templates.get(tmp)['tmp']
-        elif tmp:
+            self.tmp = env.templates[tmp].get('tmp', '')
+        else:
             self.tmp = Template(tmp)
         self.parts = parts
         self.type = type
-        self.ctx = ctx
         self.env = env
         self.val = ''
         self.nl = nl
@@ -30,7 +30,9 @@ class node:
             _type = self.env.variables[self.own]['type']
         else:
             _type = self.type
-        for part in self.parts.values():
+        for _name, part in self.parts.items():
+            if _name.endswith('_type'):
+                part = str(part)
             if isinstance(part, node):
                 part.parent = self
                 part.render()
@@ -45,9 +47,9 @@ class node:
                 node=self,
                 nl=self.nl,
                 parent=self.parent,
-                _type=types.type_render(self.env, _type),
+                _type=_type,
+                types=types,
                 isinstance=isinstance,
-                **types.types,
                 **self.parts
             )
         if self.name in [
@@ -84,7 +86,7 @@ class node:
         self.code_before.append(code)
         return ''
 
-    def del_code_before(self):
+    def clear_code_before(self):
         self.code_before = []
         return ''
 
@@ -102,44 +104,13 @@ class node:
     def __call__(self):
         return self.render()
 
-    def __gt__(self, other):
-        if self.get_val() != 'unknown':
-            if isinstance(other, node) and other.get_val() != 'unknown':
-                return self.get_val() > other.get_val()
-            return self.get_val() > other
-        return False
-
-    def __ge__(self, other):
-        if self.get_val() != 'unknown':
-            if isinstance(other, node) and other.get_val() != 'unknown':
-                return self.get_val() >= other.get_val()
-            return self.get_val() >= other
-        return False
-
-    def __le__(self, other):
-        if self.get_val() != 'unknown':
-            if isinstance(other, node) and other.get_val() != 'unknown':
-                return self.get_val() <= other.get_val()
-            return self.get_val() <= other
-        return False
-
-    def __lt__(self, other):
-        if self.get_val() != 'unknown':
-            if isinstance(other, node) and other.get_val() != 'unknown':
-                return self.get_val() < other.get_val()
-            return self.get_val() < other
-        return False
-
-    def __eq__(self, other):
-        if self.get_val() != 'unknown':
-            if isinstance(other, node) and other.get_val() != 'unknown':
-                return self.get_val() == other.get_val()
-            return self.get_val() == other
-        return False
-
-    def __nq__(self, other):
-        if self.get_val() != 'unknown':
-            if isinstance(other, node) and other.get_val() != 'unknown':
-                return self.get_val() != other.get_val()
-            return self.get_val() != other
-        return False
+for op in (lt, le, eq, ne, ge, gt):
+    def operation(op):
+        def _(self, other):
+            if self.get_val() != 'unknown':
+                if isinstance(other, node) and other.get_val() != 'unknown':
+                    return op(self.get_val(), other.get_val())
+                return op(self.get_val(), other)
+            return False
+        return _
+    setattr(node, f'__{op.__name__}__', operation(op))

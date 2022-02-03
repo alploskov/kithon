@@ -41,8 +41,15 @@ class Transpiler:
 
     def __init__(self, templates):
         self.templates = defaultdict(dict) | transpiler_templates.default
+        self.nl = 0
+        self.namespace = '__main__'
+        self.variables = {
+            '__main__': {'type': types.types['module']('__main__')}
+        }
+        self.strings = []
+        self.temp_var_counts = defaultdict(int)
+        self.used = set([])
         self.add_templ(templates)
-        self.default_state()
 
     def use(self, name):
         self.used.add(name)
@@ -53,19 +60,6 @@ class Transpiler:
         self.temp_var_counts[base_name] += 1
         return f'{base_name}_{self.temp_var_counts[base_name]}'
 
-    def default_state(self, mode='main'):
-        if mode != 'block':
-            self.variables = {
-                '__main__': {'type': types.Module('__main__')}
-            }
-        self.nl = 0
-        self.namespace = '__main__'
-        self.strings = []
-        self.temp_var_counts = defaultdict(int)
-        self.used = set([])
-        self.nl = 0
-        self.namespace = '__main__'
-
     def getvar(self, name):
         path = self.namespace
         var = self.variables.get(f'{path}.{name}')
@@ -73,15 +67,6 @@ class Transpiler:
             path = path[:path.rfind('.')]
             var = self.variables.get(f'{path}.{name}')
         return var or {}
-
-    def get_ctx(self):
-        path = self.namespace
-        while path != '__main__':
-            var = self.variables.get(path, {})
-            if var.get('type') == 'class':
-                return path
-            path = path[:path.rfind('.')]
-        return ''
 
     def previous_ns(self):
         if self.namespace == '__main__':
@@ -103,10 +88,10 @@ class Transpiler:
         if not templates:
             return
         for name, template in templates.items():
-            if isinstance(template, str):
+            if not template:
+                self.templates[name] = {}
+            elif isinstance(template, str):
                 self.templates[name].update({'tmp': Template(template)})
-            elif not template:
-                self.templates[name] = template
             elif isinstance(template, dict):
                 self.templates[name].update(template)
 
@@ -140,8 +125,14 @@ class Transpiler:
                 body='\n'.join(self.strings),
                 env=self
             )
-            self.default_state()
+            self.variables = {
+                '__main__': {'type': types.types['module']('__main__')}
+            }
+            self.temp_var_counts = defaultdict(int)
         else:
             code = '\n'.join(self.strings)
-            self.default_state(mode='block')
+        self.nl = 0
+        self.namespace = '__main__'
+        self.strings = []
+        self.used = set([])
         return code
