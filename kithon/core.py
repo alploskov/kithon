@@ -1,6 +1,5 @@
 import ast
 from collections import defaultdict
-import _ast
 import yaml
 from hy.lex import hy_parse
 from jinja2 import Template
@@ -17,25 +16,6 @@ def visitor(func):
         Transpiler.elements[annotations] = func
     return func
 
-def op_to_str(op):
-    """Return a sign instead of ast"""
-    return {
-        _ast.Add: '+',     _ast.Sub: '-',
-        _ast.Mult: '*',    _ast.Div: '/',
-        _ast.Mod: '%',     _ast.Pow: '**',
-        _ast.LShift: '<<', _ast.RShift: '>>',
-        _ast.BitOr: '|',   _ast.BitXor: '^',
-        _ast.BitAnd: '&',  _ast.FloorDiv: '//',
-        _ast.Invert: '~',  _ast.Not: 'not',
-        _ast.UAdd: '+',    _ast.USub: '-',
-        _ast.Eq: '==',     _ast.NotEq: '!=',
-        _ast.Lt: '<',      _ast.LtE: '<=',
-        _ast.Gt: '>',      _ast.GtE: '>=',
-        _ast.Is: 'is',     _ast.IsNot: 'is_not',
-        _ast.In: 'in',     _ast.NotIn: 'not_in',
-        _ast.And: 'and',   _ast.Or: 'or'
-    }.get(type(op))
-
 class Transpiler:
     elements = {}
 
@@ -51,29 +31,36 @@ class Transpiler:
         self.used = set([])
         self.add_templ(templates)
 
+    def new_var(self, full_name, _type):
+        if str(_type) in self.variables:
+            self.variables.update({
+                full_name + name.removeprefix(_type): var
+                for name, var in self.variables.items()
+                if name.startswith(_type)
+            })
+        self.variables.update({
+            full_name: {
+                'own': full_name,
+                'type': _type,
+                'immut': True
+            }
+        })
+
     def use(self, name):
         self.used.add(name)
         return ''
 
-    def get_temp_var(self, base_name="temp"):
+    def get_temp_var(self, base_name='temp'):
         """Get a unique temporary variable name."""
         self.temp_var_counts[base_name] += 1
         return f'{base_name}_{self.temp_var_counts[base_name]}'
-
-    def getvar(self, name):
-        path = self.namespace
-        var = self.variables.get(f'{path}.{name}')
-        while not var and path != '__main__':
-            path = path[:path.rfind('.')]
-            var = self.variables.get(f'{path}.{name}')
-        return var or {}
 
     def previous_ns(self):
         if self.namespace == '__main__':
             return '__main__'
         return self.namespace[:self.namespace.rfind('.')]
 
-    def node(self, tmp=None, parts={}, type=None, own=None):
+    def node(self, tmp=None, parts=None, type=None, own=None):
         return _node.node(
             env=self, tmp=tmp,
             parts=parts, type=type,
@@ -114,8 +101,7 @@ class Transpiler:
             from coconut.convenience import parse, setup
             setup(target='sys')
             tree = ast.parse(parse(code, 'block')).body
-        body = list(map(self.visit, tree))
-        for block in body:
+        for block in map(self.visit, tree):
             if not block:
                 continue
             self.strings.extend(block.render().split('\n'))

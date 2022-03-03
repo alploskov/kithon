@@ -15,6 +15,12 @@ def dict_to_any(self):
         return types['dict']('any', to_any(self.el_type))
     return types['dict'](self.key_type, to_any(self.el_type))
 
+def type_simplification(_type):
+    yield _type
+    while _type != 'any':
+        _type = to_any(_type)
+        yield _type
+
 def _type(name, fields, tmp='', to_any=(lambda self: 'any')):
     _type = make_dataclass(name, fields)
     _type.render = (lambda self:
@@ -23,6 +29,7 @@ def _type(name, fields, tmp='', to_any=(lambda self: 'any')):
     _type.__str__ = lambda self: self.render()
     _type.to_any = to_any
     types.update({name: _type})
+    return _type
 
 types = {}
 _type(
@@ -56,6 +63,8 @@ def type_eval(type_code, parts=None):
     """
     Generate type from macros
     """
+    if not type_code:
+        return None
     executor = lambda x: type_eval(x, parts=parts)
     if isinstance(type_code, list):
         _types = tuple(map(executor, type_code))
