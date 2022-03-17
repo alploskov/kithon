@@ -27,8 +27,8 @@ slice: |-
 
 new_var: "{{var}} := {{value}}"
 
-if: "if ({{condition}}) {{body}} {{els}}"
-elif: "else if ({{condition}}) {{body}} {{els}}"
+if: "if {{condition}} {{body}} {{els}}"
+elif: "else if {{condition}} {{body}} {{els}}"
 else: "else {{body}}"
 
 func: "func {{name}}({{args|map(attribute='val')|join(', ')}}) {{ret_type}} {{body()}}"
@@ -39,14 +39,14 @@ for: |-
   {%- if obj.type == 'str' -%}
     {{- env.use('mod_strings') -}}
     for _, {{var}} := range strings.Split({{obj}}, "")
-  {%- elif isinstance(obj.type, dict) -%}
+  {%- elif isinstance(obj.type, types['dict']) -%}
     for {{var}}, _ := range {{obj}}
   {%- else -%}
     for _, {{var}} := range {{obj}}
   {%- endif -%} {{body}}
 
 c_like_for: >-
-  for {{var()}} := {{start()}};{{' '}}
+  for {{var()}} := {{start}};{{' '}}
   {%- if get_val(step) < 0 -%}
     {{var}} > {{finish}};
   {%- elif get_val(step) >= 0 -%}
@@ -54,33 +54,35 @@ c_like_for: >-
   {%- else -%}
     ({{step}} < 0 && {{var}} > {{finish}}) || ({{var}} < {{finish}});
   {%- endif -%}
-  {{' '}}{{var()}} += {{step()}}
-  {{body()}}
+  {{' '}}{{var}} += {{step}}
+  {{body}}
 
 types:
   list: "[]{{el_type}}"
   str: string
   float: float64
   dict: "map[{{key_type}}]{{el_type}}"
+  any: "interface{}"
 
 body: |-
   {{'{'}}{%for st in body%}
-  {{'    '*nl}}{{st()}}{%endfor%}
+  {{'    '*nl}}{{st}}{%endfor%}
   {{'    '*(nl-1)}}}
 
 class: |-
-  type {{name}} struct {{'{'}}
-  {{' '*4*(nl)}}{{attrs|join('\n'+' '*4*(nl))}}
+  type {{name}} struct {{'{'}}{%for a, type in attrs.items()%}
+  {{'    '*(nl+1)}}{{a}} {{type}}{%endfor%}
   }
   {{init}}
   {{methods|join('\n')}}
 
 init: |-
   func init_{{class_name}}({{(args[1:])|join(', ')}}) {{class_name}}{{'{'}}
-  {{' '*4*nl}}self := {{class_name+'{}'}}
-  {{' '*4*(nl)}}{{body.parts.body|join('\n'+' '*4*(nl-1))}}
-  {{' '*4*(nl)}}return self
+  {{'    '*nl}}self := {{class_name+'{}'}}
+  {{'    '*nl}}{{body.parts.body|join('\n'+' '*4*nl)}}
+  {{'    '*nl}}return self
   }
+
 method: |-
   func (self {{class_name}}) {{name}}({{(args[1:])|join(', ')}}) {{ret_type}} {{'{'}}
   {{' '*4*(nl)}}{{body.parts.body|join('\n'+' '*4*(nl-1))}}
@@ -89,7 +91,7 @@ method: |-
 static_attr: "{{var}} {{_type}}"
 new: "init_{{func}}({{args|join(', ')}})"
 
-Main: |-
+main: |-
   package main
   {% if env.used %}  
   import ({%- for used in env.used -%}

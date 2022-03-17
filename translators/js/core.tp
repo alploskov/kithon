@@ -9,9 +9,16 @@ operators:
 Tuple: "[{{ls|join(', ')}}]"
 unpack: "[{{vars|join(', ')}}] = {{value}}"
 unpack_to_new: "let [{{vars|join(', ')}}] = {{value}}"
+attr: |-
+  {%- if attr_inf.static and obj.type != 'type' -%}
+    {{obj}}.constructor
+  {%- else -%}
+    {{obj}}
+  {%- endif -%}.{{attr}}
+
 index: >-
   {{obj}}
-  {%- if isinstance(obj.type, list) -%}[
+  {%- if isinstance(obj.type, types.list) -%}[
      {%- if key < 0 -%}
         {{obj}}.length+{{key}}
      {%- elif key >= 0 -%}
@@ -19,9 +26,9 @@ index: >-
      {%- else -%}
       ({{key}}<0)?({{obj}}.length+{{key}}):({{key}})
     {%-endif-%}]
-  {%- elif isinstance(obj.type, dict) -%}
+  {%- elif isinstance(obj.type, types.dict) -%}
     {%- if ctx == 'load' -%}
-    [{{key}}] || (()=>{throw "key error"})()
+    [{{key}}] == undefined?(()=>{throw "key error"})():{{obj}}[{{key}}]
     {%-else-%}
     [{{key}}]
     {%-endif-%}
@@ -69,7 +76,7 @@ while: "while ({{condition}}) {{body}}"
 
 for: >-
   for (let {{var}}
-  {{'in' if isinstance(obj.type, dict) else 'of'}}
+  {{'in' if isinstance(obj.type, types.dict) else 'of'}}
   {{obj}})
   {{body}}
 
@@ -88,22 +95,17 @@ c_like_for: >-
 break: "break;"
 continue: "continue;"
 
-class: |-
-  class {{name}} {{'{'}}
-  {{'    '*nl}}{{attrs|join('\n'+'    '*(nl))}}
-  {{'    '*nl}}{{init}}
-  {{'    '*nl}}{{methods|join('\n'+'    '*(nl))}}
-  {{'    '*(nl-1)}}}
-
+class: "class {{name}} {{body}}"
 init: "constructor({{(args[1:])|join(', ')}}) {{body}}"
 method: "{{name}}({{(args[1:])|join(', ')}}) {{body}}"
-self: "this"
-static_attr: "{{var}} = {{value}};"
+self:
+  alt_name: "this"
+static_attr: "static {{var}} = {{value}};"
 new: "new {{func}}({{args|join(', ')}})"
 
 body: |-
-  {{'{'}}{%for st in body%}
-  {{'    '*nl}}{{st}}{%endfor%}
+  {{'{'}}{% for st in body %}
+  {{'    '*nl}}{{st}}{% endfor %}
   {{'    '*(nl-1)}}}
 
 global: no
