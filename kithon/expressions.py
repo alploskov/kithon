@@ -172,7 +172,9 @@ def function_call(self, tree: _ast.Call):
     ret_type = getattr(func.type, 'ret_type', 'None')
     if (func.own or '').startswith('macro.'):
         macro = self.templates.get(
-            func.own.removeprefix('macro.'))
+            func.own.removeprefix('macro.'), {})
+    elif func.own.split('.')[-1] in self.templates:
+        macro = self.templates[func.own.split('.')[-1]]
     elif func.type == 'type':
         tmp = 'new'
         ret_type = func.own

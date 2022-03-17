@@ -1,9 +1,7 @@
-import os
-from os import path
+from os import path, walk
 import sys
 from typing import List, Optional
 import typer
-from .commands import get_lang
 from .core import Transpiler
 from . import supported_languages
 
@@ -20,6 +18,11 @@ def new(
         '',
         metavar='Name',
         help='Name of new language'
+    ),
+    base: str = typer.Argument(
+        '',
+        metavar='Base',
+        help='Base for new language(c, lisp, ...)'
     ),
 ):
     """
@@ -65,26 +68,28 @@ def generate(
     """
     Transpile python code into chose language
     """
-    templates = '\n'.join(list(templates))
+    transpiler = Transpiler()
     for lang, value in {'js': _js, 'go': _go}.items():
         if value:
-            target = lang
+            transpiler.get_lang(lang)
     if target and path.isdir(target):
-        for dirr, _, files in os.walk(target):
-            templates += '\n'.join([
-                open(f'{dirr}/{f}', 'r').read()
-                for f in files if f.endswith('.tp')
-            ])
+        for dirr, _, files in walk(target):
+            for f in files:
+                if f.endswith('.tp'):
+                    transpiler.add_templ(
+                        open(f'{dirr}/{f}', 'r').read()
+                    )
     elif target in supported_languages:
-        templates += get_lang(target)
+        transpiler.get_lang(target)
     ext = file_name.split('.')[-1]
+    codec = 'utf-8'
     if ext.endswith('x'):
         ext = ext[:-1]
-        source = open(file_name, 'r', encoding='pyxl').read()
-    else:
-        source = open(file_name, 'r').read()
+        codec = 'pyxl'
+    with open(file_name, 'r', encoding=codec) as f:
+        source = f.read()
     print(
-        Transpiler(templates).generate(
+        transpiler.generate(
             source,
             lang={
                 'py': 'py',
@@ -95,4 +100,5 @@ def generate(
                 'coconut': 'coco'
             }.get(input_lang or ext)
         ),
-        file=out)
+        file=out
+    )

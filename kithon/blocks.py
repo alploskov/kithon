@@ -229,11 +229,30 @@ def ret(self, tree: _ast.Return):
 def define_class(self, tree: _ast.ClassDef):
     self.namespace += f'.{tree.name}'
     self.new_var(self.namespace, 'type')
+    body = expression_block(self, tree.body)
+    attrs = {}
+    for attr in body.parts['vars']:
+        _var = self.variables[attr]
+        if ('.' not in _var['own'].removeprefix(self.namespace + '.')
+            and not isinstance(_var['type'], types['func'])
+        ):
+            attrs |= {
+                _var['own'].split('.')[-1]: str(_var['type'])
+            }
     node = self.node(
         tmp='class',
         parts={
             'name': tree.name,
-            'body': expression_block(self, tree.body),
+            'body': body,
+            'init': next(filter(
+                lambda m: m.name == 'init',
+                body.parts['body']
+            ), ''),
+            'attrs': attrs,
+            'methods': list(filter(
+                lambda m: m.name == 'method',
+                body.parts['body']
+            ))
         }
     )
     self.namespace = self.previous_ns()
@@ -246,7 +265,7 @@ def expression_block(self, body):
         tmp='body',
         parts={
             'body': list(map(self.visit, body)),
-            'vars': set(self.variables.keys()) - vars
+            'vars': list(set(self.variables.keys()) - vars)
         }
     )
     self.nl -= 1

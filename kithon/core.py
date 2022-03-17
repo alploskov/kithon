@@ -1,9 +1,10 @@
 import ast
 from collections import defaultdict
+from os import path, walk, listdir
 import yaml
 from hy.lex import hy_parse
 from jinja2 import Template
-from . import types, node as _node, transpiler_templates
+from . import types, node as _node, transpiler_templates, __path__
 
 
 def visitor(func):
@@ -19,7 +20,7 @@ def visitor(func):
 class Transpiler:
     elements = {}
 
-    def __init__(self, templates):
+    def __init__(self):
         self.templates = defaultdict(dict) | transpiler_templates.default
         self.nl = 0
         self.namespace = '__main__'
@@ -29,7 +30,6 @@ class Transpiler:
         self.strings = []
         self.temp_var_counts = defaultdict(int)
         self.used = set([])
-        self.add_templ(templates)
 
     def new_var(self, full_name, _type):
         if str(_type) in self.variables:
@@ -66,6 +66,15 @@ class Transpiler:
             parts=parts, type=type,
             nl=self.nl, own=own
         )
+    def get_lang(self, lang):
+        translators_dirr = path.join(path.split(__path__[0])[0], 'translators')
+        if lang not in listdir(translators_dirr):
+            raise ValueError(f'{lang} is not supported')
+        for dirr, _, files in walk(path.join(translators_dirr, lang)):
+            for f in files:
+                self.add_templ(
+                    open(f'{dirr}/{f}', 'r', encoding='utf-8').read()
+                )
 
     def add_templ(self, templates):
         templates = yaml.load(
@@ -106,7 +115,7 @@ class Transpiler:
                 continue
             self.strings.extend(block.render().split('\n'))
         if mode == 'main':
-            code = self.templates['Main']['tmp'].render(
+            code = self.templates['main']['tmp'].render(
                 _body=self.strings,
                 body='\n'.join(self.strings),
                 env=self
