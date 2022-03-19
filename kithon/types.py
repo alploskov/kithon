@@ -68,7 +68,12 @@ def type_eval(type_code, parts=None):
     executor = lambda x: type_eval(x, parts=parts)
     if isinstance(type_code, list):
         _types = tuple(map(executor, type_code))
-        return types['tuple'](tuple(set(_types)), _types)
+        return types['tuple'](
+            tuple(set(
+                t if t.__hash__ else 'any' for t in _types
+            )),
+            _types
+        )
     if (isinstance(type_code, dict)
         and (base_type := list(type_code.keys())[0]) in types
     ):
