@@ -21,7 +21,7 @@ class Transpiler:
     elements = {}
 
     def __init__(self):
-        self.templates = defaultdict(dict) | transpiler_templates.default
+        self.templates = transpiler_templates.default
         self.nl = 0
         self.namespace = '__main__'
         self.variables = {
@@ -66,17 +66,18 @@ class Transpiler:
             parts=parts, type=type,
             nl=self.nl, own=own
         )
+
     def get_lang(self, lang):
         translators_dirr = path.join(path.split(__path__[0])[0], 'translators')
         if lang not in listdir(translators_dirr):
             raise ValueError(f'{lang} is not supported')
         for dirr, _, files in walk(path.join(translators_dirr, lang)):
             for f in files:
-                self.add_templ(
+                self.load_templs(
                     open(f'{dirr}/{f}', 'r', encoding='utf-8').read()
                 )
 
-    def add_templ(self, templates):
+    def load_templs(self, templates):
         templates = yaml.load(
             templates.expandtabs(2),
             Loader=yaml.FullLoader
@@ -84,12 +85,20 @@ class Transpiler:
         if not templates:
             return
         for name, template in templates.items():
-            if not template:
-                self.templates[name] = {}
-            elif isinstance(template, str):
-                self.templates[name].update({'tmp': Template(template)})
-            elif isinstance(template, dict):
-                self.templates[name].update(template)
+            self.add_templ(name, template)
+    
+    def add_templ(self, name, template):
+        if name not in self.templates:
+            self.templates[name] = {}
+        if isinstance(template, str):
+            self.templates[name].update({'tmp': Template(template)})
+        elif isinstance(template, dict):
+            for field, value in template.items():
+                keywords = ['tmp', 'type', 'ignore_import', 'code', 'alt_name', 'ret_type']
+                if field in keywords:
+                    self.templates[name].update({field: value})
+                else:
+                    self.add_templ(f'{name}.{field}', value)
 
     def visit(self, tree, **kw):
         if type(tree) not in self.elements:

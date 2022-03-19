@@ -43,9 +43,9 @@ def un_op(self, tree: _ast.UnaryOp):
     return self.node(
         tmp=overload.get('code', 'un_op'),
         type=type_eval(
-            overload.get('type', el.type),
+            overload.get('type'),
             {'op': op, 'el': el}
-        ),
+        ) or el.type,
         parts={
             'op': self.templates['operators'].get(
                 f'un{op}',
@@ -163,17 +163,17 @@ def attribute(self, tree: _ast.Attribute):
     )
 
 @visitor
-def function_call(self, tree: _ast.Call):
+def call(self, tree: _ast.Call):
     func = self.visit(tree.func)
     args = list(map(self.visit, tree.args))
     kwargs = list(map(self.visit, tree.keywords))
-    tmp = 'callfunc'
+    tmp = 'call'
     macro = {}
     ret_type = getattr(func.type, 'ret_type', 'None')
     if (func.own or '').startswith('macro.'):
         macro = self.templates.get(
             func.own.removeprefix('macro.'), {})
-    elif func.own.split('.')[-1] in self.templates:
+    elif (func.own or '').split('.')[-1] in self.templates:
         macro = self.templates[func.own.split('.')[-1]]
     elif func.type == 'type':
         tmp = 'new'

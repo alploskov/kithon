@@ -1,50 +1,55 @@
 html:
-  type: module
+  type: {module: ['html']}
 
-  x_h1:
+  h1:
     ret_type: tag
 
-  x_h2:
+  h2:
     ret_type: tag
 
-  x_p:
+  p:
     ret_type: tag
 
-  x_div:
+  div:
     ret_type: tag
 
-  x_button:
+  button:
     ret_type: tag
+
   rawhtml:
     code: "{{args[0]}}"
 
-  x_input:
+  input:
     ret_type: tag
 
-  x_li:
+  li:
     ret_type: tag
 
-  x_a:
+  a:
     ret_type: tag
 
-  x_ul:
+  ul:
     ret_type: tag
 
-  x_strong:
+  strong:
     ret_type: tag
     
-  x_br:
+  br:
     ret_type: tag
 
-  x_del:
+  del:
     ret_type: tag
-  
+
+t:
+  code: "{{args[0]}}"
+  ret_type: tag
+
 tag:
   code: |-
     (
-    {%- if func.parts.obj|string == 'html' -%}
-      {%- set tag_name = func.parts.attr[2:]-%}
-    {%- elif func.name == 'callfunc'-%}
+    {%- if (func|string).startswith('html.') -%}
+      {%- set tag_name = func.parts.func.parts.attr-%}
+    {%-else -%}
       {%- set tag_name = func.parts.func() -%}
     {%- endif -%}
     {%- set kwargs -%}
@@ -57,15 +62,15 @@ tag:
 	    'maxrows': 'maxRows'
 	  }[kw.parts.name] + '={'+ kw.parts.value() + '}' -}}
         {%- elif kw.parts.value.name == 'Str' -%}
-	  {{- ' ' + kw() -}}
+          {{- ' ' + kw() -}}
         {%- else -%}
-	  {{- ' '+ kw.parts.name + '={' + kw.parts.value() + '}' -}}
+          {{- ' '+ kw.parts.name + '={' + kw.parts.value() + '}' -}}
         {%- endif -%}
       {%- endfor -%}
     {%- endset -%}
     {{'\n'+'    '*(nl+1)}}<{{tag_name}}{{kwargs}}>{{'\n'}}
     {%- for child in args -%}
-        {%- if child.name == 'Str' -%}
+        {%- if (child|string).startswith('"') -%}
             {{'    '*(nl+2)}}{{child()[1:-1]}}{{'\n'}}
         {%- elif child.type == 'tag' -%}
             {%-for st in child()[2:-1].split('\n')[:-1]-%}
@@ -84,7 +89,13 @@ react_render:
     ReactDOM.render({{args|join(', ')}})
 
 React:
-  type: module
+  type: {module: [React]}
 
-  useState:
-    ret_type: ["args[0].type", "Func('', args[0].type, None)"]
+React.useState:
+  ret_type:
+    - '{{args[0].type}}'
+    - function
+#    - func:
+#        - 'React.useState'
+#        - ['{{args[0].type}}']
+#        - 'None'

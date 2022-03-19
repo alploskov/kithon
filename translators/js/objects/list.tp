@@ -1,20 +1,31 @@
-list[any].append:
-  side_effect: |-
-    set_el_type(obj, args[0].type)
-    set_as_mut(obj)
-  alt_name: 'push'
-  ret_type: "None"
+list[any]:
+  append:
+    alt_name: 'push'
 
-list[None].*.type:
-  side_effect: |-
-    set_el_type(obj, as=args[0])
-    set_as_mut(obj)
-  code: "{{left}}"
-  type: "List[{{right.type}}]"
+  extend:
+    alt_name: 'push'
+    code: "{{func.parts.obj}}.concat({{args[0]}})"
+
+  insert:
+    alt_name: 'splice'
+
+  index:
+    alt_name: indexOf
+    ret_type: int
+
+  pop:
+    code: |-
+      {{func.parts.obj}}
+      {%- if args|length > 0 -%}
+      .splice({{args[0]}}, 1)
+      {%- else -%}
+      .pop()
+      {%- endif -%}
+    ret_type: "{{func.parts.obj.type.el_type}}"
 
 list[any].*.int:
   code: 'Array({{right}}).fill({{left}}).flat()'
-  type: 'left.type'
+  type: '{{left.type}}'
 
 list[any].==.list[any]:
   code: |-
@@ -23,24 +34,13 @@ list[any].==.list[any]:
     {%- else -%}
       (JSON.stringify({{left}})==JSON.stringify({{right}}))
     {%- endif -%}
-  type: 'bool'
+  type: bool
 
-list[any].index:
-  alt_name: 'indexOf'
-  type: 'int'
 
 list[any].+.list[any]:
   code: "{{left}}.concat({{right}})"
-  type: "left.type"
+  type: "{{left.type}}"
 
 any.in.list[any]:
   code: "{{right}}.includes({{left}})"
-  type: "bool"
-
-list[any].pop:
-  code: |-
-    {%- if args|length > 0 -%}
-      {{obj}}.splice({{args[0]}}, 1)
-    {%- else -%}
-      {{obj}}.pop()
-    {%- endif -%}
+  type: bool

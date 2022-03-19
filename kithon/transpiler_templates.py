@@ -15,9 +15,11 @@ conf = {
 {%-endif-%}''',
     'un_op': '{{op}}({{el}})',
 
-    'callfunc': "{{func}}({{args|join(', ')}}{%if args and kwargs%}, {%endif%}{{kwargs|join(', ')}})",
-    'getattr': "{{obj}}.{{attr}}",
-    'callmethod': "{{obj}}.{{attr}}({{args|join(', ')}}{%if args and kwargs%}, {%endif%}{{kwargs|join(', ')}})",
+    'call': (
+        "{{func}}({{args|join(', ')}}"
+        "{%if args and kwargs%}, {%endif%}{{kwargs|join(', ')}})"
+    ),
+    'attr': "{{obj}}.{{attr}}",
     'arg': '{{name}}',
     'kwarg': '{{name}}={{value}}',
     'List': "[{{ls|join(', ')}}]",
@@ -25,8 +27,12 @@ conf = {
     'Dict': "{{'{'}}{%for item in keys_val%}{{item[0]}}: {{item[1]}},{%endfor%}}",
 
     'index': '{{obj}}[{{key}}]',
-    'slice': '{% if step == 1 %}{{obj}}[{{low}}:{{up}}]{% else %}{{obj}}[{{low}}:{{up}}:{{step}}]{%endif%}',
-
+    'slice': (
+        '{% if step == 1 %}'
+        '{{obj}}[{{low}}:{{up}}]'
+        '{% else %}{{obj}}[{{low}}:{{up}}:{{step}}]'
+        '{%endif%}'
+    ),
     'expr': '{{value}}',
 
     'assign': '{{var}} = {{value}}',
@@ -62,13 +68,12 @@ conf = {
     'method': "def {{name}}({{args|join(', ')}}){{body}}",
     'static_attr': '{{var}} = {{value}}',
     'new': "{{func}}({{args|join(', ')}})",
-
     'body': ''':{%for st in body%}
 {{'    '*nl}}{{st}}{%endfor%}''',
     'global': 'global {{vars|join(", ")}}',
     'nonlocal': 'nonlocal {{vars|join(", ")}}',
     'import': '',
-    'Main': '{{body}}'
+    'main': '{{body}}'
 }
 
 macros = {

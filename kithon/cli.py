@@ -76,7 +76,7 @@ def generate(
         for dirr, _, files in walk(target):
             for f in files:
                 if f.endswith('.tp'):
-                    transpiler.add_templ(
+                    transpiler.load_templs(
                         open(f'{dirr}/{f}', 'r').read()
                     )
     elif target in supported_languages:
