@@ -61,9 +61,9 @@ class Transpiler:
             return '__main__'
         return self.namespace[:self.namespace.rfind('.')]
 
-    def node(self, tmp=None, parts=None, type=None, own=None):
+    def node(self, tmp=None, name='unknown', parts=None, type=None, own=None):
         return _node.node(
-            env=self, tmp=tmp,
+            env=self, tmp=tmp, name=name,
             parts=parts, type=type,
             nl=self.nl, own=own
         )

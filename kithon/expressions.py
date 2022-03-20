@@ -42,6 +42,7 @@ def un_op(self, tree: _ast.UnaryOp):
     side_effect(overload, {'op': op, 'el': el})
     return self.node(
         tmp=overload.get('code', 'un_op'),
+        name='un_op',
         type=type_eval(
             overload.get('type'),
             {'op': op, 'el': el}
@@ -102,6 +103,7 @@ def _bin_op(self, left, right, op):
     side_effect(overload, {'left': left, 'right': right})
     return self.node(
         tmp=overload.get('code', 'bin_op'),
+        name='bin_op',
         type=type_eval(
             overload.get('type', 'any'),
             {'left': left, 'right': right}
@@ -150,6 +152,7 @@ def attribute(self, tree: _ast.Attribute):
     inf = self.variables.get(own, {})
     return self.node(
         tmp=macro.get('get', 'attr'),
+        name='attr',
         type=inf.get('type') or type_eval(
             macro.get('type', 'None'),
             {'obj': obj, 'attr': tree.attr}
@@ -188,6 +191,7 @@ def call(self, tree: _ast.Call):
     side_effect(macro, parts)
     return self.node(
         tmp=macro.get('code', tmp),
+        name=tmp,
         type=type_eval(
             macro.get('ret_type'), parts
         ) or ret_type,

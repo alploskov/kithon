@@ -4,14 +4,14 @@ import _ast
 from jinja2 import Template
 from .types import types
 
+
 class node:
-    def __init__(self, env=None, tmp=None, parts={}, type=None, nl=1, own=None):
-        self.name = 'unknown'
-        self.tmp = None
+    def __init__(self, env=None, tmp=None, name='unknown', parts=None, type=None, nl=1, own=None):
         if tmp in env.templates:
             self.name = tmp
             self.tmp = env.templates[tmp].get('tmp', '')
         else:
+            self.name = name
             self.tmp = Template(tmp)
         self.parts = parts
         self.type = type
