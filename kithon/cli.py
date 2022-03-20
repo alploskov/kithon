@@ -43,6 +43,12 @@ def generate(
         '--templ',
         help='Names of template file'
     ),
+    macro: List[str] = typer.Option(
+        [],
+        '-m',
+        '--macro',
+        help='Macro in yaml format'
+    ),
     out: typer.FileTextWrite = typer.Option(
         sys.stdout,
         '-o',
@@ -81,6 +87,8 @@ def generate(
                     )
     elif target in supported_languages:
         transpiler.get_lang(target)
+    for _macro in macro:
+        transpiler.load_templs(_macro)
     ext = file_name.split('.')[-1]
     codec = 'utf-8'
     if ext.endswith('x'):
