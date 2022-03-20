@@ -4,7 +4,7 @@ from os import path, walk, listdir
 import yaml
 from hy.lex import hy_parse
 from jinja2 import Template
-from . import types, node as _node, transpiler_templates, __path__
+from . import types, node as _node, __path__
 
 
 def visitor(func):
@@ -21,7 +21,8 @@ class Transpiler:
     elements = {}
 
     def __init__(self):
-        self.templates = transpiler_templates.default
+        self.templates = {}
+        self.get_lang('python')
         self.nl = 0
         self.namespace = '__main__'
         self.variables = {

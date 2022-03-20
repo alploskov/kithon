@@ -1,0 +1,43 @@
+int:
+  type: type
+  ret_type: int
+
+  +.int:
+    type: int
+
+  -.int:
+    type: int
+  
+  /.int:
+    type: float
+
+  //.int:
+    type: int
+
+  <<.int:
+    type: int
+
+  ">>.int":
+    type: int
+  
+  "*.int":
+    type: int
+
+  "%.int":
+    type: int
+
+int.|.int:
+  type: int
+
+str:
+  type: 'type'
+  ret_type: str
+
+
+float:
+  type: 'type'
+  ret_type: float
+
+bool:
+  type: 'type'
+  ret_type: bool
