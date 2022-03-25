@@ -1,7 +1,7 @@
 import ast
 from functools import reduce
 import math
-from itertools import product, count, starmap
+from itertools import product
 import _ast
 from .types import types, type_eval, type_simplification
 from .core import visitor
@@ -249,16 +249,25 @@ def slice(self, tree: _ast.Subscript):
         _ast.Load: 'load'
     }.get(type(tree.ctx))
     if not isinstance(_slice, _ast.Slice):
+        for t in type_simplification(obj.type):
+            macro = self.templates.get(
+                f'{t}.__getitem__',
+                self.templates.get(f'{t}.[]', {})
+            )
+            if macro: break
         return self.node(
-            tmp='index',
-            type=getattr(obj.type, 'el_type', 'any'),
+            tmp=macro.get('code', 'index'),
+            type=macro.get(
+                'ret_type',
+                getattr(obj.type, 'el_type', 'any')
+            ),
             own=obj.own if ctx == 'store' else '',
             parts={'obj': obj, 'key': self.visit(_slice), 'ctx': ctx}
         )
     return self.node(
         tmp='slice',
         type=obj.type,
-        own=obj.own if ctx == 'store' else '',
+        own=(obj.own if ctx == 'store' else ''),
         parts={
             'obj': obj,
             'ctx': ctx,
@@ -289,9 +298,11 @@ def name(self, tree: _ast.Name):
         _ast.Load: 'load'
     }.get(type(tree.ctx))
     ns = (self.namespace + '.').split('.')
-    for path in map(lambda n: '.'.join(ns[:-(n + 1)]), count()):
-        var_info = self.variables.get(f'{path}.{tree.id}', {})
-        if var_info or not path: break
+    for ln in range(len(ns)):
+        var_info = self.variables.get(
+            f'{".".join(ns[:-(ln + 1)])}.{tree.id}', {}
+        )
+        if var_info: break
     macro = self.templates.get(tree.id, {})
     var_info = var_info or {
         'own': (
