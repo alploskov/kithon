@@ -107,6 +107,6 @@ body: |-
   {{'{'}}{% for st in body %}
   {{'    '*nl}}{{st}}{% endfor %}
   {{'    '*(nl-1)}}}
-
+import: 'import * as {{alias}} from "./{{name}}.mjs";'
 global: no
 nonlocal: no

@@ -1,5 +1,5 @@
 math:  
-  ignore_import: yes
+  import_code: "{%if alias != 'Math'%}{{alias}} = Math;{%endif%}"
   alt_name: Math
   type: {module: ['math']}
 

@@ -64,6 +64,6 @@ body: |-
 
 global: 'global {{vars|join(", ")}}'
 nonlocal: 'nonlocal {{vars|join(", ")}}'
-import: ''
+import: 'import {{name}}{%if alias != name%} as {{alias}}{%endif%}'
 
 main: '{{body}}'

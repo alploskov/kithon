@@ -273,7 +273,25 @@ def expression_block(self, body):
 
 @visitor
 def _import(self, tree: _ast.Import):
+    name = tree.names[0].name
+    alias = tree.names[0].asname
+    macro = self.templates.get(name, {})
+    module_own = ('macro' if macro else self.namespace) + '.' + name
+    self.variables.update({
+        (self.namespace + '.' + (alias or name)): {
+            'own': module_own,
+            'type': types['module'](name)
+        }
+    })
+    if macro.get('import_code') == False:
+        return self.node(tmp='', name='import', parts={})
     return self.node(
+        tmp=macro.get('import_code', 'import'),
+        name='import',
+        parts={
+            'name': macro.get('alt_name', name),
+            'alias': alias or macro.get('alt_name', name)
+        }
     )
 
 @visitor
