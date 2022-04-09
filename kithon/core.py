@@ -24,6 +24,7 @@ class Transpiler:
         self.templates = {}
         self.get_lang('python')
         self.nl = 0
+        self.mod_name = '__main__'
         self.namespace = '__main__'
         self.variables = {
             '__main__': {'type': types.types['module']('__main__')}
@@ -112,6 +113,13 @@ class Transpiler:
         return node
 
     def generate(self, code, lang='py', mode='main'):
+        if mode not in ['main', 'block']:
+            self.namespace = mode
+            self.mod_name = mode
+            self.variables |= {
+                mode: {'type': types.types['module'](mode)}
+            }
+
         if lang == 'py':
             tree = ast.parse(code).body
         elif lang == 'hy':
@@ -124,16 +132,17 @@ class Transpiler:
             if not block:
                 continue
             self.strings.extend(block.render().split('\n'))
-        if mode == 'main':
+        if mode != 'block':
             code = self.templates['main']['tmp'].render(
                 _body=self.strings,
                 body='\n'.join(self.strings),
                 env=self
             )
-            self.variables = {
-                '__main__': {'type': types.types['module']('__main__')}
-            }
-            self.temp_var_counts = defaultdict(int)
+            if mode == 'main':
+                self.variables = {
+                    '__main__': {'type': types.types['module']('__main__')}
+                }
+                self.temp_var_counts = defaultdict(int)
         else:
             code = '\n'.join(self.strings)
         self.nl = 0

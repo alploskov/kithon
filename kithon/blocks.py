@@ -276,7 +276,7 @@ def _import(self, tree: _ast.Import):
     name = tree.names[0].name
     alias = tree.names[0].asname
     macro = self.templates.get(name, {})
-    module_own = ('macro' if macro else self.namespace) + '.' + name
+    module_own = ('macro.' if macro else '') + name
     self.variables.update({
         (self.namespace + '.' + (alias or name)): {
             'own': module_own,
