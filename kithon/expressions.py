@@ -1,7 +1,7 @@
 import ast
 from functools import reduce
 import math
-from itertools import product
+from itertools import product, starmap
 import _ast
 from .types import types, type_eval, type_simplification
 from .core import visitor
