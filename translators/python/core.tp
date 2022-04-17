@@ -39,6 +39,7 @@ new_var: '{{var}} = {{value}}'
 if: "if {{condition}}{{body}}{%if els%}{{'\n'}}{{els}}{%endif%}"
 elif: "{{'    '*nl}}elif {{condition}}{{body}}{{'\n'}}{{els}}"
 else: "{{'    '*nl}}else{{body}}"
+ternar: "({{body}} if {{condition}} else {{els}})"
 
 func: "{{'\n'}}def {{name}}({{args|join(', ')}}){{body}}{{'\n'}}"
 lambda: 'lambda {{args|join(", ")}}: {{body}}'
@@ -65,5 +66,5 @@ body: |-
 global: 'global {{vars|join(", ")}}'
 nonlocal: 'nonlocal {{vars|join(", ")}}'
 import: 'import {{name}}{%if alias != name%} as {{alias}}{%endif%}'
-
+var_prototype: "{{name}} = None"
 main: '{{body}}'

@@ -1,4 +1,5 @@
 import ast
+import typing
 import _ast
 from .types import types
 from .core import visitor
@@ -11,7 +12,7 @@ def expr(self, tree: _ast.Expr):
         parts={'value': self.visit(tree.value)}
     )
 
-def set_var(self, var, _type):
+def set_var(self, var, _type='any'):
     """
     returns True if var is new, otherwise returns False
     """
@@ -58,6 +59,14 @@ def assign(self, tree: _ast.Assign, _type=None):
             'value': value,
             'own': var.own
         }
+    )
+
+@visitor
+def var_prototype(self, tree: typing.Any):
+    set_var(self, self.visit(ast.Name(id=tree, ctx=ast.Store)))
+    return self.node(
+        tmp='var_prototype',
+        parts={'name': tree}
     )
 
 def unpack(self, _vars, value):
@@ -107,15 +116,16 @@ def _if(self, tree: _ast.If, is_elif=False):
         }
     )
 
-def _else(self, body):
-    if not body:
+@visitor
+def _else(self, tree: typing.Any):
+    if not tree:
         return ''
-    if isinstance(body[0], _ast.If):
-        return _if(self, body[0], is_elif=True)
+    if isinstance(tree[0], _ast.If):
+        return _if(self, tree[0], is_elif=True)
     return self.node(
         tmp='else',
         parts={
-            'body': expression_block(self, body),
+            'body': expression_block(self, tree),
         }
     )
 
@@ -258,13 +268,14 @@ def define_class(self, tree: _ast.ClassDef):
     self.namespace = self.previous_ns()
     return node
 
-def expression_block(self, body):
+@visitor
+def expression_block(self, tree: typing.Any):
     self.nl += 1
     vars = set(self.variables.keys())
     body = self.node(
         tmp='body',
         parts={
-            'body': list(map(self.visit, body)),
+            'body': list(map(self.visit, tree)),
             'vars': list(set(self.variables.keys()) - vars)
         }
     )

@@ -6,12 +6,12 @@ from .types import types
 
 
 class node:
-    def __init__(self, env=None, tmp=None, name='unknown', parts=None, type=None, nl=1, own=None):
+    def __init__(self, env=None, tmp=None, name=None, parts=None, type=None, nl=1, own=None):
         if tmp in env.templates:
-            self.name = tmp
+            self.name = name or tmp
             self.tmp = env.templates[tmp].get('tmp', '')
         else:
-            self.name = name
+            self.name = name or 'unknown'
             self.tmp = Template(tmp)
         self.parts = parts
         self.type = type
@@ -65,7 +65,8 @@ class node:
             for part in self.code_before[1:]:
                 before += self.prefix * self.nl
                 before += _get_val(part) + '\n'
-            self.val = before +  self.prefix * self.nl + self.val
+            self.clear_code_before()
+            self.val = before + self.prefix * self.nl + self.val
         elif self.parent:
             self.parent.code_before.extend(self.code_before)
         return self.val

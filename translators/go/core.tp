@@ -26,14 +26,15 @@ slice: |-
   {%-endif-%}
 
 new_var: "{{var}} := {{value}}"
-
+var_prototype: "var {{name}} interface{}"
 if: "if {{condition}} {{body}} {{els}}"
 elif: "else if {{condition}} {{body}} {{els}}"
 else: "else {{body}}"
+ternar: no
 
-func: "func {{name}}({{args|map(attribute='val')|join(', ')}}) {{ret_type}} {{body()}}"
+func: "func {{name}}({{args|map(attribute='val')|join(', ')}}) {{ret_type}} {{body}}"
 
-while: "for {{condition()}} {{body()}}"
+while: "for {{condition()}} {{body}}"
 
 for: |-
   {%- if obj.type == 'str' -%}

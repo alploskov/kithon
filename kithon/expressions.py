@@ -290,6 +290,45 @@ def slice(self, tree: _ast.Subscript):
     )
 
 @visitor
+def ternar(self, tree: _ast.IfExp):
+    cond = self.visit(tree.test)
+    body = self.visit(tree.body)
+    els = self.visit(tree.orelse)
+    if not self.templates['ternar']['tmp']:
+        var_name = self.get_temp_var('ifepx')
+        exp = self.node(
+            tmp='name',
+            name='ternar',
+            type=body.type,
+            parts={'name': var_name, 'ctx': _ast.Load}
+        )
+        exp.add_code_before(self.var_prototype(var_name))
+        _assign = lambda val: ast.Assign(
+            targets=[ast.Name(id=var_name, ctx=ast.Store())],
+            value=val
+        )
+        exp.add_code_before(
+            self.node(
+                tmp='if',
+                parts={
+                    'condition': cond,
+                    'body': self.expression_block([_assign(tree.body)]),
+                    'els': self._else([_assign(tree.orelse)])
+                }
+            )
+        )
+        return exp
+    return self.node(
+        tmp='ternar',
+        type=body.type,
+        parts={
+            'condition': cond,
+            'body': body,
+            'els': els
+        }
+    )
+
+@visitor
 def name(self, tree: _ast.Name):
     if tree.id.startswith('x_'):
         tree.id = tree.id[2:]

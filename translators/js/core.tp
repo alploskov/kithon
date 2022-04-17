@@ -56,7 +56,7 @@ slice: |-
   {%-endif-%}
 
 expr: "{{value}};"
-
+var_prototype: "let {{name}};"
 assign: &assign "{{var}} = {{value}};"
 set_attr: *assign
 new_attr: *assign
@@ -67,7 +67,7 @@ new_var: "{%if env.mod_name != '__main__'%}export {%endif%}let {{var}} = {{value
 if: "if ({{condition}}) {{body}} {{els}}"
 elif: "else if ({{condition}}) {{body}} {{els}}"
 else: "else {{body}}"
-
+ternar: "({{condition}}?{{body}}:{{els}})"
 func: "{%if env.mod_name != '__main__'%}export {%endif%}function {{name}}({{args|join(', ')}}) {{body}}"
 
 return: "return {{value}};"
