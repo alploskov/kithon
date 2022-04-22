@@ -1,0 +1,7 @@
+dec:
+  code: "--{{args[0]}}"  
+  ret_type: "{{args[0].type}}"
+
+inc:
+  code: "++{{args[0]}}"
+  ret_type: "{{args[0].type}}"
