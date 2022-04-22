@@ -1,13 +1,15 @@
 [tool.poetry]
 name = "kithon"
 readme = "README.md"
-version = "0.2.0"
+version = "0.2.1"
 description = "transpiler python into other language"
 authors = ["Aleksey Ploskov"]
 license = "MIT"
 repository = "https://github.com/alploskov/kithon"
 packages = [{ include = "kithon"}]
 include = [
+	"translators/python/*",
+
 	"translators/js/*",
 	"translators/js/libs/*",
 	"translators/js/objects/*",
@@ -22,14 +24,14 @@ python = ">=3.9.0,<3.11"
 Jinja2 = ">=2.11.2,<4.0.0"
 PyYaml = ">=5.4.0"
 typer = "^0.4.0"
-hy = {git = "https://github.com/hylang/hy", rev = "master"}
 pexpect = "^4.8.0"
+hy = {path = "hy/hy-1.0a4-py3-none-any.whl"}
 pyxl4 = "^1.0.0-alpha.1"
+ptpython = "^3.0.20"
+watchdog = "^2.1.7"
 
 [tool.poetry.scripts]
-kithon = "kithon.cli:tpy"
-kithon-gen = "kithon.cli:tpy_gen"
-kithon-new = "kithon.cli:tpy_new"
+kithon = "commands:kithon"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
