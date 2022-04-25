@@ -2,10 +2,10 @@ types: {}
 operators: {}
 
 name: '{{name}}'
-Int: '{{val}}'
-Float: '{{val}}'
-Bool: '{{val}}'
-Str: "\"{{val}}\""
+int: '{{val}}'
+float: '{{val}}'
+bool: '{{val}}'
+str: "\"{{val}}\""
 
 bin_op: |-
   {%-if parent.name == "bin_op"-%}
@@ -20,9 +20,9 @@ call: "{{func}}({{args|join(', ')}}{%if args and kwargs%}, {%endif%}{{kwargs|joi
 attr: "{{obj}}.{{attr}}"
 arg: '{{name}}'
 kwarg: '{{name}}={{value}}'
-List: "[{{ls|join(', ')}}]"
-Tuple: "({{ls|join(', ')}})"
-Dict: "{{'{'}}{%for item in keys_val%}{{item[0]}}: {{item[1]}},{%endfor%}}"
+list: "[{{ls|join(', ')}}]"
+tuple: "({{ls|join(', ')}})"
+dict: "{{'{'}}{%for item in keys_val%}{{item[0]}}: {{item[1]}},{%endfor%}}"
 
 index: '{{obj}}[{{key}}]'
 slice: '{% if step == 1 %}{{obj}}[{{low}}:{{up}}]{% else %}{{obj}}[{{low}}:{{up}}:{{step}}]{%endif%}'
@@ -31,15 +31,12 @@ expr: '{{value}}'
 assign: '{{var}} = {{value}}'
 unpack: '{{vars|join(", ")}} = {{value}}'
 unpack_to_new: '{{vars|join(", ")}} = {{value}}'
-set_attr: '{{var}} = {{value}}'
-new_attr: '{{var}} = {{value}}'
-assignment_by_key: '{{var}} = {{value}}'
-new_var: '{{var}} = {{value}}'
+var_prototype: "{{name}} = None"
 
 if: "if {{condition}}{{body}}{%if els%}{{'\n'}}{{els}}{%endif%}"
 elif: "{{'    '*nl}}elif {{condition}}{{body}}{{'\n'}}{{els}}"
 else: "{{'    '*nl}}else{{body}}"
-ternar: "({{body}} if {{condition}} else {{els}})"
+ternary: "({{body}} if {{condition}} else {{els}})"
 
 func: "{{'\n'}}def {{name}}({{args|join(', ')}}){{body}}{{'\n'}}"
 lambda: 'lambda {{args|join(", ")}}: {{body}}'
@@ -66,5 +63,5 @@ body: |-
 global: 'global {{vars|join(", ")}}'
 nonlocal: 'nonlocal {{vars|join(", ")}}'
 import: 'import {{name}}{%if alias != name%} as {{alias}}{%endif%}'
-var_prototype: "{{name}} = None"
 main: '{{body}}'
+    

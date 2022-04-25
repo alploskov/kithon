@@ -1,4 +1,4 @@
-Bool: "{{val|lower}}"
+bool: "{{val|lower}}"
 
 operators:
   "or": "||"
@@ -8,8 +8,8 @@ operators:
 
 arg: "{{name}} {{_type}}"
 
-List: "{{_type}}{{'{'}}{{ls|join(', ')}}}"
-Dict: "{{_type}}{{'{'}}{%for item in keys_val%}{{item[0]}}: {{item[1]}},{%endfor%}}"
+list: "{{_type}}{{'{'}}{{ls|join(', ')}}}"
+dict: "{{_type}}{{'{'}}{%for item in keys_val%}{{item[0]}}: {{item[1]}},{%endfor%}}"
 
 index: |-
   {%- if isinstance(obj.type, list) -%}
@@ -30,7 +30,7 @@ var_prototype: "var {{name}} interface{}"
 if: "if {{condition}} {{body}} {{els}}"
 elif: "else if {{condition}} {{body}} {{els}}"
 else: "else {{body}}"
-ternar: no
+ternary: no
 
 func: "func {{name}}({{args|map(attribute='val')|join(', ')}}) {{ret_type}} {{body}}"
 

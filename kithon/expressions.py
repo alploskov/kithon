@@ -140,7 +140,7 @@ def attribute(self, tree: _ast.Attribute):
     own = f'{obj.own}.{tree.attr}'
     if own.startswith('macro.'):
         macro = self.templates.get(
-            f'{own.removeprefix("macro.")}', {}
+            own.removeprefix('macro.'), {}
         )
     else:
         for t in type_simplification(obj.type):
@@ -202,7 +202,7 @@ def call(self, tree: _ast.Call):
 def _list(self, tree: _ast.List):
     elements = list(map(self.visit, tree.elts))
     return self.node(
-        tmp='List',
+        tmp='list',
         type=types['list'](
             elements[0].type if len(elements)
             else 'any'
@@ -218,7 +218,7 @@ def _tuple(self, tree: _ast.Tuple):
     # Used in other cases
     el_type = tuple(set(els_types))
     return self.node(
-        tmp='Tuple',
+        tmp='tuple',
         type=types['tuple'](el_type, els_types),
         parts={'ls': elements}
     )
@@ -228,7 +228,7 @@ def _dict(self, tree: _ast.Dict):
     keys = list(map(self.visit, tree.keys))
     values = list(map(self.visit, tree.values))
     return self.node(
-        tmp='Dict',
+        tmp='dict',
         type=types['dict'](
             keys[0].type if len(keys) else 'any',
             values[0].type if len(values) else 'any'
@@ -290,15 +290,15 @@ def slice(self, tree: _ast.Subscript):
     )
 
 @visitor
-def ternar(self, tree: _ast.IfExp):
+def ternary(self, tree: _ast.IfExp):
     cond = self.visit(tree.test)
     body = self.visit(tree.body)
     els = self.visit(tree.orelse)
-    if not self.templates['ternar']['tmp']:
+    if not self.templates['ternary']['tmp']:
         var_name = self.get_temp_var('ifepx')
         exp = self.node(
             tmp='name',
-            name='ternar',
+            name='ternary',
             type=body.type,
             parts={'name': var_name, 'ctx': _ast.Load}
         )
@@ -319,7 +319,7 @@ def ternar(self, tree: _ast.IfExp):
         )
         return exp
     return self.node(
-        tmp='ternar',
+        tmp='ternary',
         type=body.type,
         parts={
             'condition': cond,
@@ -368,14 +368,14 @@ def name(self, tree: _ast.Name):
 @visitor
 def const(self, tree: _ast.Constant):
     _val = tree.value
-    if isinstance(_val, type(None)):
+    if _val is None:
         return none(self, tree)
     _type = str(type(_val))[8:-2]
     parts={'val': _val}
     if isinstance(_val, float):
         parts |= {'parts': math.modf(_val)}
     return self.node(
-        tmp=_type.capitalize(),
+        tmp=_type,
         type=_type,
         parts=parts
     )

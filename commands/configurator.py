@@ -1,4 +1,5 @@
-from os import path, walk
+from os import path, walk, listdir
+from kithon import __path__
 import typer
 
 
@@ -13,7 +14,7 @@ def conf(transpiler, _js, _go, target, macro, templates):
                     transpiler.load_templs(
                         open(f'{dirr}/{f}', 'r').read()
                     )
-    elif target in ['js', 'go', 'python']:
+    elif target in listdir(path.join(path.split(__path__[0])[0], 'translators')):
         transpiler.get_lang(target)
     for _macro in macro:
         transpiler.load_templs(_macro)

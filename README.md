@@ -2,22 +2,37 @@
 [hy-lang](https://github.com/hylang/hy) and [coconut](https://github.com/evhub/coconut)
 into human-readable code in any other programming languages.
 
-[Try out the web demo](https://alploskov.github.io/kithon/demo/)
+**[Try out the web demo](https://alploskov.github.io/kithon-site/demo/)** or install locally: `pip install kithon`. Then you can use generation to `js` or `go` or create custom transpiler.
 
-or 
+**Example**
 
-```bash
-pip install kithon
+```python
+# main.py
 
-echo "print('Hello World')" > test.py
+def main():
+	print('Hello, Kithon')
 
-kithon gen --js test.py
+main()
 ```
-
-Output:
-
+---
+`kithon gen --js main.py`, output:
 ```js
-console.log("Hello World");
+function main() {
+	console.log("Hello, Kithon");
+}
+main();
+```
+---
+`kithon gen --go main.py`, output:
+```go
+package main
+import (
+	"fmt"
+)
+
+func main() {
+	fmt.Println("Hello, Kithon")
+}
 ```
 
 For what?

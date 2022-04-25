@@ -40,7 +40,7 @@ def assign(self, tree: _ast.Assign, _type=None):
     _type = _type or value.type
     tmp = {
         _ast.Name: 'assign',
-        _ast.Subscript: 'assignment_by_key',
+        _ast.Subscript: 'key_assign',
         _ast.Attribute: 'set_attr'
     }.get(type(var.ast))
     if set_var(self, var, _type):
@@ -51,8 +51,11 @@ def assign(self, tree: _ast.Assign, _type=None):
     if self.variables[self.namespace]['type'] == 'type':
         self.variables[var.own]['static'] = True
         tmp = 'static_attr'
+    if not self.templates.get(tmp, {}).get('tmp'):
+        tmp = 'assign'
     return self.node(
         tmp=tmp,
+        name='assign',
         type=_type,
         parts={
             'var': var,

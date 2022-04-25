@@ -62,7 +62,7 @@ class Transpiler:
             return '__main__'
         return self.namespace[:self.namespace.rfind('.')]
 
-    def node(self, tmp=None, name='unknown', parts=None, type=None, own=None):
+    def node(self, tmp=None, name=None, parts=None, type=None, own=None):
         return _node.node(
             env=self, tmp=tmp, name=name,
             parts=parts, type=type,
@@ -75,9 +75,10 @@ class Transpiler:
             raise ValueError(f'{lang} is not supported')
         for dirr, _, files in walk(path.join(translators_dirr, lang)):
             for f in files:
-                self.load_templs(
-                    open(f'{dirr}/{f}', 'r', encoding='utf-8').read()
-                )
+                if f.endswith('.tp'):
+                    self.load_templs(
+                        open(f'{dirr}/{f}', 'r', encoding='utf-8').read()
+                    )
 
     def load_templs(self, templates):
         templates = yaml.load(
@@ -88,7 +89,7 @@ class Transpiler:
             return
         for name, template in templates.items():
             self.add_templ(name, template)
-    
+
     def add_templ(self, name, template):
         if name not in self.templates:
             self.templates[name] = {}
@@ -121,7 +122,6 @@ class Transpiler:
             self.variables |= {
                 mode: {'type': types.types['module'](mode)}
             }
-
         if lang == 'py':
             tree = ast.parse(code).body
         elif lang == 'hy':
