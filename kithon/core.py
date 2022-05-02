@@ -2,7 +2,18 @@ import ast
 from collections import defaultdict
 from os import path, walk, listdir
 import yaml
-from hy.lex import hy_parse
+try:
+    from hy.lex import hy_parse
+except ImportError:
+    is_hy_supported = False
+else:
+    is_hy_supported = True
+try:
+    from coconut.convenience import parse, setup
+except ImportError:
+    is_coconut_supported = False
+else:
+    is_coconut_supported = True
 from jinja2 import Template
 from . import types, node as _node, __path__
 
@@ -99,7 +110,7 @@ class Transpiler:
             self.templates[name].update({'tmp': ''})
         elif isinstance(template, dict):
             for field, value in template.items():
-                keywords = ['tmp', 'type', 'import_code', 'code', 'alt_name', 'ret_type']
+                keywords = ['tmp', 'type', 'import_code', 'code', 'alt_name', 'ret_type', 'meta']
                 if field in keywords:
                     self.templates[name].update({field: value})
                 else:
@@ -125,9 +136,18 @@ class Transpiler:
         if lang == 'py':
             tree = ast.parse(code).body
         elif lang == 'hy':
+            if not is_hy_supported:
+                raise Exception(
+                    "requires hy library\n"
+                    "\trun 'python -m pip install kithon[add-langs]' to fix"
+                )
             tree = hy_parse(code)[1:]
         elif lang == 'coco':
-            from coconut.convenience import parse, setup
+            if not is_coconut_supported:
+                raise Exception(
+                    "requires coconut library\n"
+                    "\trun 'python -m pip install kithon[add-langs]' to fix"
+                )
             setup(target='sys')
             tree = ast.parse(parse(code, 'block')).body
         for block in map(self.visit, tree):

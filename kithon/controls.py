@@ -1,15 +1,16 @@
 import ast
-from hy.models import Expression
-from hy.compiler import hy_compile, mkexpr
-from .core import visitor
+from .core import visitor, is_hy_supported
 from .blocks import expression_block, _else
 
 
-@visitor
-def hy_expr(self, tree: Expression):
-    if str(tree[0]) in contorols:
-        return contorols[str(tree[0])](self, tree[1:])
-    return self.visit(get_ast(tree))
+if is_hy_supported:
+    from hy.models import Expression
+    from hy.compiler import hy_compile, mkexpr
+    @visitor
+    def hy_expr(self, tree: Expression):
+        if str(tree[0]) in contorols:
+            return contorols[str(tree[0])](self, tree[1:])
+        return self.visit(get_ast(tree))
 
 def unless(self, tree):
     cond, body, *els = tree

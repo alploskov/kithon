@@ -1,6 +1,12 @@
 import time
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+try:
+    from watchdog.observers import Observer
+    from watchdog.events import FileSystemEventHandler
+except ImportError:
+    raise Exception(
+        "requires watchdog library\n"
+        "\trun 'python -m pip install kithon[watch]' to fix"
+    )
 
 
 def watch(action, path):

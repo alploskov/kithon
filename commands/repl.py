@@ -1,8 +1,14 @@
 import pprint
 from typing import Optional
-import pexpect
 import typer
-from ptpython.python_input import PythonInput
+try:
+    import pexpect
+    from ptpython.python_input import PythonInput
+except ImportError:
+    raise Exception(
+        "requires pexpect, ptpython\n"
+        "\trun 'python -m pip install kithon[repl]' to fix"
+    )
 from kithon import Transpiler
 from . import configurator
 
