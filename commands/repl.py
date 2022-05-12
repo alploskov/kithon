@@ -4,11 +4,9 @@ import typer
 try:
     import pexpect
     from ptpython.python_input import PythonInput
+    is_repl_install = True
 except ImportError:
-    raise Exception(
-        "requires pexpect, ptpython\n"
-        "\trun 'python -m pip install kithon[repl]' to fix"
-    )
+    is_repl_install = False
 from kithon import Transpiler
 from . import configurator
 
@@ -16,9 +14,7 @@ from . import configurator
 def _repl(
     templates: list[typer.FileText] = configurator.templates,
     macro: list[str] = configurator.macro,
-    _js: Optional[bool] = configurator._js,
-    _go: Optional[bool] = configurator._go,
-    target: Optional[str] = configurator.target,
+    target: Optional[str] = configurator.to,
     repl_name: Optional[str] = typer.Option(
         '',
         '--repl',
@@ -30,17 +26,19 @@ def _repl(
         help='Input prompt including spaces'
     )
 ):
+    if not is_repl_install:
+        raise Exception(
+            "requires pexpect, ptpython\n"
+            "\trun 'python -m pip install kithon[repl]' to fix"
+        )
     prompt = PythonInput()
     transpiler = Transpiler()
     configurator.conf(
-        transpiler, _js, _go,
-        target, macro, templates
+        transpiler, target, macro, templates
     )
-    if _js and not repl_name:
-        repl_name = 'node'
-        separator = '> '
-    repl = pexpect.spawn(repl_name)
-    repl.expect(separator)
+    repl = pexpect.spawn(repl_name or transpiler.templates.get('repl.name')['tmp'].render())
+    sep = separator or transpiler.templates.get('repl.separator')['tmp'].render()
+    repl.expect(sep)
     code = ''
     while 1:
         src = prompt.app.run()
@@ -52,7 +50,7 @@ def _repl(
             continue
         code = transpiler.generate(src, mode='block')
         repl.sendline(code)
-        repl.expect(separator)
+        repl.expect(sep)
         print(
             '\n'.join(repl.before.decode('utf-8').split('\n')[
                 len(code.split('\n')):-1

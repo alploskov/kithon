@@ -26,7 +26,7 @@ name_of_element:
   macro_field: ...
 ```
 
-For disable element use "no" as value
+For disable element use "no" as value in generated code of this element will be empty string
 
 ```yaml
 name_of_element: no
@@ -59,3 +59,6 @@ Types
 ### Declaration
 
 ### Using
+
+Node object
+-----------

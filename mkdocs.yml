@@ -1,0 +1,14 @@
+site_name: Kithon
+
+theme:
+    name: readthedocs
+    highlightjs: true
+    hljs_languages:
+        - yaml
+
+nav:
+  - Kithon: index.md
+  - CLI: cli.md
+  - Kithon-lang: kithon-lang.md
+  - API: api.md
+  - Tutorial: tutorial.md

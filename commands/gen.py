@@ -2,10 +2,14 @@ import sys
 import time
 from typing import Optional
 import typer
+import yaml
 from kithon import Transpiler
 from . import configurator
 from .watch import watch
 
+
+def builder(conf):
+    ...
 
 def _gen(
     file_name: str = typer.Argument(
@@ -13,11 +17,8 @@ def _gen(
         metavar='FILE',
         help='Name of file for transpilation'
     ),
-    templates: list[typer.FileText] = configurator.templates,
+    templates: list[str] = configurator.templates,
     macro: list[str] = configurator.macro,
-    _js: Optional[bool] = configurator._js,
-    _go: Optional[bool] = configurator._go,
-    target: Optional[str] = configurator.target,
     out: Optional[str] = typer.Option(
         '',
         '-o',
@@ -44,8 +45,7 @@ def _gen(
     """
     transpiler = Transpiler()
     configurator.conf(
-        transpiler, _js, _go,
-        target, macro, templates
+        transpiler, target, macro, templates
     )
     ext = file_name.split('.')[-1]
     codec = 'utf-8'

@@ -2,14 +2,16 @@ import time
 try:
     from watchdog.observers import Observer
     from watchdog.events import FileSystemEventHandler
+    is_watch_install = True
 except ImportError:
-    raise Exception(
-        "requires watchdog library\n"
-        "\trun 'python -m pip install kithon[watch]' to fix"
-    )
-
+    is_watch_install = False
 
 def watch(action, path):
+    if not is_watch_install:
+        raise Exception(
+            "requires watchdog library\n"
+            "\trun 'python -m pip install kithon[watch]' to fix"
+        )
     class handl(FileSystemEventHandler):
         def on_modified(self, event):
             if event.is_directory:

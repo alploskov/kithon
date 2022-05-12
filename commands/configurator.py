@@ -3,10 +3,7 @@ from kithon import __path__
 import typer
 
 
-def conf(transpiler, _js, _go, target, macro, templates):
-    for lang, value in {'js': _js, 'go': _go}.items():
-        if value:
-            transpiler.get_lang(lang)
+def conf(transpiler, target, macro, templates):
     if target and path.isdir(target):
         for dirr, _, files in walk(target):
             for f in files:
@@ -21,8 +18,6 @@ def conf(transpiler, _js, _go, target, macro, templates):
     for tmp in templates:
         transpiler.load_templs(open(tmp).read())
 
-_js = typer.Option(False, '--js')
-_go = typer.Option(False, '--go')
 templates = typer.Option(
     [],
     '-t',
@@ -30,11 +25,11 @@ templates = typer.Option(
     help='Names of template file'
 )
 
-target = typer.Option(
+to = typer.Option(
     '',
-    '--target',
+    '--to',
     show_default=None,
-    help='Directory with template files'
+    help='Directory with template files or name of target language'
 )
 
 macro = typer.Option(
