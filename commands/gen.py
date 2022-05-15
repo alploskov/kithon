@@ -19,6 +19,7 @@ def _gen(
     ),
     templates: list[str] = configurator.templates,
     macro: list[str] = configurator.macro,
+    target: Optional[str] = configurator.to,
     out: Optional[str] = typer.Option(
         '',
         '-o',

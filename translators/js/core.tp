@@ -110,3 +110,7 @@ body: |-
 import: 'import * as {{alias}} from "./{{name}}.mjs";'
 global: no
 nonlocal: no
+
+repl:
+  name: "node"
+  separator: "> "

@@ -20,7 +20,7 @@ index: |-
   {%- endif -%}
 
 slice: |-
-  {%- if step() == '1' -%}
+  {%- if step.val == '1' -%}
     {{-env.use('Index')-}}
     {{obj}}[{{low}}:Index({{up}}, len({{obj}}))]
   {%-endif-%}
@@ -34,7 +34,7 @@ ternary: no
 
 func: "func {{name}}({{args|map(attribute='val')|join(', ')}}) {{ret_type}} {{body}}"
 
-while: "for {{condition()}} {{body}}"
+while: "for {{condition}} {{body}}"
 
 for: |-
   {%- if obj.type == 'str' -%}
@@ -47,10 +47,10 @@ for: |-
   {%- endif -%} {{body}}
 
 c_like_for: >-
-  for {{var()}} := {{start}};{{' '}}
-  {%- if get_val(step) < 0 -%}
+  for {{var}} := {{start}};{{' '}}
+  {%- if step < 0 -%}
     {{var}} > {{finish}};
-  {%- elif get_val(step) >= 0 -%}
+  {%- elif step >= 0 -%}
     {{var}} < {{finish}};
   {%- else -%}
     ({{step}} < 0 && {{var}} > {{finish}}) || ({{var}} < {{finish}});

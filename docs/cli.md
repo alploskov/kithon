@@ -26,7 +26,7 @@ source                Path to the python or coconut/hy file to compile
 -l, --lang TEXT       Marking the entrance language (py, hy, coco)
 	                  [default: (Determined by the filename)]
 
---to TEXT             Dirrectory with templates file or name of target language
+--to TEXT             Dirrectory with templates files or name of target language
 
 -w, --watch           Regeneration when changing
 ```

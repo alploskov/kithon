@@ -110,7 +110,11 @@ class Transpiler:
             self.templates[name].update({'tmp': ''})
         elif isinstance(template, dict):
             for field, value in template.items():
-                keywords = ['tmp', 'type', 'import_code', 'code', 'alt_name', 'ret_type', 'meta']
+                keywords = [
+                    'tmp', 'type', 'import_code',
+                    'code', 'alt_name', 'ret_type',
+                    'meta', 'decorating_code', 'args'
+                ]
                 if field in keywords:
                     self.templates[name].update({field: value})
                 else:

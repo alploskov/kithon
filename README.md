@@ -10,20 +10,20 @@ into human-readable code in any other programming languages.
 # main.py
 
 def main():
-	print('Hello, Kithon')
+    print('Hello, Kithon')
 
 main()
 ```
 ---
-`kithon gen --js main.py`, output:
+`kithon gen --to js main.py`, output:
 ```js
 function main() {
-	console.log("Hello, Kithon");
+    console.log("Hello, Kithon");
 }
 main();
 ```
 ---
-`kithon gen --go main.py`, output:
+`kithon gen --to go main.py`, output:
 ```go
 package main
 import (
@@ -31,7 +31,7 @@ import (
 )
 
 func main() {
-	fmt.Println("Hello, Kithon")
+    fmt.Println("Hello, Kithon")
 }
 ```
 

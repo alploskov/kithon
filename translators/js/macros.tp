@@ -1,10 +1,14 @@
 min:
   alt_name: "Math.min"
-  type: float
+  ret_type: float
 
 max:
   alt_name: "Math.max"
-  type: float
+  ret_type: float
+
+sum:
+  code: "{{args[0]}}.reduce((a, b)=>a+b)"
+  ret_type: "{{args[0].type}}"
 
 round:
   args: [num, ndigits]
@@ -53,9 +57,8 @@ map:
 filter:
   code: "{{args[1]}}.filter({{args[0]}})"
 
-require:
-  code: "{{args[0]}}"
-  ret_type: "class_require"
+any.require_from:
+  code: "import {{func.parts.obj}} from {{args[0]}}"
 
-require.to:
-  code: "import {{args[0]}} from {{obj}}"
+js:
+  code: "{{args[0].parts.val}}"

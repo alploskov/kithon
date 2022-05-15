@@ -118,7 +118,7 @@ math:
   atanh:
     type: float
 
-  tau":
+  tau:
     code: "(Math.PI*2)"
     type: float
 
