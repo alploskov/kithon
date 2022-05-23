@@ -18,7 +18,7 @@ def main():
 main()
 ```
 ---
-`kithon gen --js main.py`, output:
+`kithon gen --to js main.py`, output:
 ```js
 function main() {
 	console.log("Hello, Kithon");
@@ -26,7 +26,7 @@ function main() {
 main();
 ```
 ---
-`kithon gen --go main.py`, output:
+`kithon gen --to go main.py`, output:
 ```go
 package main
 import (
@@ -56,7 +56,8 @@ Kithon have multiple backends trying to generate cleaner and idiomatic code. Als
 
 ### Differences form Python
 
-Kithon depends on the target language for example this python code.
+In a sense kiton is not only a transpiler it is a new programming language that gets the features of python and the target language for example static typing
+or other behavior of math operations
 
 ```python
 '1' + 1
