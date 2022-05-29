@@ -113,7 +113,7 @@ class Transpiler:
                 keywords = [
                     'tmp', 'type', 'import_code',
                     'code', 'alt_name', 'ret_type',
-                    'meta', 'decorating_code', 'args'
+                    'meta', 'decorate', 'args'
                 ]
                 if field in keywords:
                     self.templates[name].update({field: value})

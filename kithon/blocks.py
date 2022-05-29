@@ -178,6 +178,40 @@ def _for(self, tree: _ast.For):
         } | parts
     )
 
+def decorating(self, decorators):
+    if len(decorators) == 0:
+        return {}
+    if (decorators[0].own or '').startswith('macro.'):
+        return self.templates.get(
+            decorators.pop(0).own.removeprefix('macro.'), {}
+        )
+    if str(decorators[0].type) in self.templates:
+        return self.templates.get(decorators.pop(0).type, {})
+    return {}
+
+@visitor
+def args(self, tree: _ast.arg, in_class=False):
+    _args = []
+    for i, arg in enumerate(tree):
+        full_name = f'{self.namespace}.{arg.arg}'
+        if i == 0 and in_class:
+            self.variables.update({
+                full_name: self.variables[
+                    self.previous_ns()
+                ] | {'type': self.previous_ns()}
+            })
+        else:
+            self.new_var(
+                full_name,
+                getattr(arg.annotation, 'id', 'any')
+            )
+        _args.append(self.node(
+            tmp='arg',
+            type=self.variables[full_name]['type'],
+            parts={'name': arg.arg}
+        ))
+    return _args
+
 @visitor
 def define_function(self, tree: _ast.FunctionDef):
     parts = {}
@@ -191,39 +225,25 @@ def define_function(self, tree: _ast.FunctionDef):
     else:
         tmp = 'func'
     self.namespace += f'.{tree.name}'
-    args = []
-    for i, arg in enumerate(tree.args.args):
-        full_name = f'{self.namespace}.{arg.arg}'
-        if i == 0 and in_class:
-            self.variables.update({
-                full_name: self.variables[
-                    self.previous_ns()
-                ] | {'type': self.previous_ns()}
-            })
-        else:
-            self.new_var(
-                full_name,
-                getattr(arg.annotation, 'id', 'any')
-            )
-        args.append(self.node(
-            tmp='arg',
-            type=self.variables[full_name]['type'],
-            parts={'name': arg.arg}
-        ))
+    _args = self.args(tree.args.args, in_class=in_class)
+    decorators = list(map(self.visit, tree.decorator_list))
+    macro = decorating(self, decorators)
     self.new_var(
         self.namespace, types['func'](
-            tree.name, args,
+            tree.name, _args,
             getattr(tree.returns, 'id', 'None')
         )
     )
     func = self.node(
-        tmp=tmp,
+        tmp=macro.get('decorate', tmp),
+        name=tmp,
         type=self.variables[self.namespace],
         own=self.namespace,
         parts={
             'name': tree.name,
-            'args': args,
+            'args': _args,
             'body': expression_block(self, tree.body),
+            'decorators': decorators
         } | parts
     )
     self.namespace = self.previous_ns()
@@ -252,8 +272,11 @@ def define_class(self, tree: _ast.ClassDef):
             attrs |= {
                 _var['own'].split('.')[-1]: str(_var['type'])
             }
+    decorators = list(map(self.visit, tree.decorator_list))
+    macro = decorating(self, decorators)
     node = self.node(
-        tmp='class',
+        tmp=macro.get('decorate', 'class'),
+        name='class',
         parts={
             'name': tree.name,
             'body': body,
@@ -265,7 +288,8 @@ def define_class(self, tree: _ast.ClassDef):
             'methods': list(filter(
                 lambda m: m.name == 'method',
                 body.parts['body']
-            ))
+            )),
+            'decorators': decorators
         }
     )
     self.namespace = self.previous_ns()
