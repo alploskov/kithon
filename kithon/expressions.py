@@ -176,13 +176,11 @@ def call(self, tree: _ast.Call):
     if (func.own or '').startswith('macro.'):
         macro = self.templates.get(
             func.own.removeprefix('macro.'), {})
-    elif (func.own or '').split('.')[-1] in self.templates:
-        macro = self.templates[func.own.split('.')[-1]]
-    elif func.type == 'type':
-        tmp = 'new'
-        ret_type = func.own
     elif str(func.type) in self.templates:
         macro = self.templates.get(str(func.type))
+    if func.type == 'type':
+        tmp = 'new'
+        ret_type = func.own
     parts = {
         'func': func,
         'args': args,

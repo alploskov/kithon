@@ -229,21 +229,24 @@ def define_function(self, tree: _ast.FunctionDef):
     decorators = list(map(self.visit, tree.decorator_list))
     macro = decorating(self, decorators)
     self.new_var(
-        self.namespace, types['func'](
-            tree.name, _args,
+        self.namespace,
+        types['func'](
+            tree.name,
+            tuple(map(lambda a: a.type, _args)),
             getattr(tree.returns, 'id', 'None')
         )
     )
     func = self.node(
         tmp=macro.get('decorate', tmp),
         name=tmp,
-        type=self.variables[self.namespace],
+        type=self.variables[self.namespace]['type'],
         own=self.namespace,
         parts={
             'name': tree.name,
             'args': _args,
             'body': expression_block(self, tree.body),
-            'decorators': decorators
+            'decorators': decorators,
+            'ret_type': self.variables[self.namespace]['type'].ret_type
         } | parts
     )
     self.namespace = self.previous_ns()
