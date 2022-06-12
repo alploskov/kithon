@@ -23,17 +23,18 @@ def type_simplification(_type):
 
 def _type(name, fields, tmp='', to_any=(lambda self: 'any')):
     _type = make_dataclass(name, fields)
-    _type.render = (lambda self:
-        Template(tmp or name).render(**self.__dict__)
-    )
-    _type.__str__ = lambda self: self.render()
     _type.to_any = to_any
+    _type.name = name
+    _type.__str__ = (lambda t:
+        Template(tmp or t.name).render(**t.__dict__)
+    )
+    _type.fields = fields
     types.update({name: _type})
     return _type
 
 types = {}
 _type(
-    'list',
+    name='list',
     fields=['el_type'],
     tmp='list[{{el_type}}]',
     to_any=(
@@ -42,22 +43,22 @@ _type(
     )
 )
 _type(
-    'dict',
+    name='dict',
     fields=['key_type', 'el_type'],
     tmp='dict[{{key_type}}]{{el_type}}',
     to_any=dict_to_any
 )
 _type(
-    'tuple',
+    name='tuple',
     fields=['el_type', 'els_types'],
     tmp='tuple[{{els_types|join(", ")}}]'
 )
 _type(
-    'func',
-    fields=['name', 'args', 'ret_type'],
-    tmp='func[{{args|join(", ")}}]'
+    name='func',
+    fields=['args', 'ret_type'],
+    tmp='func[{{args|join(" ")}}]'
 )
-_type('module', fields=['name'], tmp='mode_{{name}}')
+_type('module', ['name'], 'mode_{{name}}')
 
 def type_eval(type_code, parts=None):
     """

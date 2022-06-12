@@ -8,7 +8,7 @@ list[any].append:
     {%-else-%}
       {{obj}} = append({{obj}}, {{args[0]}})
     {%-endif-%}
-  rettype: "None"
+  ret_type: "None"
 
 list[generic].*.type:
   side_effect: |-
@@ -18,6 +18,7 @@ list[generic].*.type:
 
 list[any].+.list[any]:
   side_effect: |-
+    #- type_conversion: el_type
     if left.type.el_type != 'generic':
       set_el_type(right, left.type.el_type)
     else:
@@ -36,4 +37,4 @@ list[any].index:
     {{'    '*nl}}    {{'}'}}
     {{'    '*nl}}    {{'panic(errors.New("ValueError: "+fmt.Sprintf("%v",'}}{{args[0]}}){{'+" is not in list"))'}}
     {{'    '*nl}}{{'}()'}}
-  rettype: int
+  ret_type: int

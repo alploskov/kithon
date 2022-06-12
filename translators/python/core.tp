@@ -1,4 +1,10 @@
-types: {}
+types:
+  list: "list[{{el_type}}]"
+  func: "func[{{args|join(', ')}}]{{ret_type}}"
+  dict: "dict[{{key_type}}]{{el_type}}"
+  tuple: "tuple[{{el_type}}]"
+  module: "mode_{{name}}"
+
 operators: {}
 
 name: '{{name}}'
@@ -38,7 +44,7 @@ elif: "{{'    '*nl}}elif {{condition}}{{body}}{{'\n'}}{{els}}"
 else: "{{'    '*nl}}else{{body}}"
 ternary: "({{body}} if {{condition}} else {{els}})"
 
-func: "{{'\n'}}def {{name}}({{args|join(', ')}}){{body}}{{'\n'}}"
+func: "{{'\n'}}{%for d in decorators %}@{{d}}{{'\n'}}{%endfor%}def {{name}}({{args|join(', ')}}){{body}}{{'\n'}}"
 lambda: 'lambda {{args|join(", ")}}: {{body}}'
 return: "return {{value}}"
 
@@ -49,10 +55,10 @@ for: 'for {{var}} in {{obj}}{{body}}'
 break: 'break'
 continue: 'continue'
 
-class: "class {{name}}{{body}}"
+class: "{%for d in decorators%}@{{d}}{{'\n'}}{%endfor%}class {{name}}{{body}}"
 
-init: "def __init__({{args|join(', ')}}){{body}}"
-method: "def {{name}}({{args|join(', ')}}){{body}}"
+init: "{%for d in decorators%}@{{d}}{{'\n'}}{%endfor%}def __init__({{args|join(', ')}}){{body}}"
+method: "{%for d in decorators%}@{{d}}{{'\n'}}{%endfor%}def {{name}}({{args|join(', ')}}){{body}}"
 static_attr: '{{var}} = {{value}}'
 new: "{{func}}({{args|join(', ')}})"
 
@@ -64,4 +70,8 @@ global: 'global {{vars|join(", ")}}'
 nonlocal: 'nonlocal {{vars|join(", ")}}'
 import: 'import {{name}}{%if alias != name%} as {{alias}}{%endif%}'
 main: '{{body}}'
-    
+
+meta:
+  repl:
+    name: python
+    separator: ">>> "

@@ -231,7 +231,6 @@ def define_function(self, tree: _ast.FunctionDef):
     self.new_var(
         self.namespace,
         types['func'](
-            tree.name,
             tuple(map(lambda a: a.type, _args)),
             getattr(tree.returns, 'id', 'None')
         )
@@ -239,7 +238,6 @@ def define_function(self, tree: _ast.FunctionDef):
     func = self.node(
         tmp=macro.get('decorate', tmp),
         name=tmp,
-        type=self.variables[self.namespace]['type'],
         own=self.namespace,
         parts={
             'name': tree.name,

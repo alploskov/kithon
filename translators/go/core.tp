@@ -6,10 +6,10 @@ operators:
   "not": "!"
   "is": "=="
 
-arg: "{{name}} {{_type}}"
+arg: "{{name}} {{type}}"
 
-list: "{{_type}}{{'{'}}{{ls|join(', ')}}}"
-dict: "{{_type}}{{'{'}}{%for item in keys_val%}{{item[0]}}: {{item[1]}},{%endfor%}}"
+list: "{{type}}{{'{'}}{{ls|join(', ')}}}"
+dict: "{{type}}{{'{'}}{%for item in keys_val%}{{item[0]}}: {{item[1]}},{%endfor%}}"
 
 index: |-
   {%- if isinstance(obj.type, list) -%}
@@ -32,7 +32,7 @@ elif: "else if {{condition}} {{body}} {{els}}"
 else: "else {{body}}"
 ternary: no
 
-func: "func {{name}}({{args|map(attribute='val')|join(', ')}}) {{ret_type}} {{body}}"
+func: "func {{name}}({{args|join(', ')}}){%if ret_type != 'None'%} {{ret_type}}{%endif%} {{body}}"
 
 while: "for {{condition}} {{body}}"
 
@@ -89,7 +89,7 @@ method: |-
   {{' '*4*(nl)}}{{body.parts.body|join('\n'+' '*4*(nl-1))}}
   }
 
-static_attr: "{{var}} {{_type}}"
+static_attr: "{{var}} {{type}}"
 new: "init_{{func}}({{args|join(', ')}})"
 
 main: |-

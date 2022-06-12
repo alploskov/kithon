@@ -1,4 +1,4 @@
-Bool: "{{val|lower}}"
+bool: "{{val|lower}}"
 
 operators:
   "or": "||"
@@ -6,7 +6,7 @@ operators:
   "not": "!"
   "is": "==="
 
-Tuple: "[{{ls|join(', ')}}]"
+tuple: "[{{ls|join(', ')}}]"
 unpack: "[{{vars|join(', ')}}] = {{value}}"
 unpack_to_new: "let [{{vars|join(', ')}}] = {{value}}"
 attr: |-
@@ -68,7 +68,7 @@ if: "if ({{condition}}) {{body}} {{els}}"
 elif: "else if ({{condition}}) {{body}} {{els}}"
 else: "else {{body}}"
 ternar: "({{condition}}?{{body}}:{{els}})"
-func: "{%if env.mod_name != '__main__'%}export {%endif%}function {{name}}({{args|join(', ')}}) {{body}}"
+func: "{%if env.mod_name != '__main__'%}export {%endif%}let {{name}} = {{(decorators + [''])|join('(')}}({{args|join(', ')}}) => {{body}}{{')' * decorators|length}};"
 
 return: "return {{value}};"
 
@@ -97,7 +97,7 @@ continue: "continue;"
 
 class: "class {{name}} {{body}}"
 init: "constructor({{(args[1:])|join(', ')}}) {{body}}"
-method: "{{name}}({{(args[1:])|join(', ')}}) {{body}}"
+method: "{{name}} = {{(decorators + [''])|join('(')}}({{args[1:]|join(', ')}}) => {{body}}{{')' * decorators|length}};"
 self:
   alt_name: "this"
 static_attr: "static {{var}} = {{value}};"
@@ -111,6 +111,7 @@ import: 'import * as {{alias}} from "./{{name}}.mjs";'
 global: no
 nonlocal: no
 
-repl:
-  name: "node"
-  separator: "> "
+meta:
+  repl:
+    name: "node"
+    separator: "> "
