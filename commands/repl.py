@@ -36,8 +36,11 @@ def _repl(
     configurator.conf(
         transpiler, target, macro, templates
     )
-    repl = pexpect.spawn(repl_name or transpiler.templates.get('repl.name')['tmp'].render())
-    sep = separator or transpiler.templates.get('repl.separator')['tmp'].render()
+    repl = pexpect.spawn(
+        repl_name
+        or transpiler.templates['meta']['repl']['name']
+    )
+    sep = separator or transpiler.templates['meta']['repl']['separator']
     repl.expect(sep)
     code = ''
     while 1:
