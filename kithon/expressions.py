@@ -184,7 +184,8 @@ def call(self, tree: _ast.Call):
     parts = {
         'func': func,
         'args': args,
-        'kwargs': kwargs
+        'kwargs': kwargs,
+        'obj': func.parts.get('obj')
     } | match_args(macro, args, kwargs)
     side_effect(macro, parts)
     return self.node(
