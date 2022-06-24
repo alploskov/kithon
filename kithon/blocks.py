@@ -183,10 +183,11 @@ def decorating(self, decorators):
         return {}
     if (decorators[0].own or '').startswith('macro.'):
         return self.templates.get(
-            decorators.pop(0).own.removeprefix('macro.'), {}
+            decorators[0].own.removeprefix('macro.'), {}
         )
+    print(decorators[0].type)
     if str(decorators[0].type) in self.templates:
-        return self.templates.get(decorators.pop(0).type, {})
+        return self.templates.get(decorators[0].type, {})
     return {}
 
 @visitor
