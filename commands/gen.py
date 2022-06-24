@@ -6,7 +6,10 @@ import yaml
 from kithon import Transpiler
 from . import configurator
 from .watch import watch
-
+try:
+    import packed
+except:
+    packed = None
 
 def builder(conf):
     ...
@@ -49,10 +52,11 @@ def _gen(
         transpiler, target, macro, templates
     )
     ext = file_name.split('.')[-1]
-    codec = 'utf-8'
+    code = open(file_name, 'r').read()
     if ext.endswith('x'):
         ext = ext[:-1]
-        codec = 'pyxl'
+        if packed is not None:
+            code = packed.translate(code)
     lang = {
         'py': 'py',
         'python': 'py',
@@ -66,8 +70,7 @@ def _gen(
             print(f'{time.asctime()} -- generate --')
         print(
             transpiler.generate(
-                open(file_name, 'r', encoding=codec).read(),
-                lang=lang
+                code, lang=lang
             ), file=open(out, 'w') if out else sys.stdout
         )
     g(False)
