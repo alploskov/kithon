@@ -1,7 +1,4 @@
 list[any].append:
-  side_effect: |-
-    set_el_type(obj, args[0].type)
-    set_as_mut(obj)
   code: |-
     {%-if parent.name != 'expr'-%}
       {{'func()error{'}}{{obj}} = append({{obj}}, {{args[0]}}){{';return nil}()'}}
@@ -10,21 +7,13 @@ list[any].append:
     {%-endif-%}
   ret_type: "None"
 
-list[generic].*.type:
-  side_effect: |-
-    set_el_type(left, right.type)
+list[any].*.type:
   code: "{{left}}"
-  type: "left.type"
+  type: "{{left.type}}"
 
 list[any].+.list[any]:
-  side_effect: |-
-    #- type_conversion: el_type
-    if left.type.el_type != 'generic':
-      set_el_type(right, left.type.el_type)
-    else:
-      set_el_type(left, right.type.el_type)
   code: "append({{left}}, {{right}}...)"
-  type: "left.type"
+  type: "{{left.type}}"
 
 list[any].index:
   code: |-

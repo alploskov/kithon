@@ -1,4 +1,5 @@
 bool: "{{val|lower}}"
+str: "{%if '\n' in val%}`{{val}}`{%else%}'{{val}}'{%endif%}"
 
 operators:
   "or": "||"

@@ -1,5 +1,5 @@
 random:
-  alt_name: "Math.random"  
+  import_code: no
   type: {module: [random]}
 
   randint:

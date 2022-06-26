@@ -1,0 +1,32 @@
+Elem:
+  code: |-
+    React.createElement(
+    {%-for a in args-%}
+    {{'\n' + '    ' * (nl + 1)}}
+    {%- if '\n' not in a|string-%}
+      {{a}}
+    {%- else -%}
+    {%- set strs = (a|string).split('\n') -%}
+    {{strs[0]}}
+    {{'    ' * nl}}{{strs[1:-1]|join('\n' + '    ' * nl)}}
+    {{'    ' * nl}}{{strs[-1]}}
+    {%- endif -%},
+    {%-endfor-%}{{'\n' + '    ' * nl }})
+  ret_type: react_el
+
+react_render:
+  code: |-
+    {{- env.strings.insert(0, "import React from 'react';\nimport ReactDOM from 'react-dom';\n\n") or ''-}}
+    ReactDOM.render({{args|join(', ')}})
+
+React:
+  type: {module: [React]}
+
+React.useState:
+  ret_type:
+    - '{{args[0].type}}'
+    - function
+#    - func:
+#        - 'React.useState'
+#        - ['{{args[0].type}}']
+#        - 'None'

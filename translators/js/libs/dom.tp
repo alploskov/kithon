@@ -1,11 +1,28 @@
-event:
+dom.bind:
+  args: [event_name, fun]
+  code: "{{obj}}.addEventListener({{event_name}}, {{fun}})"
+  ret_type: event_binder
+
+bind:
   args: [el, event_name, fun]
   code: "{{el}}.addEventListener({{event_name}}, {{fun}})"
-  ret_type: 'None'
+  ret_type: event_binder
+
+event_binder:
+  decorate: |-
+    {%- if decorators[0].parts.args|length == 1 -%}
+      {{decorators[0].parts.obj}}
+    {%- else -%}
+      {%- if decorators[0].parts.args[0].type == 'str'-%}
+      document.querySelector({{decorators[0].parts.args[0]}})
+      {%- else -%}
+      {{decorators[0].parts.args[0]}}
+      {%- endif -%}
+    {%- endif -%}.addEventListener({{decorators[0].parts.args[-1]}}, ({{args|join(',')}}) => {{body}});
 
 url_param:
   alt_name: "new URL(window.location.href).searchParams.get"
-  type: str
+  ret_type: str
 
 get_by_id:
   alt_name: "document.getElementById"
@@ -29,3 +46,11 @@ dom.<<.any:
 
 document:
   type: dom
+
+dom.select:
+  alt_name: 'querySelector'
+  ret_type: dom
+
+dom.[]:
+  code: "document.getElementById({{key}})"
+  ret_type: dom
