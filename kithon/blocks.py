@@ -186,7 +186,6 @@ def decorating(self, decorators):
         return self.templates.get(
             decorators[0].own.removeprefix('macro.'), {}
         )
-    print(decorators[0].type)
     if str(decorators[0].type) in self.templates:
         return self.templates.get(decorators[0].type, {})
     return {}
@@ -317,19 +316,38 @@ def _import(self, tree: _ast.Import):
     name = tree.names[0].name
     alias = tree.names[0].asname
     macro = self.templates.get(name, {})
-    module_own = ('macro.' if macro else '') + name
     self.variables.update({
         (self.namespace + '.' + (alias or name)): {
-            'own': module_own,
+            'own': ('macro.' if macro else '') + name,
             'type': types['module'](name)
         }
     })
-    if macro.get('import_code') == False:
-        return self.node(tmp='', name='import', parts={})
     return self.node(
         tmp=macro.get('import_code', 'import'),
         name='import',
         parts={
+            'name': macro.get('alt_name', name),
+            'alias': alias or macro.get('alt_name', name)
+        }
+    )
+
+@visitor
+def import_from(self, tree: _ast.ImportFrom):
+    name = tree.names[0].name
+    alias = tree.names[0].asname
+    macro = self.templates.get(f'{tree.module}.{name}', {})
+    own = ('macro.' if macro else '') + tree.module + '.' + name
+    self.variables.update({
+        (self.namespace + '.' + (alias or name)): {
+            'own': own,
+            'type': macro.get('type', 'any')
+        }
+    })
+    return self.node(
+        tmp=macro.get('import_code', 'import_from'),
+        name='import_from',
+        parts={
+            'module': tree.module,
             'name': macro.get('alt_name', name),
             'alias': alias or macro.get('alt_name', name)
         }

@@ -11,7 +11,7 @@ def type_to_node(env, _type):
     type_name = getattr(_type, 'name', _type)
     tmp = env.templates['types'].get(type_name, type_name)
     if isinstance(_type, str):
-        return env.node(tmp=f'type.{tmp}', parts={})
+        return env.node(tmp=f'type.{tmp}')
     return env.node(
         tmp=tmp,
         name='type',
@@ -23,7 +23,7 @@ def type_to_node(env, _type):
 
 class node:
     def __init__(self, env=None, tmp=None, name=None, parts=None, type=None, nl=1, own=None):
-        if tmp.startswith('type.'):
+        if (tmp or '').startswith('type.'):
             self.name = 'type'
             self.tmp = Template(tmp.removeprefix('type.'))
         elif tmp in env.templates:
