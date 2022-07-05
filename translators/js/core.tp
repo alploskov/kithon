@@ -2,14 +2,16 @@ bool: "{{val|lower}}"
 str: "{%if '\n' in val%}`{{val}}`{%else%}'{{val}}'{%endif%}"
 
 operators:
+  "==": "==="
+  "!=": "!=="
   "or": "||"
   "and": "&&"
   "not": "!"
   "is": "==="
 
 tuple: "[{{ls|join(', ')}}]"
-unpack: "[{{vars|join(', ')}}] = {{value}}"
-unpack_to_new: "let [{{vars|join(', ')}}] = {{value}}"
+unpack: "[{{vars|join(', ')}}] = {{value}};"
+unpack_to_new: "let [{{vars|join(', ')}}] = {{value}};"
 attr: |-
   {%- if attr_inf.static and obj.type != 'type' -%}
     {{obj}}.constructor
@@ -63,13 +65,18 @@ set_attr: *assign
 new_attr: *assign
 assignment_by_key: *assign
 new_key: *assign
-new_var: "{%if env.mod_name != '__main__'%}export {%endif%}let {{var}} = {{value}};"
+new_var: |-
+  {%- if isinstance(value.type, types['module']) -%}
+    import * as {{var}} from {{value.parts.args[0]}};
+  {%- else -%}
+    {%if env.mod_name != 'main' and nl == 0%}export {%endif%}let {{var}} = {{value}};"
+  {%- endif -%}
 
 if: "if ({{condition}}) {{body}} {{els}}"
 elif: "else if ({{condition}}) {{body}} {{els}}"
 else: "else {{body}}"
 ternar: "({{condition}}?{{body}}:{{els}})"
-func: "{%if env.mod_name != '__main__'%}export {%endif%}let {{name}} = {{(decorators + [''])|join('(')}}({{args|join(', ')}}) => {{body}}{{')' * decorators|length}};"
+func: "{%if env.mod_name != 'main' and nl == 0%}export {%endif%}let {{name}} = {{(decorators + [''])|join('(')}}({{args|join(', ')}}) => {{body}}{{')' * decorators|length}};"
 
 return: "return {{value}};"
 
@@ -108,7 +115,8 @@ body: |-
   {{'{'}}{% for st in body %}
   {{'    '*nl}}{{st}}{% endfor %}
   {{'    '*(nl-1)}}}
-import: 'import * as {{alias}} from "./{{name}}.mjs";'
+import: 'import * as {{alias}} from "./{{name}}";'
+import_from: 'import {{"{"}}{{name}}{%if alias != name%} as {{alias}}{%endif%}} from "./{{module|replace(".", "/")}}";'
 global: no
 nonlocal: no
 
@@ -116,3 +124,4 @@ meta:
   repl:
     name: "node"
     separator: "> "
+  ext: "js"

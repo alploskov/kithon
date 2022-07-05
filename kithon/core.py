@@ -133,9 +133,9 @@ class Transpiler:
         return node
 
     def generate(self, code, lang='py', mode='main'):
+        self.mod_name = mode
         if mode not in ['main', 'block']:
             self.namespace = mode
-            self.mod_name = mode
             self.variables |= {
                 mode: {'type': types.types['module'](mode)}
             }

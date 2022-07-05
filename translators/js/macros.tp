@@ -57,8 +57,14 @@ map:
 filter:
   code: "{{args[1]}}.filter({{args[0]}})"
 
-any.require_from:
-  code: "import {{func.parts.obj}} from {{args[0]}}"
+require:
+  ret_type: {module: ["{{args[0].parts.val}}"]}
 
 js:
   code: "{{args[0].parts.val}}"
+
+# unpacking fields function a({f1, f2}){...}
+do:
+  decorate: >-
+    {%if env.mod_name != '__main__'%}export {%endif%}let
+    {{name}} = {{(decorators[1:] + [''])|join('(')}}({{'{'}}{{args|join(', ')}}{{'}'}}) => {{body}}{{')' * (decorators|length - 1)}};

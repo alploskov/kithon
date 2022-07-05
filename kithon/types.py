@@ -58,7 +58,7 @@ _type(
     fields=['args', 'ret_type'],
     tmp='func[{{args|join(" ")}}]'
 )
-_type('module', ['name'], 'mode_{{name}}')
+_type('module', ['_name'], 'mode_{{_name}}')
 
 def type_eval(type_code, parts=None):
     """

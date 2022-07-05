@@ -3,7 +3,7 @@ types:
   func: "func[{{args|join(', ')}}]{{ret_type}}"
   dict: "dict[{{key_type}}]{{el_type}}"
   tuple: "tuple[{{el_type}}]"
-  module: "mode_{{name}}"
+  module: "mode_{{_name}}"
 
 operators: {}
 
