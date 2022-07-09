@@ -18,9 +18,10 @@ def set_var(self, var, _type='any'):
     """
     if isinstance(var.ast, _ast.Name):
         var.own = f'{self.namespace}.{var.ast.id}'
-    elif (isinstance(var.ast, _ast.Subscript)
-          and hasattr(self.variables[var.own]['type'], 'el_type')):
-        self.variables[var.own]['type'].el_type = _type
+    elif isinstance(var.ast, _ast.Subscript):
+        own = var.own.removesuffix('.[]')
+        if hasattr(self.variables.get(own, {}).get('type'), 'el_type'):
+            self.variables[own]['type'].el_type = _type
     if var.own in self.variables:
         self.variables[var.own]['immut'] = False
         if (

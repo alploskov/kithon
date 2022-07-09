@@ -260,13 +260,13 @@ def slice(self, tree: _ast.Subscript):
                 'ret_type',
                 getattr(obj.type, 'el_type', 'any')
             ),
-            own=obj.own if ctx == 'store' else '',
+            own=f'{obj.own}.[]',
             parts={'obj': obj, 'key': self.visit(_slice), 'ctx': ctx}
         )
     return self.node(
         tmp='slice',
         type=obj.type,
-        own=(obj.own if ctx == 'store' else ''),
+        own=f'{obj.own}.[]',
         parts={
             'obj': obj,
             'ctx': ctx,
