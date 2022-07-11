@@ -134,8 +134,6 @@ def kwarg(self, tree: _ast.keyword):
 
 @visitor
 def attribute(self, tree: _ast.Attribute):
-    if tree.attr.startswith('x_'):
-        tree.attr = tree.attr[2:]
     obj = self.visit(tree.value)
     own = f'{obj.own}.{tree.attr}'
     if own.startswith('macro.'):
@@ -329,8 +327,6 @@ def ternary(self, tree: _ast.IfExp):
 
 @visitor
 def name(self, tree: _ast.Name):
-    if tree.id.startswith('x_'):
-        tree.id = tree.id[2:]
     ctx = {
         _ast.Store: 'store',
         _ast.Load: 'load'
@@ -341,13 +337,14 @@ def name(self, tree: _ast.Name):
             f'{".".join(ns[:-(ln + 1)])}.{tree.id}', {}
         )
         if var_info: break
-    macro = self.templates.get(tree.id, {})
-    var_info = var_info or {
-        'own': (
-            'macro' if macro
-            else self.namespace
-        ) + '.' + tree.id
-    }
+    if tree.id in self.templates:
+        var_info |= {'own': f'macro.{tree.id}'}
+        macro = self.templates.get(tree.id, {})
+    elif var_info.get('own', '').startswith('macro.'):
+        macro = self.templates.get(
+            var_info['own'].removeprefix('macro.'), {}
+        )
+    var_info = {'own': f'{self.namespace}.{tree.id}'} | var_info
     return self.node(
         tmp='name',
         type=var_info.get(
