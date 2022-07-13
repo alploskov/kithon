@@ -16,6 +16,8 @@ def watch(action, path):
         def on_modified(self, event):
             if event.is_directory:
                 return
+            if event.src_path.split('.')[-1] not in ['py', 'coco', 'hy', 'pyx', 'cocox']:
+                return
             action()
     obs = Observer()
     obs.schedule(handl(), path=path)

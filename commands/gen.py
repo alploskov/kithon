@@ -1,5 +1,8 @@
+import ast
+import os
 import sys
 import time
+from _ast import Import, ImportFrom
 from typing import Optional
 import typer
 import yaml
@@ -11,8 +14,38 @@ try:
 except:
     packed = None
 
-def builder(conf):
-    ...
+
+def compilation_order(__dir__):
+    modules = {}
+    for _file in os.listdir(__dir__):
+        if _file.startswith('.'):
+            continue
+        ext = _file.split('.')[-1]
+        if ext in ['py', 'coco', 'hy', 'pyx', 'cocox']:
+            name = os.path.split(_file)[1].removesuffix('.' + ext)
+            code = open(os.path.join(__dir__, _file), 'r').read()
+            if ext.endswith('x') and packed != None:
+                code = packed.translate(code)
+            modules |= {name: {
+                'count_dependent': 0,
+                'code': code
+            }}
+    for mod in modules:
+        tree = ast.parse(modules[mod]['code']).body
+        for node in tree:
+            if isinstance(node, Import):
+                name = node.names[0].name
+            elif isinstance(node, ImportFrom):
+                name = node.module
+            else:
+                continue
+            if name in modules:
+                modules[name]['count_dependent'] += 1
+    return sorted(
+        modules,
+        key=lambda k: modules[k]['count_dependent'],
+        reverse=True
+    ), modules
 
 def _gen(
     file_name: str = typer.Argument(
@@ -51,28 +84,31 @@ def _gen(
     configurator.conf(
         transpiler, target, macro, templates
     )
-    ext = file_name.split('.')[-1]
-    code = open(file_name, 'r').read()
-    if ext.endswith('x'):
-        ext = ext[:-1]
-        if packed is not None:
-            code = packed.translate(code)
-    lang = {
-        'py': 'py',
-        'python': 'py',
-        'hy': 'hy',
-        'hylang': 'hy',
-        'coco': 'coco',
-        'coconut': 'coco'
-    }.get(input_lang or ext)
-    def g(msg=True):
-        if msg:
-            print(f'{time.asctime()} -- generate --')
-        print(
-            transpiler.generate(
-                code, lang=lang
-            ), file=open(out, 'w') if out else sys.stdout
-        )
-    g(False)
+    if os.path.isdir(file_name):
+        _ext = transpiler.templates['meta'].get('ext')
+        out_dir = out or file_name
+        if not os.path.isdir(out_dir):
+            os.mkdir(out)
+        def g():
+            order, modules = compilation_order(file_name)
+            for m in order:
+                with open(os.path.join(out_dir, f'{m}.{_ext}'), 'w') as f:
+                    f.write(transpiler.generate(
+                        modules[m]['code'],
+                        mode=m if m != order[-1] else 'main'
+                    ))
+    else:
+        ext = file_name.split('.')[-1]
+        def g():
+            code = open(file_name, 'r').read()
+            if ext.endswith('x') and packed is not None:
+                code = packed.translate(code)
+            lang = input_lang or ext.removesuffix('x')
+            print(
+                transpiler.generate(
+                    code, lang=lang
+                ), file=open(out, 'w') if out else sys.stdout
+            )
+    g()
     if _watch:
         watch(g, file_name)
