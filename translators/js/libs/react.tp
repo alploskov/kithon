@@ -15,18 +15,23 @@ Elem:
   ret_type: react_el
 
 react_render:
-  code: |-
-    {{- env.strings.insert(0, "import React from 'react';\nimport ReactDOM from 'react-dom';\n\n") or ''-}}
-    ReactDOM.render({{args|join(', ')}})
+  alt_name: "ReactDOM.render"
 
-React:
+ReactDOM:
+  import_code: "import ReactDOM from 'react-dom';"
   type: {module: [React]}
 
-React.useState:
-  ret_type:
-    - '{{args[0].type}}'
-    - function
-#    - func:
-#        - 'React.useState'
-#        - ['{{args[0].type}}']
-#        - 'None'
+React:
+  import_code: "import React from 'react';"
+  type: {module: [React]}
+
+  use_state: &use_state
+    import_code: "import {useState} from 'react';"
+    alt_name: "useState"
+    ret_type:
+      - '{{args[0].type}}'
+      - callable
+  useState: *use_state
+
+style:
+  code: "import {{args[0]}};"

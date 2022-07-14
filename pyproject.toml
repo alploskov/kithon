@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "kithon"
 readme = "README.md"
-version = "0.2.1"
+version = "0.3.0"
 description = "transpiler python into other language"
 authors = ["Aleksey Ploskov"]
 license = "MIT"
@@ -36,7 +36,7 @@ ptpython = {version = "^3.0.20", optional = true}
 
 watchdog = {version = "^2.1.7", optional = true}
 
-packed = {path = "deps/packed-0.2.0-py3-none-any.whl", optional = true}
+packed = {path = "deps/packed-0.2.1-py3-none-any.whl", optional = true}
 
 [tool.poetry.scripts]
 kithon = "commands:kithon"

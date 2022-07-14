@@ -48,6 +48,9 @@ setattr:
 int:
   alt_name: 'Number'
 
+float:
+  alt_name: 'Number'
+
 str:
   code: '({{args[0]}}).toString()'
 
@@ -65,6 +68,10 @@ js:
 
 # unpacking fields function a({f1, f2}){...}
 do:
+  code: "{{'{'}}{{args|join(', ')}}}"
   decorate: >-
     {%if env.mod_name != '__main__'%}export {%endif%}let
     {{name}} = {{(decorators[1:] + [''])|join('(')}}({{'{'}}{{args|join(', ')}}{{'}'}}) => {{body}}{{')' * (decorators|length - 1)}};
+
+getattr:
+  code: "{{args[0]}}[{{args[1]}}]"

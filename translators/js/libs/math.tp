@@ -1,3 +1,5 @@
+_: &import_el "let {{node.ast.names[0].name}} = Math.{{name}};"
+
 math:  
   import_code: "{%if alias != 'Math'%}{{alias}} = Math;{%endif%}"
   alt_name: Math
@@ -12,7 +14,7 @@ math:
     alt_name: abs
     type: float
 
-  factorial":
+  factorial:
     type: int
 
   floor:
@@ -25,10 +27,10 @@ math:
   
   fsum:
     args: [x]
-    code: "{{x()}}.reduce((sum, current)=>{return sum + current},0)"
+    code: "{{x}}.reduce((sum, current)=>{return sum + current},0)"
     type: float
 
-  isinf":
+  isinf:
     args: [x]
     code: "({{x}} === Infinity)"
     type: bool
@@ -119,13 +121,16 @@ math:
     type: float
 
   tau:
+    import_code: *import_el
     code: "(Math.PI*2)"
     type: float
 
   e:
+    import_code: *import_el
     alt_name: "E"
     type: float
 
   pi:
+    import_code: *import_el
     alt_name: PI
     type: float

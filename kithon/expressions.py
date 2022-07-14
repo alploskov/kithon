@@ -337,6 +337,7 @@ def name(self, tree: _ast.Name):
             f'{".".join(ns[:-(ln + 1)])}.{tree.id}', {}
         )
         if var_info: break
+    macro = {}
     if tree.id in self.templates:
         var_info |= {'own': f'macro.{tree.id}'}
         macro = self.templates.get(tree.id, {})

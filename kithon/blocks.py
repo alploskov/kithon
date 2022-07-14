@@ -80,6 +80,8 @@ def unpack(self, _vars, value):
     _type = None
     if value.type == 'str':
         _type = 'str'
+    elif isinstance(value.type, str):
+        _type = 'any'
     elif isinstance(value.type, types['list']):
         _type = value.type.el_type
     elif isinstance(value.type, types['dict']):

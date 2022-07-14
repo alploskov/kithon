@@ -69,13 +69,13 @@ new_var: |-
   {%- if isinstance(value.type, types['module']) -%}
     import * as {{var}} from {{value.parts.args[0]}};
   {%- else -%}
-    {%if env.mod_name != 'main' and nl == 0%}export {%endif%}let {{var}} = {{value}};"
+    {%if env.mod_name != 'main' and nl == 0%}export {%endif%}let {{var}} = {{value}};
   {%- endif -%}
 
 if: "if ({{condition}}) {{body}} {{els}}"
 elif: "else if ({{condition}}) {{body}} {{els}}"
 else: "else {{body}}"
-ternar: "({{condition}}?{{body}}:{{els}})"
+ternary: "({{condition}}?{{body}}:{{els}})"
 func: "{%if env.mod_name != 'main' and nl == 0%}export {%endif%}let {{name}} = {{(decorators + [''])|join('(')}}({{args|join(', ')}}) => {{body}}{{')' * decorators|length}};"
 
 return: "return {{value}};"
@@ -125,3 +125,4 @@ meta:
     name: "node"
     separator: "> "
   ext: "js"
+  run: "echo {{code}} | node"
