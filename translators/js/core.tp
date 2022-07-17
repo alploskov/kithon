@@ -125,4 +125,4 @@ meta:
     name: "node"
     separator: "> "
   ext: "js"
-  run: "echo {{code}} | node"
+  run: "echo '{{code}}' | node"

@@ -5,6 +5,7 @@ operators:
   "and": "&&"
   "not": "!"
   "is": "=="
+  "//": "/"
 
 arg: "{{name}} {{type}}"
 
@@ -12,7 +13,7 @@ list: "{{type}}{{'{'}}{{ls|join(', ')}}}"
 dict: "{{type}}{{'{'}}{%for item in keys_val%}{{item[0]}}: {{item[1]}},{%endfor%}}"
 
 index: |-
-  {%- if isinstance(obj.type, list) -%}
+  {%- if isinstance(obj.type, types['list']) -%}
     {{- env.use('Index') -}}
     {{obj}}[Index({{key}}, len({{obj}}))]
   {%- else -%}
@@ -108,3 +109,6 @@ main: |-
   {% endif %}
   {% endif %}
   {{body}}
+
+meta:
+  run: "echo '{{code}}' > file1.go && go run file1.go && rm file1.go"

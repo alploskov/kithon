@@ -31,9 +31,13 @@ def visitor(func):
 class Transpiler:
     elements = {}
 
-    def __init__(self):
+    def __init__(self, lang='', templs=''):
         self.templates = {}
         self.get_lang('python')
+        if lang:
+            self.get_lang(lang)
+        if templs:
+            self.load_templs(templs)
         self.nl = 0
         self.mod_name = '__main__'
         self.namespace = '__main__'
