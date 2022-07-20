@@ -1,7 +1,6 @@
 import ast
 import os
 import sys
-import time
 from _ast import Import, ImportFrom
 from typing import Optional
 import typer
@@ -92,11 +91,16 @@ def _gen(
         def g():
             order, modules = compilation_order(file_name)
             for m in order:
-                with open(os.path.join(out_dir, f'{m}.{_ext}'), 'w') as f:
-                    f.write(transpiler.generate(
-                        modules[m]['code'],
-                        mode=m if m != order[-1] else 'main'
-                    ))
+                try:
+                    with open(os.path.join(out_dir, f'{m}.{_ext}'), 'w') as f:
+                        f.write(transpiler.generate(
+                            modules[m]['code'],
+                            mode=m if m != order[-1] else 'main'
+                        ))
+                    print(f'\033[32mSucsess compile {m}\033[38m')
+                except:
+                    print(f'\033[31mFaile compile {m}\033[38m')
+            print('----------')
     else:
         ext = file_name.split('.')[-1]
         def g():
