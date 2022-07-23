@@ -1,0 +1,5 @@
+random:
+  type: {module: [random]}
+
+  randint:
+    ret_type: int

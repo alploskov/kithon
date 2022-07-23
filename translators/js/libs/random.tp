@@ -1,7 +1,5 @@
 random:
   import_code: no
-  type: {module: [random]}
 
   randint:
     code: "(Math.floor(Math.random() * ({{args[1]}} - {{args[0]}})) + {{args[0]}})"
-    ret_type: int

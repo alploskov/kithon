@@ -1,0 +1,74 @@
+math:  
+  type: {module: ['math']}
+
+  copysign: {ret_type: float}
+
+  fabs: {ret_type: float}
+
+  factorial: {ret_type: int}
+
+  floor: {ret_type: int}
+
+  fmod: {ret_type: float}
+
+  fsum: {ret_type: float}
+
+  isinf: {ret_type: bool}
+
+  isnan: {ret_type: bool}
+
+  trunc: {ret_type: int}
+
+  exp: {ret_type: float}
+
+  expm1: {ret_type: float}
+
+  log: {ret_type: float}
+
+  log1p: {ret_type: float}
+
+  log10: {ret_type: float}
+
+  log2: {ret_type: float}
+
+  pow: {ret_type: float}
+
+  sqrt: {ret_type: float}
+
+  acos: {ret_type: float}
+  
+  asin: {ret_type: float}
+
+  atan: {ret_type: float}
+
+  atan2: {ret_type: float}
+
+  cos: {ret_type: float}
+
+  sin: {ret_type: float}
+
+  tan: {ret_type: float}
+
+  hypot: {ret_type: float}
+
+  degrees: {ret_type: float}
+
+  radians: {ret_type: float}
+
+  cosh: {ret_type: float}
+
+  sinh: {ret_type: float}
+
+  tanh: {ret_type: float}
+
+  acosh: {ret_type: float}
+
+  asinh: {ret_type: float}
+
+  atanh: {ret_type: float}
+
+  tau: {type: float}
+
+  e: {type: float}
+
+  pi: {type: float}
