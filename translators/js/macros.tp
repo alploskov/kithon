@@ -32,9 +32,14 @@ interval:
   type: "Func"
   ret_type: "None"
 
-any.//.any:
-  code: "Math.floor({{left}}/{{right}})"
-  type: "int"
+any:
+  "//.any":
+    code: "Math.floor({{left}}/{{right}})"
+    type: "int"
+
+  "**.any":
+    code: "Math.pow({{left}}, {{right}})"
+    type: "float"
 
 setattr:
   args: ["obj", "name", "val"]
@@ -46,10 +51,10 @@ setattr:
     {%-endif-%}
 
 int:
-  alt_name: 'Number'
+  code: "parseInt({{args|join(', ')}})"
 
 float:
-  alt_name: 'Number'
+  code: "parseFloat({{args|join(', ')}})"
 
 str:
   code: '({{args[0]}}).toString()'

@@ -9,8 +9,37 @@ str:
     {{-env.use('mod_fmt')-}}
     fmt.Sprintf("%v", {{args[0]}})
 
+int:
+  code: |-
+    {{-env.use('mod_strconv')-}}
+    func() int64 {{'{'}}
+    {{'    '*(nl * 2)}}res, err := strconv.ParseInt({{args[0]}}, 
+    {%- if args|length == 2-%}
+      {{args[1]}}
+    {%- else -%}
+      10
+    {%- endif -%}, 32)
+    {{'\n' + '    '*(nl * 2)}}if err != nil {
+    {{'    '*(nl * 2)}}    panic(err)
+    {{'    '*(nl * 2)}}}
+    {{'    '*(nl * 2)}}return res
+    {{'    '*nl}}{{'}()'}}
+
+float:
+  code: |-
+    {{-env.use('mod_strconv')-}}
+    func() float64 {{'{'}}
+    {{'    '*(nl * 2)}}res, err := strconv.ParseFloat({{args[0]}}, 64)
+    {{'    '*(nl * 2)}}if err != nil {
+    {{'    '*(nl * 2)}}    panic(err)
+    {{'    '*(nl * 2)}}}
+    {{'    '*(nl * 2)}}return res
+    {{'    '*nl}}{{'}()'}}
+
+any.**.any:
+  code: |-
+    {{-env.use('mod_math')-}}
+    math.Pow({{left}}, {{right}})
+
 main:
   code: ""
-
-len:
-  ret_type: int

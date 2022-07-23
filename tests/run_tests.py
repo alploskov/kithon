@@ -8,7 +8,12 @@ transpilers = {
     'js': {
         'code': Transpiler(lang='js'),
         'out': Transpiler(templs= '''
-list: "[ {{ls|join(\', \')}} ]"
+list: >-
+  {%- if ls|length == 0 -%}
+    []
+  {%- else -%}
+    [ {{ls|join(\', \')}} ]
+  {%- endif -%}
 bool: "{{val|lower}}"
 float: |-
   {%- if parts[0] == 0 -%}
@@ -49,6 +54,5 @@ def test(test_name):
             f'{name} test is',
             '\033[32mpassed ✔\033[38m' if is_passed else '\033[31mfailed ×\033[38m'
         )
-
 for _file in listdir('cases'):
     test(_file.split('.')[0])
