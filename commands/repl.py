@@ -22,7 +22,7 @@ def _repl(
     ),
     separator: Optional[str] = typer.Option(
         '',
-        '--sep',
+        '--prompt',
         help='Input prompt including spaces'
     )
 ):
@@ -40,7 +40,7 @@ def _repl(
         repl_name
         or transpiler.templates['meta']['repl']['name']
     )
-    sep = separator or transpiler.templates['meta']['repl']['separator']
+    sep = separator or transpiler.templates['meta']['repl']['prompt']
     repl.expect(sep)
     code = ''
     while 1:
