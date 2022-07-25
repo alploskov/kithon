@@ -1,11 +1,44 @@
-list[any].append:
-  code: |-
-    {%-if parent.name != 'expr'-%}
+list[any]:
+  append:
+    code: |-
+      {%-if parent.name != 'expr'-%}
       {{'func()error{'}}{{obj}} = append({{obj}}, {{args[0]}}){{';return nil}()'}}
-    {%-else-%}
+      {%-else-%}
       {{obj}} = append({{obj}}, {{args[0]}})
-    {%-endif-%}
-  ret_type: "None"
+      {%-endif-%}
+    ret_type: "None"
+  extend:
+    code: |-
+      {%-if parent.name != 'expr'-%}
+      {{'func()error{'}}{{obj}} = append({{obj}}, {{args[0]}}...){{';return nil}()'}}
+      {%-else-%}
+      {{obj}} = append({{obj}}, {{args[0]}}...)
+      {%-endif-%}
+
+  index:
+    code: |-
+      {{- env.use('mod_errors') -}}
+      func() int {{'{'}}
+      {{'    '*nl}}    for i, el := range {{obj}} {{'{'}}
+      {{'    '*nl}}        if el == {{args[0]}} {{'{'}}
+      {{'    '*nl}}            return i
+      {{'    '*nl}}        {{'}'}}
+      {{'    '*nl}}    {{'}'}}
+      {{'    '*nl}}    {{'panic(errors.New("ValueError: "+fmt.Sprintf("%v",'}}{{args[0]}}){{'+" is not in list"))'}}
+      {{'    '*nl}}{{'}()'}}
+  clear:
+    code: "dump({{obj}})"
+  count:
+    code: |-
+      func() int {{'{'}}
+      {{'    '*(nl + 1)}}n := 0
+      {{'    '*(nl + 1)}}for _, v := range arr {{'{'}}
+      {{'    '*(nl + 1)}}    if v == {{args[0]}} {{'{'}}
+      {{'    '*(nl + 1)}}        n += 1
+      {{'    '*(nl + 1)}}    }
+      {{'    '*(nl + 1)}}}
+      {{'    '*(nl + 1)}}return n
+      {{'    '*nl}}}()
 
 list[any].*.type:
   code: "{{left}}"
@@ -15,15 +48,3 @@ list[any].+.list[any]:
   code: "append({{left}}, {{right}}...)"
   type: "{{left.type}}"
 
-list[any].index:
-  code: |-
-    {{- env.use('mod_errors') -}}
-    func() int {{'{'}}
-    {{'    '*nl}}    for i, el := range {{obj}} {{'{'}}
-    {{'    '*nl}}        if el == {{args[0]}} {{'{'}}
-    {{'    '*nl}}            return i
-    {{'    '*nl}}        {{'}'}}
-    {{'    '*nl}}    {{'}'}}
-    {{'    '*nl}}    {{'panic(errors.New("ValueError: "+fmt.Sprintf("%v",'}}{{args[0]}}){{'+" is not in list"))'}}
-    {{'    '*nl}}{{'}()'}}
-  ret_type: int

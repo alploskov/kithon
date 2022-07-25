@@ -1,5 +1,5 @@
 bool: "{{val|lower}}"
-str: "{%if '\n' in val%}`{{val}}`{%else%}'{{val}}'{%endif%}"
+str: "{%if '\n' in val%}`{{val}}`{%else%}\"{{val}}\"{%endif%}"
 
 operators:
   "==": "==="
@@ -19,29 +19,31 @@ attr: |-
     {{obj}}
   {%- endif -%}.{{attr}}
 
-index: >-
-  {{obj}}
-  {%- if isinstance(obj.type, types.list) -%}[
-     {%- if key < 0 -%}
-        {{obj}}.length+{{key}}
-     {%- elif key >= 0 -%}
-        {{key}}
-     {%- else -%}
+index: "{{obj}}[{{key}}]"
+
+list[any].[]:
+  code: >-
+    {{obj}}[{%- if key < 0 -%}
+      {{obj}}.length+{{key}}
+    {%- elif key >= 0 -%}
+      {{key}}
+    {%- else -%}
       ({{key}}<0)?({{obj}}.length+{{key}}):({{key}})
     {%-endif-%}]
-  {%- elif isinstance(obj.type, types.dict) -%}
-    {%- if ctx == 'load' -%}
-    [{{key}}] == undefined?(()=>{throw "key error"})():{{obj}}[{{key}}]
+
+dict[any].[]:
+  code: >-
+    {{obj}}[{%- if ctx == 'load' -%}
+      {{key}}] == undefined?(()=>{throw "key error"})():{{obj}}[{{key}}
     {%-else-%}
-    [{{key}}]
-    {%-endif-%}
-  {%- else -%}
-    [{{key}}]
-  {%- endif -%}
+      {{key}}
+    {%-endif-%}]
 
 slice: |-
   {%- if step == 1 -%}
     {{obj}}.slice({{low}}, {{up}})
+  {%- elif step == -1 -%}
+    {{obj}}.slice({{low}}, {{up}}).reverse()
   {%- elif step != 0 -%}
     {%- if step < 0 -%}
         [...{{obj}}].reverse()
@@ -50,12 +52,10 @@ slice: |-
     {%- else -%}
       ({{step}}<0?[...{{obj}}].reverse():{{obj}})
     {%- endif -%}
-    {%-if low() != '' or up() != ''-%}
+    {%-if low != 0 or up.val != obj.val + '.length' -%}
       .slice(...({{step}}<0?[{{up}}, {{low}}]:[{{low}}, {{up}}]))
     {%-endif-%}
-    {%-if step != -1-%}
-      .filter((_,i)=>(i%{{step}})==0)
-    {%-endif-%}
+    .filter((_,i)=>(i%{{step}})==0)
   {%-endif-%}
 
 expr: "{{value}};"
@@ -69,14 +69,14 @@ new_var: |-
   {%- if isinstance(value.type, types['module']) -%}
     import * as {{var}} from {{value.parts.args[0]}};
   {%- else -%}
-    {%if env.mod_name != 'main' and nl == 0%}export {%endif%}let {{var}} = {{value}};
+    {%if env.mod_name not in ['main', 'block'] and nl == 0%}export {%endif%}let {{var}} = {{value}};
   {%- endif -%}
 
 if: "if ({{condition}}) {{body}} {{els}}"
 elif: "else if ({{condition}}) {{body}} {{els}}"
 else: "else {{body}}"
 ternary: "({{condition}}?{{body}}:{{els}})"
-func: "{%if env.mod_name != 'main' and nl == 0%}export {%endif%}let {{name}} = {{(decorators + [''])|join('(')}}({{args|join(', ')}}) => {{body}}{{')' * decorators|length}};"
+func: "{%if env.mod_name not in ['main', 'block'] and nl == 0%}export {%endif%}let {{name}} = {{(decorators + [''])|join('(')}}({{args|join(', ')}}) => {{body}}{{')' * decorators|length}};"
 
 return: "return {{value}};"
 
@@ -123,6 +123,6 @@ nonlocal: no
 meta:
   repl:
     name: "node"
-    separator: "> "
+    prompt: "> "
   ext: "js"
   run: "echo '{{code}}' | node"

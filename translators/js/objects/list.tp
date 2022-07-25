@@ -4,10 +4,10 @@ list[any]:
 
   extend:
     alt_name: 'push'
-    code: "{{func.parts.obj}}.concat({{args[0]}})"
+    code: "{{obj}}.push(...{{args[0]}})"
 
   insert:
-    alt_name: 'splice'
+    code: "{{obj}}.splice({{args[0]}}, 0, {{args[1]}})"
 
   index:
     alt_name: indexOf
@@ -15,13 +15,22 @@ list[any]:
 
   pop:
     code: |-
-      {{func.parts.obj}}
+      {{obj}}
       {%- if args|length > 0 -%}
       .splice({{args[0]}}, 1)
       {%- else -%}
       .pop()
       {%- endif -%}
-    ret_type: "{{func.parts.obj.type.el_type}}"
+    ret_type: "{{obj.type.el_type}}"
+
+  clear:
+    code: "{{obj}}.splice(0,{{obj}}.length)"
+
+  count:
+    code: "{{obj}}.filter(_ => _ == {{args[0]}}).length"
+
+  remove:
+    code: "{{obj}}.splice(...((i)=>i==-1?[i, 0]:[i, 1])({{obj}}.indexOf({{args[0]}})))"
 
 list[any].*.int:
   code: 'Array({{right}}).fill({{left}}).flat()'
