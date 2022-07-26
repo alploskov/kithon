@@ -74,7 +74,9 @@ meta:
     name: "Command to run repl of target language"
     prompt: "Input prompt including spaces"
   ext: "Extension for create files in package compilation"
-  run: "Template of run command"
+  run: |
+    Template of run command
+	Maybe dictionary with keys as platform names
 ```
 
 Example, meta for JavaScript:

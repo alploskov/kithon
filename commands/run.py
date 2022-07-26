@@ -1,4 +1,5 @@
 import os
+import sys
 from typing import Optional
 import typer
 from jinja2 import Template
@@ -26,6 +27,10 @@ def _run(
         help='Marking the entrance language (py, hy, coco)',
         show_default='Determined by the filename'
     ),
+    command: Optional[str] = typer.Option(
+        '',
+        '--command'
+    )
 ):
     """
     Transpile python code into chose language
@@ -42,8 +47,11 @@ def _run(
         if ext.endswith('x') and packed is not None:
             code = packed.translate(code)
         lang = input_lang or ext.removesuffix('x')
+        command = command or transpiler.templates['meta']['run']
+        if isinstance(command, dict):
+            command = command.get(sys.platform)
         os.system(
-            Template(transpiler.templates['meta']['run']).render(
+            Template(command).render(
                 code=transpiler.generate(
                     code, lang=lang
                 )
