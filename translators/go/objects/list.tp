@@ -27,7 +27,9 @@ list[any]:
       {{'    '*nl}}    {{'panic(errors.New("ValueError: "+fmt.Sprintf("%v",'}}{{args[0]}}){{'+" is not in list"))'}}
       {{'    '*nl}}{{'}()'}}
   clear:
-    code: "dump({{obj}})"
+    code: |-
+      {{- node.add_code_before(obj.val + ' = nil' ) -}}
+      {%- if parent.name != 'expr' -%}nil{%- endif -%}
   count:
     code: |-
       func() int {{'{'}}
@@ -39,7 +41,48 @@ list[any]:
       {{'    '*(nl + 1)}}}
       {{'    '*(nl + 1)}}return n
       {{'    '*nl}}}()
+  reverse:
+    code: |-
+      {{- node.add_code_before(
+      'for i, j := 0, len(' + obj.val + ')-1; i < j; i, j = i+1, j-1 {\n'
+      + '    ' + obj.val + '[i], ' + obj.val + '[j] = ' + obj.val + '[j], ' + obj.val + '[i]\n'
+      + '}'
+      ) -}}
+      {%- if parent.name != 'expr' -%}nil{%- endif -%}
 
+  sort:
+    code: |-
+      {{- env.use('mod_sort') -}}
+      {%- if obj.type.el_type == 'int' -%}
+      {{- node.add_code_before('sort.Ints(' + obj.val + ')')-}}
+      {%- elif obj.type.el_type == 'float' -%}
+      {{- node.add_code_before('sort.Float64s(' + obj.val + ')')-}}
+      {%- else -%}
+      {{- node.add_code_before('sort.Slice(' + obj.val + ', func(i, j int) bool {\n'
+      + 'return ' + obj.val + '[i] <' + obj.val + '[j]\n'
+      + '})')-}}
+      {%- endif -%}
+      {%- if parent.name != 'expr' -%}nil{%- endif -%}
+
+  insert:
+    code: |-
+      {{- node.add_code_before(obj.val + ' = append(' + obj.val + ', ' + args[1].val + ')') -}}
+      {{- node.add_code_before('copy(' + obj.val + '[' + args[0].val + '+1:], ' + obj.val + '[' + args[0].val + ':])') -}}
+      {{- node.add_code_before(obj.val + '[' + args[0].val + '] = ' + args[1].val) -}}
+      {%- if parent.name != 'expr' -%}nil{%- endif -%}
+
+  remove:
+    code: |-
+      {{- env.use('mod_reflect') -}}
+      {{- node.add_code_before(
+      'for i, val := range ' + obj.val + ' {\n'
+      + '    if reflect.DeepEqual(val, ' + args[0].val + ') {\n'
+      + '        ' + obj.val + '= append(' + obj.val + '[:i], ' + obj.val + '[i+1:]...)\n'
+      + '        break\n'
+      + '    }'
+      + '}'
+      ) -}}
+      {%- if parent.name != 'expr' -%}nil{%- endif -%}
 list[any].*.type:
   code: "{{left}}"
   type: "{{left.type}}"

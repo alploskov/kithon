@@ -88,7 +88,7 @@ class node:
                 before += '    ' * self.nl
                 before += _get_val(part) + '\n'
             self.clear_code_before()
-            self.val = before + self.prefix * self.nl + self.val
+            self.val = before + '    ' * self.nl + self.val
         elif self.parent:
             self.parent.code_before.extend(self.code_before)
         return self.val
