@@ -1,23 +1,26 @@
-def for_with_break():
+def c_for_with_break():
     for i in range(4):
         if i == 2:
             break
         print(i)
 
 
-def for_with_continue():
+def c_for_with_continue():
     for i in range(4):
         if i == 2:
             continue
         print(i)
 
 
-def for_with_else():
+def c_for_with_else():
     for i in range(4):
         print(i)
     else:
         print("OK")
 
+def _foreach():
+    for l in ['a', 'b', 'c']:
+        print(l)
 
 def while_with_break():
     i = 0
@@ -37,8 +40,9 @@ def while_with_continue():
         print(i)
 
 def main():
-    for_with_break()
-    for_with_continue()
+    c_for_with_break()
+    c_for_with_continue()
+    _foreach()
     while_with_break()
     while_with_continue()
 
