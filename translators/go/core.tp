@@ -33,7 +33,7 @@ elif: "else if {{condition}} {{body}} {{els}}"
 else: "else {{body}}"
 ternary: no
 
-func: "func {{name}}({{args|join(', ')}}){%if ret_type != 'None'%} {{ret_type}}{%endif%} {{body}}"
+func: "func {{name}}({{args|join(', ')}}){%if ret_type.val != 'None'%} {{ret_type}}{%endif%} {{body}}"
 
 while: "for {{condition}} {{body}}"
 
