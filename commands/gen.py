@@ -5,6 +5,7 @@ from _ast import Import, ImportFrom
 from typing import Optional
 import typer
 import yaml
+from jinja2 import Template
 from kithon import Transpiler
 from . import configurator
 from .watch import watch
@@ -74,6 +75,14 @@ def _gen(
         '-w',
         '--watch',
         help='Watch file changes'
+    ),
+    _build: Optional[bool] = typer.Option(
+        False,
+        '--build'
+    ),
+    build_command: Optional[str] = typer.Option(
+        '',
+        '--build-command'
     )
 ):
     """
@@ -108,11 +117,24 @@ def _gen(
             if ext.endswith('x') and packed is not None:
                 code = packed.translate(code)
             lang = input_lang or ext.removesuffix('x')
-            print(
-                transpiler.generate(
+            _code = transpiler.generate(
                     code, lang=lang
-                ), file=open(out, 'w') if out else sys.stdout
             )
+            print(
+                _code,
+                file=open(out, 'w') if out else sys.stdout
+            )
+            if _build:
+                command = transpiler.templates['meta'].get('build')
+            else:
+                command = build_command
+            if command:
+                os.system(
+                    Template(command).render(
+                        out=out,
+                        code=_code
+                    )
+                )
     g()
     if _watch:
         watch(g, file_name)

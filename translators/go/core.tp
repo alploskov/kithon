@@ -33,7 +33,7 @@ elif: "else if {{condition}} {{body}} {{els}}"
 else: "else {{body}}"
 ternary: no
 
-func: "func {{name}}({{args|join(', ')}}){%if ret_type != 'None'%} {{ret_type}}{%endif%} {{body}}"
+func: "func {{name}}({{args|join(', ')}}){%if ret_type.val != 'None'%} {{ret_type}}{%endif%} {{body}}"
 
 while: "for {{condition}} {{body}}"
 
@@ -112,3 +112,9 @@ main: |-
 
 meta:
   run: "echo '{{code}}' > file1.go && go run file1.go && rm file1.go"
+  build: |-
+    {%- if out -%}
+    go build {{out}}
+    {%- else -%}
+    echo '{{code}}' > main.go && go build main.go && rm main.go
+    {%- endif -%}

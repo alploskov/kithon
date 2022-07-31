@@ -36,6 +36,10 @@ Gen options
 -o, --out FILENAME    Output file  by default: stdout for files and input directory for directories
 
 -w, --watch           watch a file/directory and recompile on changes
+
+--build               Run build command from meta
+
+--build-command       Build command instead of meta.build
 ```
 
 
@@ -77,6 +81,9 @@ meta:
   run: |
     Template of run command
 	Maybe dictionary with keys as platform names
+  build: |
+	Template of build command
+	Parameters: out - name of out file or '', code - generated code
 ```
 
 Example, meta for JavaScript:
