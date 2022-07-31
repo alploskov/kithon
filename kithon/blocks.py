@@ -22,6 +22,7 @@ def set_var(self, var, _type='any'):
         own = var.own.removesuffix('.[]')
         if hasattr(self.variables.get(own, {}).get('type'), 'el_type'):
             self.variables[own]['type'].el_type = _type
+        self.new_var(var.own, _type)
     if var.own in self.variables:
         self.variables[var.own]['immut'] = False
         if (
