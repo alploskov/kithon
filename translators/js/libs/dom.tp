@@ -47,10 +47,11 @@ dom.<<.any:
 document:
   type: dom
 
+  __getitem__:
+    code: "document.getElementById({{key}})"
+    ret_type: dom
+
 dom.select:
   alt_name: 'querySelector'
   ret_type: dom
 
-dom.[]:
-  code: "document.getElementById({{key}})"
-  ret_type: dom

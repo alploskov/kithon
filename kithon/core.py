@@ -1,6 +1,7 @@
 import ast
 from collections import defaultdict
 from os import path, walk, listdir
+from itertools import product
 import yaml
 try:
     from hy.lex import hy_parse
@@ -62,6 +63,32 @@ class Transpiler:
                 'immut': True
             }
         })
+
+
+    def get_macro(
+            self, own='', _type=None,
+            selector='{_}', is_reducing=False
+    ):
+        macro = {}
+        if own:
+            own = selector.format(_=own)
+            macro = self.templates.get(own, {})
+        if not macro and _type is not None:
+            if isinstance(_type, tuple):
+                type_chain = product(
+                    *map(types.type_simplification, _type)
+                )
+            else:
+                type_chain = types.type_simplification(_type)
+            for t in type_chain:
+                own = selector.format(_=t)
+                _macro = self.templates.get(own, {})
+                if is_reducing:
+                    macro = _macro | macro
+                elif _macro:
+                    return _macro, own
+        return macro, own
+
 
     def use(self, name):
         self.used.add(name)

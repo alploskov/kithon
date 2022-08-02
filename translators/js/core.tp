@@ -21,7 +21,7 @@ attr: |-
 
 index: "{{obj}}[{{key}}]"
 
-list[any].[]:
+list[any].__getitem__:
   code: >-
     {{obj}}[{%- if key < 0 -%}
       {{obj}}.length+{{key}}
@@ -31,7 +31,7 @@ list[any].[]:
       ({{key}}<0)?({{obj}}.length+{{key}}):({{key}})
     {%-endif-%}]
 
-dict[any].[]:
+dict[any].__getitem__:
   code: >-
     {{obj}}[{%- if ctx == 'load' -%}
       {{key}}] == undefined?(()=>{throw "key error"})():{{obj}}[{{key}}
@@ -125,4 +125,4 @@ meta:
     name: "node"
     prompt: "> "
   ext: "js"
-  run: "echo '{{code}}' | node"
+  run: "node -e '{{code}}'"

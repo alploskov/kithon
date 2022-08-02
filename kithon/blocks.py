@@ -186,13 +186,10 @@ def _for(self, tree: _ast.For):
 def decorating(self, decorators):
     if len(decorators) == 0:
         return {}
-    if (decorators[0].own or '').startswith('macro.'):
-        return self.templates.get(
-            decorators[0].own.removeprefix('macro.'), {}
-        )
-    if str(decorators[0].type) in self.templates:
-        return self.templates.get(decorators[0].type, {})
-    return {}
+    return self.get_macro(
+        decorators[0].own,
+        decorators[0].type
+    )[0]
 
 @visitor
 def args(self, tree: _ast.arg, in_class=False):
@@ -322,7 +319,7 @@ def _import(self, tree: _ast.Import):
     macro = self.templates.get(name, {})
     self.variables.update({
         (self.namespace + '.' + (alias or name)): {
-            'own': ('macro.' if macro else '') + name,
+            'own': name,
             'type': types['module'](name)
         }
     })
@@ -340,7 +337,7 @@ def import_from(self, tree: _ast.ImportFrom):
     name = tree.names[0].name
     alias = tree.names[0].asname
     macro = self.templates.get(f'{tree.module}.{name}', {})
-    own = ('macro.' if macro else '') + tree.module + '.' + name
+    own = tree.module + '.' + name
     self.variables.update({
         (self.namespace + '.' + (alias or name)): {
             'own': own,

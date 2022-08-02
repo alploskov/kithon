@@ -1,9 +1,7 @@
 import ast
-from functools import reduce
 import math
-from itertools import product, starmap
 import _ast
-from .types import types, type_eval, type_simplification
+from .types import types, type_eval
 from .core import visitor
 from .side_effects import side_effect
 
@@ -32,12 +30,10 @@ def un_op(self, tree: _ast.UnaryOp):
     """Unary operations(not...)"""
     el = self.visit(tree.operand)
     op = op_to_str(tree.op)
-    overload = reduce(
-        lambda ovl, new_ovl: new_ovl | ovl,
-        map(
-            lambda t: self.templates.get(f'{op}.{t}', {}),
-            type_simplification(el.type)
-        )
+    overload, _ = self.get_macro(
+        _type=el.type,
+        selector=op + '.{_}',
+        is_reducing=True
     )
     side_effect(overload, {'op': op, 'el': el})
     return self.node(
@@ -88,17 +84,10 @@ def compare(self, tree: _ast.Compare):
     return expr
 
 def _bin_op(self, left, right, op):
-    overload = reduce(
-        lambda ovl, new_ovl: new_ovl | ovl,
-        starmap(
-            lambda l, r: self.templates.get(
-                f'{l}.{op}.{r}', {}
-            ),
-            product(
-                type_simplification(left.type),
-                type_simplification(right.type)
-            )
-        )
+    overload, _ = self.get_macro(
+        _type=(left.type, right.type),
+        selector='{_[0]}.' + op + '.{_[1]}',
+        is_reducing=True
     )
     side_effect(overload, {'left': left, 'right': right})
     return self.node(
@@ -136,16 +125,11 @@ def kwarg(self, tree: _ast.keyword):
 def attribute(self, tree: _ast.Attribute):
     obj = self.visit(tree.value)
     own = f'{obj.own}.{tree.attr}'
-    if own.startswith('macro.'):
-        macro = self.templates.get(
-            own.removeprefix('macro.'), {}
-        )
-    else:
-        for t in type_simplification(obj.type):
-            macro = self.templates.get(f'{t}.{tree.attr}', {})
-            if macro:
-                own = f'macro.{t}.{tree.attr}'
-                break
+    macro, own = self.get_macro(
+        obj.own,
+        obj.type,
+        selector='{_}.' + tree.attr
+    )
     side_effect(macro, {'obj': obj, 'attr': tree.attr})
     inf = self.variables.get(own, {})
     return self.node(
@@ -169,13 +153,8 @@ def call(self, tree: _ast.Call):
     args = list(map(self.visit, tree.args))
     kwargs = list(map(self.visit, tree.keywords))
     tmp = 'call'
-    macro = {}
     ret_type = getattr(func.type, 'ret_type', 'None')
-    if (func.own or '').startswith('macro.'):
-        macro = self.templates.get(
-            func.own.removeprefix('macro.'), {})
-    elif str(func.type) in self.templates:
-        macro = self.templates.get(str(func.type))
+    macro, _ = self.get_macro(func.own, func.type)
     if func.type == 'type':
         tmp = 'new'
         ret_type = func.own
@@ -246,12 +225,11 @@ def slice(self, tree: _ast.Subscript):
         _ast.Load: 'load'
     }.get(type(tree.ctx))
     if not isinstance(_slice, _ast.Slice):
-        for t in type_simplification(obj.type):
-            macro = self.templates.get(
-                f'{t}.__getitem__',
-                self.templates.get(f'{t}.[]', {})
-            )
-            if macro: break
+        macro, _ = self.get_macro(
+            obj.own,
+            obj.type,
+            selector='{_}.__getitem__'
+        )
         return self.node(
             tmp=macro.get('code', 'index'),
             type=macro.get(
@@ -337,15 +315,15 @@ def name(self, tree: _ast.Name):
             f'{".".join(ns[:-(ln + 1)])}.{tree.id}', {}
         )
         if var_info: break
+    var_info = (
+        {'own': f'{self.namespace}.{tree.id}'}
+        | var_info
+    )
     macro = {}
     if tree.id in self.templates:
-        var_info |= {'own': f'macro.{tree.id}'}
-        macro = self.templates.get(tree.id, {})
-    elif var_info.get('own', '').startswith('macro.'):
-        macro = self.templates.get(
-            var_info['own'].removeprefix('macro.'), {}
-        )
-    var_info = {'own': f'{self.namespace}.{tree.id}'} | var_info
+        macro, var_info['own'] = self.get_macro(tree.id)
+    else:
+        macro, var_info['own'] = self.get_macro(var_info.get('own'))
     return self.node(
         tmp='name',
         type=var_info.get(
