@@ -59,6 +59,7 @@ _type(
     tmp='func[{{args|join(" ")}}]'
 )
 _type('module', ['_name'], 'mode_{{_name}}')
+_type('type', ['__type__'], '{{__type__}}')
 
 def type_eval(type_code, parts=None):
     """

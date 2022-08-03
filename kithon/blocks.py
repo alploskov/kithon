@@ -205,7 +205,10 @@ def args(self, tree: _ast.arg, in_class=False):
         else:
             self.new_var(
                 full_name,
-                getattr(arg.annotation, 'id', 'any')
+                getattr(
+                    self.visit(arg.annotation).type,
+                    '__type__', 'any'
+                )
             )
         _args.append(self.node(
             tmp='arg',

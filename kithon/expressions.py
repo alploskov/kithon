@@ -230,14 +230,15 @@ def slice(self, tree: _ast.Subscript):
             obj.type,
             selector='{_}.__getitem__'
         )
+        parts = {'obj': obj, 'key': self.visit(_slice), 'ctx': ctx}
         return self.node(
             tmp=macro.get('code', 'index'),
-            type=macro.get(
-                'ret_type',
-                getattr(obj.type, 'el_type', 'any')
+            type=(
+                type_eval(macro.get('ret_type'), parts)
+                or getattr(obj.type, 'el_type', 'any')
             ),
             own=f'{obj.own}.[]',
-            parts={'obj': obj, 'key': self.visit(_slice), 'ctx': ctx}
+            parts=parts
         )
     return self.node(
         tmp='slice',
