@@ -1,125 +1,180 @@
-The aim of this tutorial is to build python -> [wren](https://wren.io) transpiler using [kithon](https://github.com/alploskov/kithon).
+ This tutorial describes how create of python to js transpiler that can translate following code:
 
-First, install kithon. if you haven’t done this already.
+```python
+def fib(n):
+    nums = [1, 1]
+    for i in range(2, n):
+        nums.append(nums[i - 2] + nums[i - 1])
+    return nums
 
-```
-pip install kithon
-```
-
-By default, kithon uses templates that generate python code. When you create a new translator, you should create a template for constructs that is different from python
-
-### Base
-
-Wren is c-like scripting language, on it we can use template for c-like languages with this command
-
-```
-kithon new --base C wren
+import random
+print(fib(random.randint(1, 200)))
 ```
 
-Now we have dirrectory wren with the folowing content:
+## Install **Kithon**
+
+The first step is to install **Kithon**.
+
+<div class="termy">
+
+```console
+$ pip install kithon
+
+---> 100%
+```
+</div>
+
+## Create language template
+
+JavaScript have c-like syntax, then we can use following command to create template of our transpiler
 
 ```
-wren
+kithon new --base=C JS
+```
+
+Now we have dirrectory JS with the folowing content:
+
+```
+JS
 ├── core.tp
 ├── macros.tp
 ├── libs/
 └── objects/
 ```
 
-If you don't change any `core.tp`, you will receive code in c-like language
+Some template, such as functions or for loop, are already in `core.tp` and if compile our program we get this code:
 
-### Wren-specifc constructions
-
-If statements in C and Wren have same syntax and we don't need change templates `if`, `elif`, `else` and other matching with C.
-
-Some templates match with python for example `expr`, `break`, `continue` on it we must delete they from `core.tp`. 
-
-Variables and functions defenition don't match with C or python than we must rewrite they template:
-
-```yaml
-# var defenition
-
-new_var: &new-assign "var {{var}} = {{value}}"
-new_attr: *new-assign
+```js
+function fib(n) {
+    nums = [1, 1];
+    for (i = 2;i < n; i += 1) {
+        nums.append(nums[i - 2] + nums[i - 1]);
+    }
+    return nums;
+}
+import random
+print(fib(random.randint(1, 200)));
 ```
 
-```yaml
-# functions defenition
-func: |-
-  var {{name}} = Fn.new {{'('}}|{{args|join(', ')}}|{% for st in body.parts.body %}
-  {{'    '*nl}}{{st}}{% endfor %}
-  {{'    '*(nl-1)}}}
-```
+## JavaScript-specifc constructions
 
-Some constructions undefined in C and has different from python for example `for`:
+Now we need to add JavaScript-specific constructs, for example, using the keyword `let` in defining new variables.
 
 ```yaml
-for: "for ({{var}} in {{obj}}) {{body}}"
+new_var: "let {{var}} = {{value}}"
 ```
 
-Full code with other core elements may be found in this [file](https://github.com/alploskov/kithon/blob/master/translators/wren/core.tp) 
+Now our code compile to this:
 
-### Macros
+```js
+function fib(n) {
+    let nums = [1, 1];
+    for (i = 2;i < n; i += 1) {
+        nums.append(nums[i - 2] + nums[i - 1]);
+    }
+    return nums;
+}
+import random
+print(fib(random.randint(1, 200)));
+```
 
-Next step is add macros for example `print` has following macro:
+## Macros
+
+Next step is to add macros. We need replace `print` to `console.log`, write this code in macros.tp: 
 
 ```yaml
 print:
-  code: "System.printAll([{{args|join(', \" \", ')}}])"
+  alt_name: "console.log"
 ```
-
-It use wren standart function `System.printAll` and if we transpile following code:
-
-```python
-print('Hello, Kithon', 123)
-System.printAll([1, 2, 3])
-```
-
-We get this:
-
-```python
-System.printAll(["Hello, Kithon", 123])
-System.printAll([1, 2, 3])
-```
-
-Because we can use we can use python functions as macros or built-in functions of the target language
-
-### Libs and embedded objects
-
-Last step is add libraries, most often, kithon-libraries are a projection onto similar libraries of the target language.
-
-In this tutorial we create set of macros for binding subset of python library `random` to [wren-random](https://wren.io/modules/random/random.html)
-
-First in `libs/` create file `random.tp` and write next code
+<br>
+List method `append` in python changed by `push` method in js. Create list.tp file in objects dirrectory and write this code:
 
 ```yaml
-random:
-  alt_name: "Random.new()"
-  import_code: "import \"random\" for Random"
-  type: {module: ['random']}
+list[any]:
+  append:
+	alt_name: "push"
+```
+<br>
+
+A `random` module in js doesn't need to be imported. The function `random(min, max)` from the random module can be changed using this code: 
+
+```js
+(Math.floor(Math.random() * (max - min)) + min)
 ```
 
-We create prototype of our module and we can write following code:
-
-```python
-import random
-
-random.int()
-```
-
-that compiles to:
-
-```
-import "random" for Random
-Random.new().int()
-```
-
-But we wanna use python names. Python analog for wren `int` method int is `randint`, on it modifying our code:
-
+Then write next code to `JS/libs/random.tp`:
 ```yaml
 random:
-  alt_name: "Random.new()"
-  import_code: "import \"random\" for Random"
-  type: {module: ['random']}
+  import_code: no
 
+  randint:
+    code: "(Math.floor(Math.random() * ({{args[1]}} - {{args[0]}})) + {{args[0]}})"
 ```
+
+After these steps, our code transpiled to this:
+
+```js
+function fib(n) {
+    let nums = [1, 1];
+    for (i = 2;i < n; i += 1) {
+        nums.push(nums[i - 2] + nums[i - 1]);
+    }
+    return nums;
+}
+
+console.log(fib((Math.floor(Math.random() * (200 - 1)) + 1)));
+```
+
+
+## Tools
+
+Last step in creating transpiler is provide dev-tools. We need to run our code in nodejs and use its repl.
+
+To run code in nodejs we can use this command template `node -e '{{code}}'`, code is generated by kithon and placed to template
+
+For provide repl we need in command to run repl and prompt to type, then see what happend when we start nodejs:
+
+<div class="termy">
+
+```console
+$ node
+Welcome to Node.js v17.2.0.
+Type ".help" for more information.
+> console.log(
+```
+</div>
+
+
+So we can create file `JS/tools.tp` and write this code:
+
+```yaml
+meta:
+  repl:
+    name: "node"
+    prompt: "> "
+  run: "node -e '{{code}}'"
+```
+
+In the end create file main.py with code form start of tutorial and try execute these commands:
+
+<div class="termy">
+
+```console
+$ kithon gen --to JS main.py
+function fib(n) {
+    let nums = [1, 1];
+    for (i = 2;i < n; i += 1) {
+        nums.push(nums[i - 2] + nums[i - 1]);
+    }
+    return nums;
+}
+
+console.log(fib((Math.floor(Math.random() * (200 - 1)) + 1)));
+$ kithon run --to JS main.py
+[
+	  <font color="lightgreen">1</font>,  <font color="lightgreen">1</font>,  <font color="lightgreen">2</font>,  <font color="lightgreen">3</font>,  <font color="lightgreen">5</font>,   <font color="lightgreen">8</font>,
+	 <font color="lightgreen">13</font>, <font color="lightgreen">21</font>, <font color="lightgreen">34</font>, <font color="lightgreen">55</font>, <font color="lightgreen">89</font>, <font color="lightgreen">144</font>,
+	<font color="lightgreen">233</font>
+]
+```
+</div>
