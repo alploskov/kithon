@@ -31,7 +31,7 @@ class node:
             self.tmp = env.templates[tmp].get('tmp', '')
         else:
             self.name = name or 'unknown'
-            self.tmp = Template(tmp)
+            self.tmp = Template(tmp or '')
         self.parts = parts
         self.type = type or 'None'
         self.env = env
