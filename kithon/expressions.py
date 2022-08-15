@@ -124,12 +124,12 @@ def kwarg(self, tree: _ast.keyword):
 @visitor
 def attribute(self, tree: _ast.Attribute):
     obj = self.visit(tree.value)
-    own = f'{obj.own}.{tree.attr}'
     macro, own = self.get_macro(
         obj.own,
         obj.type,
         selector='{_}.' + tree.attr
     )
+    own = own if macro else f'{obj.own}.{tree.attr}'
     side_effect(macro, {'obj': obj, 'attr': tree.attr})
     inf = self.variables.get(own, {})
     return self.node(
