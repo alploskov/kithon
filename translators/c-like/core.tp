@@ -1,6 +1,6 @@
-Bool: "{{val|lower}}"
+bool: "{{val|lower}}"
 
-expr: "{{expr}};"
+expr: "{{value}};"
 
 if: "if ({{condition}}) {{body}} {{els}}"
 elif: "else if ({{condition}}) {{body}} {{els}}"
