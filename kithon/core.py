@@ -104,12 +104,8 @@ class Transpiler:
             return '__main__'
         return self.namespace[:self.namespace.rfind('.')]
 
-    def node(self, tmp=None, name=None, parts={}, type=None, own=None):
-        return _node.node(
-            env=self, tmp=tmp, name=name,
-            parts=parts, type=type,
-            nl=self.nl, own=own
-        )
+    def node(self, **kwargs):
+        return _node.node(env=self, **kwargs)
 
     def get_lang(self, lang):
         translators_dirr = path.join(path.split(__path__[0])[0], 'translators')
@@ -156,6 +152,10 @@ class Transpiler:
                     self.add_templ(f'{name}.{field}', value)
 
     def visit(self, tree, **kw):
+        if isinstance(tree, _node.node):
+            return tree
+        if isinstance(tree, (int, str, float, bool)):
+            tree = ast.Constant(value=tree)
         if type(tree) not in self.elements:
             return self.node()
         node = self.elements.get(type(tree))(

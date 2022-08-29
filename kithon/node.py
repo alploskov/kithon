@@ -22,7 +22,7 @@ def type_to_node(env, _type):
     )
 
 class node:
-    def __init__(self, env=None, tmp=None, name=None, parts=None, type=None, nl=1, own=None):
+    def __init__(self, env=None, tmp=None, name=None, parts={}, type=None, nl=1, own=None, alt=None):
         if (tmp or '').startswith('type.'):
             self.name = 'type'
             self.tmp = Template(tmp.removeprefix('type.'))
@@ -41,6 +41,7 @@ class node:
         self.parent = None
         self.own = own
         self.code_before = []
+        self.alt = alt
 
     def render(self):
         _get_val = lambda el: el.render() if isinstance(el, node) else el
@@ -76,19 +77,19 @@ class node:
                 **self.parts
             )
         if self.name in [
-            'expr', 'assign', 'set_attr',
-            'new_attr', 'assignment_by_key', 'new_var',
-            'if', 'elif', 'else', 'func',
-            'return', 'while', 'for',
-            'c_like_for', 'class', 'init',
-            'method', 'attr'
+                'expr', 'assign', 'set_attr',
+                'new_attr', 'assignment_by_key', 'new_var',
+                'if', 'elif', 'else', 'func',
+                'return', 'while', 'for',
+                'c_like_for', 'class', 'init',
+                'method', 'attr', 'var_prototype'
         ] and self.code_before:
             before = _get_val(self.code_before[0]) + '\n'
             for part in self.code_before[1:]:
                 before += '    ' * self.nl
                 before += _get_val(part) + '\n'
-            self.clear_code_before()
             self.val = before + '    ' * self.nl + self.val
+            self.code_before = []
         elif self.parent:
             self.parent.code_before.extend(self.code_before)
         return self.val
@@ -107,10 +108,6 @@ class node:
 
     def add_code_before(self, code):
         self.code_before.append(code)
-        return ''
-
-    def clear_code_before(self):
-        self.code_before = []
         return ''
 
     def __str__(self):
