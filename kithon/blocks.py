@@ -68,10 +68,14 @@ def assign(self, tree: _ast.Assign, _type=None):
     )
 
 @visitor
-def var_prototype(self, tree: typing.Any):
-    set_var(self, self.visit(ast.Name(id=tree, ctx=ast.Store)))
+def var_prototype(self, tree: typing.Any, type='any'):
+    if isinstance(tree, str):
+        set_var(self, self.visit(ast.Name(id=tree, ctx=ast.Store)), type)
+    else:
+        set_var(self, tree, type)
     return self.node(
         tmp='var_prototype',
+        type=type,
         parts={'name': tree}
     )
 
@@ -100,7 +104,16 @@ def unpack(self, _vars, value):
 
 @visitor
 def ann_assign(self, tree: _ast.AnnAssign):
-    pass
+    _type = getattr(
+        self.visit(tree.annotation).type,
+        '__type__', 'any'
+    )
+    if tree.value is None:
+        return self.var_prototype(self.visit(tree.target), type=_type)
+    return self.assign(
+        ast.Assign(targets=[tree.target], value=tree.value),
+        _type=_type
+    )
 
 @visitor
 def aug_assign(self, tree: _ast.AugAssign):
