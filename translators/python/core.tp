@@ -75,4 +75,5 @@ main: '{{body}}'
 meta:
   repl:
     name: python
-    separator: ">>> "
+    prompt: ">>> "
+  run: "python -c '{{code}}'"
