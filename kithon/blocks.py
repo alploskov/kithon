@@ -73,10 +73,18 @@ def var_prototype(self, tree: typing.Any, type='any'):
         set_var(self, self.visit(ast.Name(id=tree, ctx=ast.Store)), type)
     else:
         set_var(self, tree, type)
+    default_val = None
+    if isinstance(type, types['list']):
+        default_val = self.visit(ast.List(elts=[]))
+        default_val.type = type
+    elif type != 'any':
+        default_val = self.visit(
+            {'int': 0, 'str': '', 'float': 0.0, 'bool': False}.get(type)
+        )
     return self.node(
         tmp='var_prototype',
         type=type,
-        parts={'name': tree}
+        parts={'name': tree, 'default_val': default_val}
     )
 
 def unpack(self, _vars, value):

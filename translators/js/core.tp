@@ -39,27 +39,11 @@ dict[any].__getitem__:
       {{key}}
     {%-endif-%}]
 
-slice: |-
-  {%- if step == 1 -%}
-    {{obj}}.slice({{low}}, {{up}})
-  {%- elif step == -1 -%}
-    {{obj}}.slice({{low}}, {{up}}).reverse()
-  {%- elif step != 0 -%}
-    {%- if step < 0 -%}
-        [...{{obj}}].reverse()
-    {%- elif step > 0 -%}
-        {{obj}}
-    {%- else -%}
-      ({{step}}<0?[...{{obj}}].reverse():{{obj}})
-    {%- endif -%}
-    {%-if low != 0 or up.val != obj.val + '.length' -%}
-      .slice(...({{step}}<0?[{{up}}, {{low}}]:[{{low}}, {{up}}]))
-    {%-endif-%}
-    .filter((_,i)=>(i%{{step}})==0)
-  {%-endif-%}
+slice: "{{obj}}.slice({{low}}, {{up}})"
+steped_slice: ~
 
 expr: "{{value}};"
-var_prototype: "let {{name}};"
+var_prototype: "let {{name}}{%if default_val%} = {{default_val}}{%endif%};"
 assign: &assign "{{var}} = {{value}};"
 set_attr: *assign
 new_attr: *assign
