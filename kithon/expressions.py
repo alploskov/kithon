@@ -1,6 +1,8 @@
 import ast
 import math
 import _ast
+import typing
+from . import analogs
 from .types import types, type_eval
 from .core import visitor
 from .side_effects import side_effect
@@ -217,6 +219,28 @@ def _dict(self, tree: _ast.Dict):
     )
 
 @visitor
+def index(self, tree: typing.Any = None, obj=None, key=None, ctx=None):
+    macro, _ = self.get_macro(
+            obj.own,
+            obj.type,
+            selector='{_}.__getitem__'
+    )
+    parts = {
+        'obj': self.visit(obj),
+        'key': self.visit(key),
+        'ctx': ctx
+    }
+    return self.node(
+        tmp=macro.get('code', 'index'),
+        type=(
+            type_eval(macro.get('ret_type'), parts)
+            or getattr(obj.type, 'el_type', 'any')
+        ),
+        own=f'{obj.own}.[]',
+        parts=parts
+    )
+
+@visitor
 def slice(self, tree: _ast.Subscript):
     obj = self.visit(tree.value)
     _slice = tree.slice
@@ -225,44 +249,80 @@ def slice(self, tree: _ast.Subscript):
         _ast.Load: 'load'
     }.get(type(tree.ctx))
     if not isinstance(_slice, _ast.Slice):
-        macro, _ = self.get_macro(
-            obj.own,
-            obj.type,
-            selector='{_}.__getitem__'
-        )
-        parts = {'obj': obj, 'key': self.visit(_slice), 'ctx': ctx}
-        return self.node(
-            tmp=macro.get('code', 'index'),
-            type=(
-                type_eval(macro.get('ret_type'), parts)
-                or getattr(obj.type, 'el_type', 'any')
-            ),
-            own=f'{obj.own}.[]',
-            parts=parts
-        )
+        return self.index(obj=obj, key=_slice, ctx=ctx)
+    step = self.visit(_slice.step or 1)
+    tmp = 'slice'
+    if step != 1:
+        tmp = 'steped_slice'
+    # generation defaults limits
+    obj_len = analogs.call(self, 'len', args=[obj])
+    negative_step_up = lambda: ast.BinOp(
+        left = ast.UnaryOp(op=ast.USub(), operand=obj_len),
+        op = ast.Sub(),
+        right = 1
+    )
+    initial_code = []
+    if step < 0:
+        low = self.visit(_slice.lower or -1)
+        up = self.visit(_slice.upper or negative_step_up())
+    elif step >= 0:
+        low = self.visit(_slice.lower or 0)
+        up = self.visit(_slice.upper or obj_len)
+    else:
+        _prototypes = []
+        _body = []
+        _else = []
+        if _slice.lower is None:
+            _low = self.get_temp_var('slice_start')
+            _prototypes += [self.var_prototype(_low, type='int')]
+            _body += [analogs.assign(self, _low, 0)]
+            _else += [analogs.assign(self, _low, -1)]
+            low = analogs.name(self, _low)
+        else:
+            low = self.visit(_slice.lower)
+        if _slice.upper is None:
+            _up = self.get_temp_var('slice_finish')
+            _prototypes += [self.var_prototype(_up, type='int')]
+            _body += [analogs.assign(self, _up, obj_len)]
+            _else += [
+                analogs.assign(self, _up, negative_step_up())
+            ]
+            up = analogs.name(self, _up)
+        else:
+            up = self.visit(_slice.upper)
+        if _prototypes != []:
+            initial_code += [
+                *_prototypes,
+                self.node(
+                    tmp='if',
+                    parts={
+                        'condition': _bin_op(self, step, self.visit(0), '>'),
+                        'body': self.expression_block(_body),
+                        'els': self._else(_else),
+                    }
+                )
+            ]
+    if self.templates[tmp]['meta'].get('gen_negative_indexes'):
+        low = analogs.index(self, obj, low)
+        up = analogs.index(self, obj, up)
+    # end of generation defaults limits
+    if (
+            step != 1 and self.templates['steped_slice']['tmp'] is None
+            or not self.templates['slice']['tmp']
+    ):
+        _ = analogs.slice(self, obj, low, up, step)
+        _.code_before = initial_code + _.code_before
+        return _
     return self.node(
-        tmp='slice',
+        tmp=tmp,
+        name='slice',
         type=obj.type,
         own=f'{obj.own}.[]',
-        parts={
-            'obj': obj,
-            'ctx': ctx,
-            'low': self.visit(
-                _slice.lower
-                or ast.Constant(value=0)
-            ),
-            'up': self.visit(
-                _slice.upper
-                or ast.Call(
-                    func=ast.Name(id='len', ctx=_ast.Load),
-                    args=[tree.value],
-                    keywords=[])
-            ),
-            'step': self.visit(
-                _slice.step
-                or ast.Constant(value=1)
-            )
-        }
+        parts = {
+            'obj': obj, 'ctx': ctx,
+            'low': low, 'up': up, 'step': step
+        },
+        code_before=initial_code
     )
 
 @visitor
@@ -270,30 +330,8 @@ def ternary(self, tree: _ast.IfExp):
     cond = self.visit(tree.test)
     body = self.visit(tree.body)
     els = self.visit(tree.orelse)
-    if not self.templates['ternary']['tmp']:
-        var_name = self.get_temp_var('ifepx')
-        exp = self.node(
-            tmp='name',
-            name='ternary',
-            type=body.type,
-            parts={'name': var_name, 'ctx': _ast.Load}
-        )
-        exp.add_code_before(self.var_prototype(var_name))
-        _assign = lambda val: ast.Assign(
-            targets=[ast.Name(id=var_name, ctx=ast.Store())],
-            value=val
-        )
-        exp.add_code_before(
-            self.node(
-                tmp='if',
-                parts={
-                    'condition': cond,
-                    'body': self.expression_block([_assign(tree.body)]),
-                    'els': self._else([_assign(tree.orelse)])
-                }
-            )
-        )
-        return exp
+    if self.templates['ternary']['tmp'] is None:
+        return analogs.ternary(self, cond, body, els)
     return self.node(
         tmp='ternary',
         type=body.type,

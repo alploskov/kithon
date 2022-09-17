@@ -1,4 +1,5 @@
 from . import (
+    analogs,
     expressions,
     blocks,
     controls,

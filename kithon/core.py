@@ -134,7 +134,7 @@ class Transpiler:
         if name in ['types', 'operators', 'meta']:
             self.templates[name] = template
         if isinstance(template, str):
-            self.templates[name].update({'tmp': Template(template)})
+            self.templates[name].update({'tmp': Template(template), 'meta': {}})
         elif isinstance(template, bool) and not template:
             self.templates[name].update({'tmp': ''})
         elif template is None:
@@ -147,7 +147,7 @@ class Transpiler:
                     'meta', 'decorate', 'args'
                 ]
                 if field == 'tmp':
-                    self.templates[name].update({'tmp': Template(value)})
+                    self.add_templ(name, value)
                 if field in keywords:
                     self.templates[name].update({field: value})
                 else:
