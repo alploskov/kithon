@@ -40,7 +40,9 @@ dict[any].__getitem__:
     {%-endif-%}]
 
 slice: "{{obj}}.slice({{low}}, {{up}})"
-steped_slice: ~
+steped_slice:
+  meta: {"gen_negative_indexes": yes}
+  tmp: ~
 
 expr: "{{value}};"
 var_prototype: "let {{name}}{%if default_val%} = {{default_val}}{%endif%};"

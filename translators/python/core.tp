@@ -31,7 +31,8 @@ tuple: "({{ls|join(', ')}})"
 dict: "{{'{'}}{%for item in keys_val%}{{item[0]}}: {{item[1]}},{%endfor%}}"
 
 index: '{{obj}}[{{key}}]'
-slice: '{% if step == 1 %}{{obj}}[{{low}}:{{up}}]{% else %}{{obj}}[{{low}}:{{up}}:{{step}}]{%endif%}'
+slice: '{{obj}}[{{low}}:{{up}}]'
+steped_slice: '{{obj}}[{{low}}:{{up}}:{{step}}]'
 expr: '{{value}}'
 
 assign: '{{var}} = {{value}}'

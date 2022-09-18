@@ -30,6 +30,7 @@ list[any]:
     code: |-
       {{- node.add_code_before(obj.val + ' = nil' ) -}}
       {%- if parent.name != 'expr' -%}nil{%- endif -%}
+
   count:
     code: |-
       func() int {{'{'}}
@@ -41,6 +42,7 @@ list[any]:
       {{'    '*(nl + 1)}}}
       {{'    '*(nl + 1)}}return n
       {{'    '*nl}}}()
+
   reverse:
     code: |-
       {{- node.add_code_before(
@@ -83,6 +85,7 @@ list[any]:
       + '}'
       ) -}}
       {%- if parent.name != 'expr' -%}nil{%- endif -%}
+
 list[any].*.type:
   code: "{{left}}"
   type: "{{left.type}}"

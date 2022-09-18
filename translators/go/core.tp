@@ -12,26 +12,33 @@ arg: "{{name}} {{type}}"
 list: "{{type}}{{'{'}}{{ls|join(', ')}}}"
 dict: "{{type}}{{'{'}}{%for item in keys_val%}{{item[0]}}: {{item[1]}},{%endfor%}}"
 
-index: |-
-  {%- if isinstance(obj.type, types['list']) -%}
-    {{- env.use('Index') -}}
-    {{obj}}[Index({{key}}, len({{obj}}))]
-  {%- else -%}
-    {{obj}}[{{key}}]
-  {%- endif -%}
+index: "{{obj}}[{{key}}]"
 
-slice: |-
-  {%- if step.val == '1' -%}
-    {{-env.use('Index')-}}
-    {{obj}}[{{low}}:Index({{up}}, len({{obj}}))]
-  {%-endif-%}
+list[any].__getitem__:
+  code: |-
+    {{obj}}[
+    {%- if key >= 0 -%}
+    {{key}}
+    {%- elif key < 0 -%}
+    len({{obj}}) + {{key}}
+    {%- else -%}
+    {{- env.use('Index') -}}
+    Index({{key}}, len({{obj}}))
+    {%- endif -%}]
+
+slice:
+  meta: {"gen_negative_indexes": yes}
+  tmp: ~
+steped_slice:
+  meta: {"gen_negative_indexes": yes}
+  tmp: ~
 
 new_var: "{{var}} := {{value}}"
-var_prototype: "var {{name}} interface{}"
+var_prototype: "var {{name}} {{type}}"
 if: "if {{condition}} {{body}} {{els}}"
 elif: "else if {{condition}} {{body}} {{els}}"
 else: "else {{body}}"
-ternary: no
+ternary: ~
 
 func: "func {{name}}({{args|join(', ')}}){%if ret_type.val != 'None'%} {{ret_type}}{%endif%} {{body}}"
 
@@ -95,7 +102,7 @@ new: "init_{{func}}({{args|join(', ')}})"
 
 main: |-
   package main
-  {% if env.used %}  
+  {% if env.used %}
   import ({%- for used in env.used -%}
   {% if used.startswith('mod_')%}{{'\n    '}}"{{used[4:]}}"{%endif%}
   {%- endfor -%}{{'\n'}})
