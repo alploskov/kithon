@@ -37,6 +37,10 @@ float: |-
   {%- endif -%}
 un_op: "{{op}}{{el}}"
 ''')
+    },
+    'python': {
+        'code': Transpiler(),
+        'out': Transpiler()
     }
 }
 
@@ -51,7 +55,7 @@ def test(test_name):
         )
         is_passed = T['out'].generate(result) == expected_result
         print(
-            f'{name} test is',
+            f'{name}: test is',
             '\033[32mpassed ✔\033[38m' if is_passed else '\033[31mfailed ×\033[38m'
         )
 for _file in listdir('cases'):
