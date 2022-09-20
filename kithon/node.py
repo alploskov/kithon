@@ -22,8 +22,8 @@ def type_to_node(env, _type):
     )
 
 class node:
-    def __init__(self, env=None, tmp=None, name=None, parts={}, type=None, nl=1, own=None, alt=None):
-        if (tmp or '').startswith('type.'):
+    def __init__(self, env=None, tmp='', name=None, parts={}, type=None, own=None, code_before=None):
+        if tmp.startswith('type.'):
             self.name = 'type'
             self.tmp = Template(tmp.removeprefix('type.'))
         elif tmp in env.templates:
@@ -31,17 +31,16 @@ class node:
             self.tmp = env.templates[tmp].get('tmp', '')
         else:
             self.name = name or 'unknown'
-            self.tmp = Template(tmp or '')
+            self.tmp = Template(tmp)
         self.parts = parts
         self.type = type or 'None'
         self.env = env
         self.val = ''
-        self.nl = nl
+        self.nl = env.nl
         self.ast = None
         self.parent = None
         self.own = own
-        self.code_before = []
-        self.alt = alt
+        self.code_before = code_before or []
 
     def render(self):
         _get_val = lambda el: el.render() if isinstance(el, node) else el
@@ -116,11 +115,23 @@ class node:
     def __call__(self):
         return self.render()
 
-for op in (lt, le, eq, ne, ge, gt):
+    def __eq__(self, other):
+        if isinstance(other, node):
+            if self.is_const() and other.is_const():
+                return self.get_val() == other.get_val()
+            return self.parts == other.parts
+        if self.is_const():
+            return self.get_val() == other
+        return False
+
+    def __ne__(self, other):
+        return not self == other
+
+for op in (lt, le, ge, gt):
     def operation(op):
         def _(self, other):
-            if self.get_val() != 'unknown':
-                if isinstance(other, node) and other.get_val() != 'unknown':
+            if self.is_const():
+                if isinstance(other, node) and other.is_const():
                     return op(self.get_val(), other.get_val())
                 return op(self.get_val(), other)
             return False
