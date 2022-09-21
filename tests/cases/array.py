@@ -20,18 +20,21 @@ def slices():
     print(arr[0:-1])
     print(arr[1:-1])
     print(arr[-1:1])
-    
+    print(arr[:10])
     print(arr[::1])
     print(arr[::-1])
     print(arr[1:-1:2])
-#    print(arr[-1:1:-1])
-#    print(arr[-1:1:-2])
+    print(arr[-1:1:-1])
+    print(arr[-1:1:-2])
+    b = 2
+    print(arr[::b])
 
 def main():
     print([])
     print([1])
     print([1,2,3,4])
     get_by_index()
+    lens()
     slices()
 
 main()
