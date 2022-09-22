@@ -12,12 +12,7 @@ operators:
   "and": "&&"
   "not": "!"
 
-assign: &assign "{{var}} = {{value}};"
-set_attr: *assign
-new_attr: *assign
-assignment_by_key: *assign
-new_key: *assign
-new_var: *assign
+assign: "{{var}} = {{value}};"
 
 c_like_for:
   meta:
@@ -49,3 +44,10 @@ body: |-
   {{'{'}}{% for st in body %}
   {{'    '*nl}}{{st}}{% endfor %}
   {{'    '*(nl-1)}}}
+
+slice:
+  meta: {"gen_negative_indexes": yes}
+  tmp: ~
+steped_slice:
+  meta: {"gen_negative_indexes": yes}
+  tmp: ~
