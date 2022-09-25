@@ -56,7 +56,7 @@ def slice(self, obj, low, up, step):
         self.visit(ast.For(
             iter=call(self, 'range', args=[low, up, step]),
             target=name(self, 'i', ctx='store'),
-            body=[call(
+            body=[ast.Expr(value=call(
                 self,
                 ast.Attribute(
                     value=name(self, slice_name),
@@ -67,7 +67,7 @@ def slice(self, obj, low, up, step):
                     key=name(self, 'i'),
                     ctx='load'
                 )]
-            )]
+            ))]
         ))
     ]
     return exp
