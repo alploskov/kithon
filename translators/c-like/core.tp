@@ -45,6 +45,9 @@ body: |-
   {{'    '*nl}}{{st}}{% endfor %}
   {{'    '*(nl-1)}}}
 
+list[any].__getitem__:
+  meta: {"gen_negative_indexes": yes}
+
 slice:
   meta: {"gen_negative_indexes": yes}
   tmp: ~

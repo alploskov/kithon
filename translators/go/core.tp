@@ -15,16 +15,7 @@ dict: "{{type}}{{'{'}}{%for item in keys_val%}{{item[0]}}: {{item[1]}},{%endfor%
 index: "{{obj}}[{{key}}]"
 
 list[any].__getitem__:
-  code: |-
-    {{obj}}[
-    {%- if key >= 0 -%}
-    {{key}}
-    {%- elif key < 0 -%}
-    len({{obj}}) + {{key}}
-    {%- else -%}
-    {{- env.use('Index') -}}
-    Index({{key}}, len({{obj}}))
-    {%- endif -%}]
+  meta: {"gen_negative_indexes": yes}
 
 slice:
   meta: {"gen_negative_indexes": yes}
@@ -106,14 +97,6 @@ main: |-
   import ({%- for used in env.used -%}
   {% if used.startswith('mod_')%}{{'\n    '}}"{{used[4:]}}"{%endif%}
   {%- endfor -%}{{'\n'}})
-  {% if 'Index' in env.used %}
-  func Index(index, ln int) int {{'{'}}
-      if index < 0 {{'{'}}
-          return ln + index
-      }
-      return index
-  }
-  {% endif %}
   {% endif %}
   {{body}}
 

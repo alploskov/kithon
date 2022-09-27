@@ -225,9 +225,13 @@ def index(self, tree: typing.Any = None, obj=None, key=None, ctx=None):
             obj.type,
             selector='{_}.__getitem__'
     )
+    key = self.visit(key)
+    if (macro.get('meta', self.templates['index']['meta'])
+          .get('gen_negative_indexes')):
+        key = analogs.index(self, obj, key)
     parts = {
         'obj': self.visit(obj),
-        'key': self.visit(key),
+        'key': key,
         'ctx': ctx
     }
     return self.node(
