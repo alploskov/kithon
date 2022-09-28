@@ -4,7 +4,6 @@ import sys
 from _ast import Import, ImportFrom
 from typing import Optional
 import typer
-import yaml
 from jinja2 import Template
 from kithon import Transpiler
 from . import configurator
@@ -90,7 +89,7 @@ def _gen(
     """
     transpiler = Transpiler()
     configurator.conf(
-        transpiler, target, macro, templates
+        transpiler, target or out.split('.')[-1], macro, templates
     )
     if os.path.isdir(file_name):
         _ext = transpiler.templates['meta'].get('ext')
