@@ -21,7 +21,9 @@ include = [
 
 	"translators/go/*",
 	"translators/go/libs/*",
-	"translators/go/objects/*"
+	"translators/go/objects/*",
+
+	"translators/c-like/*.tp"
 ]
 
 [tool.poetry.dependencies]
