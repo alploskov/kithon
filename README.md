@@ -1,63 +1,31 @@
-**Kithon** is a project that provides the ability to translate python and python-family language such as
-[hy-lang](https://github.com/hylang/hy) and [coconut](https://github.com/evhub/coconut)
-into human-readable code in any other programming languages.
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/alploskov/kithon/blob/master/LICENSE.txt) <a href="https://pypi.org/project/kithon" target="_blank"> <img src="https://img.shields.io/pypi/v/kithon?color=%2334D058&label=pypi%20package" alt="Package version"></a> ![lines of code](https://tokei.rs/b1/github/alploskov/kithon)
 
-**[Try out the web demo](https://alploskov.github.io/kithon-site/demo/)** or install locally: `pip install kithon`. Then you can use generation to `js` or `go` or create custom transpiler.
+**Kithon** is universal python transpiler for speedup python programs and use python in other platform, such as browser or game engines, it focused on generating human readable code and integration with tools of target languages including cli and libraries
 
-**Example**
+**[Try out the web demo](https://alploskov.github.io/kithon-site/demo/)**
 
-```python
-# main.py
+Quick start
+------------
+First, you install it:
 
-def main():
-    print('Hello, Kithon')
-
-main()
-```
----
-`kithon gen --to js main.py`, output:
-```js
-function main() {
-    console.log("Hello, Kithon");
-}
-main();
-```
----
-`kithon gen --to go main.py`, output:
-```go
-package main
-import (
-	"fmt"
-)
-
-func main() {
-    fmt.Println("Hello, Kithon")
-}
+```text
+$ pip install kithon[all]
 ```
 
-For what?
----------
+Then, you translate your code to target language, in this example JavaSctipt
 
-For use python where we can't. For example in browser(js), embedded scripting(mostly lua).
-Or make python program faster by translating to go, c++, rust, nim or julia.
-Also for supporting program written on in unpopular programming languages (very new or vice versa)
+```text
+$ kithon gen --to js hello_world.py
+```
 
-How it works?
--------------
+Or translate and run resulting code
 
-Kithon uses a dsl based on yaml and jinja to apply the rules described on it to the nodes of the ast tree. 
-Using this dsl you can add new languages or extensions to those already added.
+```text
+$ kithon run --to go hello_world.py
+```
+It should be clear what to do. If not, ask us in our [Telegram chat](https://t.me/kithon).
 
-Status
-------
+How to Contribute
+-----------------
 
-The project is under active development.
-Now the ability to add translation of basic python constructs into any other language(in this repo js and go only) is supported.
-
-There are plans to develop a number of supported languages and expand support for python syntax
-
-Similar projects
-----------------
-
-* [py2many](https://github.com/adsharma/py2many)
-* [pseudo](https://github.com/pseudo-lang/pseudo)
+First, install `python>=3.9`, `poetry`
