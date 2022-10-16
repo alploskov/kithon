@@ -217,6 +217,7 @@ def args(self, tree: _ast.arg, in_class=False):
     _args = []
     for i, arg in enumerate(tree):
         full_name = f'{self.namespace}.{arg.arg}'
+        macro, _ = self.get_macro(arg.arg)
         if i == 0 and in_class:
             self.variables.update({
                 full_name: self.variables[
@@ -226,15 +227,18 @@ def args(self, tree: _ast.arg, in_class=False):
         else:
             self.new_var(
                 full_name,
-                getattr(
-                    self.visit(arg.annotation).type,
-                    '__type__', 'any'
+                macro.get(
+                    'type',
+                    getattr(
+                        self.visit(arg.annotation).type,
+                        '__type__', 'any'
+                    )
                 )
             )
         _args.append(self.node(
-            tmp='arg',
+            tmp=macro.get('access', 'arg'),
             type=self.variables[full_name]['type'],
-            parts={'name': arg.arg}
+            parts={'name': macro.get(arg.arg, arg.arg)}
         ))
     return _args
 

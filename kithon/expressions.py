@@ -368,7 +368,7 @@ def name(self, tree: _ast.Name):
     else:
         macro, var_info['own'] = self.get_macro(var_info.get('own'))
     return self.node(
-        tmp='name',
+        tmp=macro.get('access', 'name'),
         type=var_info.get(
             'type',
             type_eval(

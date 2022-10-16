@@ -142,9 +142,9 @@ class Transpiler:
         elif isinstance(template, dict):
             for field, value in template.items():
                 keywords = [
-                    'type', 'import_code',
-                    'code', 'alt_name', 'ret_type',
-                    'meta', 'decorate', 'args'
+                    'type', 'import_code', 'code',
+                    'alt_name', 'ret_type', 'meta',
+                    'decorate', 'args', 'access'
                 ]
                 if field == 'tmp':
                     self.add_templ(name, value)
