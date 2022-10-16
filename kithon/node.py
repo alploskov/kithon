@@ -39,6 +39,7 @@ class node:
         self.nl = env.nl
         self.ast = None
         self.parent = None
+        self.part_name = ''
         self.own = own
         self.code_before = code_before or []
 
@@ -57,11 +58,13 @@ class node:
                 self.parts[_name] = part = type_to_node(self.env, part)
             if isinstance(part, node):
                 part.parent = self
+                part.part_name = _name
                 part.render()
             elif isinstance(part, list):
                 for part_el in part:
                     if isinstance(part_el, node):
                         part_el.parent = self
+                        part_el.part_name = _name
                         part_el.render()
         if getattr(self, 'tmp', None):
             self.val = self.tmp.render(
@@ -69,6 +72,7 @@ class node:
                 node=self,
                 nl=self.nl,
                 parent=self.parent,
+                part_name=self.part_name,
                 _type=_type,
                 type=type,
                 types=types,
