@@ -1,5 +1,4 @@
 import ast
-import math
 import _ast
 import typing
 from . import analogs
@@ -355,7 +354,7 @@ def name(self, tree: _ast.Name):
     ns = (self.namespace + '.').split('.')
     for ln in range(len(ns)):
         var_info = self.variables.get(
-            f'{".".join(ns[:-(ln + 1)])}.{tree.id}', {}
+            '.'.join(ns[:-(ln + 1)] + [tree.id]), {}
         )
         if var_info: break
     var_info = (
@@ -391,7 +390,7 @@ def const(self, tree: _ast.Constant):
     _type = str(type(_val))[8:-2]
     parts={'val': _val}
     if isinstance(_val, float):
-        parts |= {'parts': math.modf(_val)}
+        parts |= {'parts': (_val % 1, int(_val))}
     return self.node(
         tmp=_type,
         type=_type,

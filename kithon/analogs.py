@@ -80,7 +80,7 @@ def index(self, obj, _index):
     ))
     if _index >= 0:
         return _index
-    elif _index < 0:
+    if _index < 0:
         return invert()
     _index.type = 'int'
     return self.visit(ast.IfExp(

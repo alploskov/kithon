@@ -1,6 +1,6 @@
 import ast
 from collections import defaultdict
-from os import path, walk, listdir
+from pathlib import Path
 from itertools import product
 import yaml
 try:
@@ -108,15 +108,11 @@ class Transpiler:
         return _node.node(env=self, **kwargs)
 
     def get_lang(self, lang):
-        translators_dirr = path.join(path.split(__path__[0])[0], 'translators')
-        if lang not in listdir(translators_dirr):
+        _dir = Path(__path__[0]).parent / 'translators' / lang
+        if not _dir.exists():
             raise ValueError(f'{lang} is not supported')
-        for dirr, _, files in walk(path.join(translators_dirr, lang)):
-            for f in files:
-                if f.endswith('.tp'):
-                    self.load_templs(
-                        open(f'{dirr}/{f}', 'r', encoding='utf-8').read()
-                    )
+        for templs in _dir.glob('**/*.tp'):
+            self.load_templs(templs.open().read())
 
     def load_templs(self, templates):
         templates = yaml.load(

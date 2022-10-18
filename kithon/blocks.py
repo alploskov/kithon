@@ -161,7 +161,7 @@ def _else(self, tree: typing.Any):
 @visitor
 def _while(self, tree: _ast.While):
     return self.node(
-        tmp = 'while',
+        tmp='while',
         parts={
             'condition': self.visit(tree.test),
             'body': expression_block(self, tree.body),
@@ -178,13 +178,9 @@ def _for(self, tree: _ast.For):
         tmp = 'c_like_for'
         _type = 'int'
         if len(obj.parts['args']) < 3:
-            obj.parts['args'].append(self.visit(
-                ast.Constant(value=1)
-            ))
+            obj.parts['args'].append(self.visit(1))
         if len(obj.parts['args']) < 3:
-            obj.parts['args'].insert(0, self.visit(
-                ast.Constant(value=0)
-            ))
+            obj.parts['args'].insert(0, self.visit(0))
         parts = {
             'start':  obj.parts['args'][0],
             'finish': obj.parts['args'][1],
