@@ -78,3 +78,4 @@ meta:
     name: python
     prompt: ">>> "
   run: "python -c '{{code}}'"
+  keyword_tmp: "_{{keyword}}"

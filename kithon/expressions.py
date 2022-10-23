@@ -124,6 +124,7 @@ def kwarg(self, tree: _ast.keyword):
 
 @visitor
 def attribute(self, tree: _ast.Attribute):
+    tree.attr = analogs.keyword(self, tree.attr)
     obj = self.visit(tree.value)
     macro, own = self.get_macro(
         obj.own,
@@ -347,6 +348,7 @@ def ternary(self, tree: _ast.IfExp):
 
 @visitor
 def name(self, tree: _ast.Name):
+    tree.id = analogs.keyword(self, tree.id)
     ctx = {
         _ast.Store: 'store',
         _ast.Load: 'load'

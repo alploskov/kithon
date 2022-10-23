@@ -127,9 +127,11 @@ class Transpiler:
     def add_templ(self, name, template):
         if name not in self.templates:
             self.templates[name] = {'meta': {}}
-        if name in ['types', 'operators', 'meta']:
+        if name in ['types', 'operators']:
             self.templates[name] = template
-        if isinstance(template, str):
+        elif name == 'meta':
+            self.templates['meta'].update(template)
+        elif isinstance(template, str):
             self.templates[name].update({'tmp': Template(template)})
         elif isinstance(template, bool) and not template:
             self.templates[name].update({'tmp': ''})

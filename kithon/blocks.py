@@ -3,6 +3,7 @@ import typing
 import _ast
 from .types import types
 from .core import visitor
+from . import analogs
 
 
 @visitor
@@ -212,6 +213,7 @@ def decorating(self, decorators):
 def args(self, tree: _ast.arg, in_class=False):
     _args = []
     for i, arg in enumerate(tree):
+        arg.arg = analogs.keyword(self, arg.arg)
         full_name = f'{self.namespace}.{arg.arg}'
         macro, _ = self.get_macro(arg.arg)
         if i == 0 and in_class:
@@ -240,6 +242,7 @@ def args(self, tree: _ast.arg, in_class=False):
 
 @visitor
 def define_function(self, tree: _ast.FunctionDef):
+    tree.name = analogs.keyword(self, tree.name)
     parts = {}
     in_class = self.variables[self.namespace]['type'] == 'type'
     if in_class:
@@ -287,6 +290,7 @@ def ret(self, tree: _ast.Return):
 
 @visitor
 def define_class(self, tree: _ast.ClassDef):
+    tree.name = analogs.keyword(self, tree.name)
     self.namespace += f'.{tree.name}'
     self.new_var(self.namespace, 'type')
     body = expression_block(self, tree.body)

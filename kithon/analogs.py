@@ -2,6 +2,7 @@
 Code generators for some python constructions
 """
 import ast
+from jinja2 import Template
 
 
 def name(self, name, ctx='load'):
@@ -88,3 +89,10 @@ def index(self, obj, _index):
         body=_index,
         orelse=invert()
     ))
+
+def keyword(self, kw):
+    if kw not in self.templates['meta']['keywords']:
+        return kw
+    return Template(self.templates['meta']['keyword_tmp']).render(
+        keyword=kw
+    )
