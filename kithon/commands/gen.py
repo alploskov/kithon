@@ -5,8 +5,8 @@ from _ast import Import, ImportFrom
 from typing import Optional
 import typer
 from jinja2 import Template
-from kithon import Transpiler
 from . import configurator
+from .. import Transpiler
 from .watch import watch
 try:
     import packed

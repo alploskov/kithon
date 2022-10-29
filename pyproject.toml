@@ -7,8 +7,7 @@ authors = ["Aleksey Ploskov"]
 license = "MIT"
 repository = "https://github.com/alploskov/kithon"
 packages = [
-        { include = "kithon" },
-        { include = "commands" }
+        { include = "kithon" }
 ]
 include = [
 	"translators/python/*",
@@ -50,7 +49,7 @@ hy = {path = "deps/hy-1.0a4-py3-none-any.whl", optional = true}
 packed = {path = "deps/packed-0.2.1-py3-none-any.whl", optional = true}
 
 [tool.poetry.scripts]
-kithon = "commands:kithon"
+kithon = "kithon.commands:kithon"
 
 [tool.poetry.extras]
 add-langs = ["coconut", "hy"]
