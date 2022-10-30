@@ -1,0 +1,43 @@
+---
+bin_op: |-
+  {%- if parent.name == "bin_op" and parent.parts.op == "**" and part_name == "right" -%}
+  {{left}} {{op}} {{right}}
+  {%-elif parent.name == "bin_op" and parent.parts.op not in ["/", "//"]-%}
+  ({{left}} {{op}} {{right}})
+  {%-elif parent.name == "un_op" and op in ["+", "-"] -%}
+  ({{left}} {{op}} {{right}})
+  {%-else-%}
+  {{left}} {{op}} {{right}}
+  {%-endif-%}
+
+un_op: "{{op}}{{el}}"
+
++.any:
+  code: "{{el}}"
+    
+any./.any:
+  code: "\\frac{{'{'}}{{left}}{{'}{'}}{{right}}{{'}'}}"
+
+any.*.any:
+  code: "{{left}}{{right}}"
+
+any.**.any:
+  code: "{{left}}^{{'{'}}{{right}}{{'}'}}"
+
+operators:
+  "==": "="  
+  "<=": "\\le"
+  ">=": "\\ge"
+  "!=": "\\ne"
+  "is": "\\equiv"
+  "or": "\\lor"
+  "and": "\\land"
+
+
+expr: "{{value}}\\\\"  
+func: "\\mathrm{{'{'}}{{name}}{{'}'}}({{args|join(', ')}})\\triangleq {{body.parts.body[0]}}\\\\"
+return: "{{value}}"
+
+if: "\\left\\{{'{'}}\\begin{{'{array}{ll}'}}{{body.parts.body[0]}}, & \\mathrm{{'{if}'}} \\ {{condition}} \\\\{{els}}\\\\"
+elif: "{{body.parts.body[0]}}, & \\mathrm{{'{if}'}} \\ {{condition}} \\\\{{els}}"
+else: "{{body.parts.body[0]}}, & \\mathrm{{'{otherwise}'}} \\end{{'{array}'}} \\right."
