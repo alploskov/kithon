@@ -1,0 +1,31 @@
+meta:
+  repl:
+    name: "node"
+    prompt: "> "
+  ext: "js"
+  run: "node -e '{{code}}'"
+
+  keyword: "_{{keyword}}"
+  keywords:
+    - case
+    - const
+    - debugger
+    - default
+    - delete
+    - do
+    - export
+    - extends
+    - "false"
+    - function
+    - instanceof
+    - let
+    - new
+    - "null"
+    - static
+    - super
+    - switch
+    - this
+    - throw
+    - "true"
+    - typeof
+    - var

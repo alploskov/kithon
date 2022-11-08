@@ -39,11 +39,7 @@ steped_slice:
 
 expr: "{{value}};"
 var_prototype: "let {{name}}{%if default_val%} = {{default_val}}{%endif%};"
-assign: &assign "{{var}} = {{value}};"
-set_attr: *assign
-new_attr: *assign
-assignment_by_key: *assign
-new_key: *assign
+assign: "{{var}} = {{value}};"
 new_var: |-
   {%- if isinstance(value.type, types['module']) -%}
     import * as {{var}} from {{value.parts.args[0]}};
@@ -55,7 +51,9 @@ if: "if ({{condition}}) {{body}} {{els}}"
 elif: "else if ({{condition}}) {{body}} {{els}}"
 else: "else {{body}}"
 ternary: "({{condition}}?{{body}}:{{els}})"
-func: "{%if env.mod_name not in ['main', 'block'] and nl == 0%}export {%endif%}let {{name}} = {{(decorators + [''])|join('(')}}({{args|join(', ')}}) => {{body}}{{')' * decorators|length}};"
+func: >-
+  {%if env.mod_name not in ['main', 'block'] and nl == 0%}export {%endif%}let
+  {{name}} = {{(decorators + [''])|join('(')}}({{args|join(', ')}}) => {{body}}{{')' * decorators|length}};
 
 return: "return {{value}};"
 
@@ -98,10 +96,3 @@ import: 'import * as {{alias}} from "./{{name}}";'
 import_from: 'import {{"{"}}{{name}}{%if alias != name%} as {{alias}}{%endif%}} from "./{{module|replace(".", "/")}}";'
 global: no
 nonlocal: no
-
-meta:
-  repl:
-    name: "node"
-    prompt: "> "
-  ext: "js"
-  run: "node -e '{{code}}'"
