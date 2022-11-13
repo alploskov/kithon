@@ -67,8 +67,9 @@ def slice(self, obj, low, up, step):
                     obj=obj,
                     key=name(self, 'i'),
                     ctx='load'
-                )]
-            ))]
+                )],
+            ))],
+            orelse=[]
         ))
     ]
     return exp

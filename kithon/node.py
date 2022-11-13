@@ -37,6 +37,7 @@ class node:
         self.env = env
         self.val = ''
         self.nl = env.nl
+        self.ctx = env.ctx[-1]
         self.ast = None
         self.parent = None
         self.part_name = ''

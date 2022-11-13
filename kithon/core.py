@@ -48,6 +48,7 @@ class Transpiler:
         self.strings = []
         self.temp_var_counts = defaultdict(int)
         self.used = set([])
+        self.ctx = [None]
 
     def new_var(self, full_name, _type):
         if str(_type) in self.variables:

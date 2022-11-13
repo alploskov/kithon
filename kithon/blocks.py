@@ -2,6 +2,7 @@ import ast
 import typing
 import _ast
 from .types import types
+from .contexts import Loop
 from .core import visitor
 from . import analogs
 
@@ -161,17 +162,21 @@ def _else(self, tree: typing.Any):
 
 @visitor
 def _while(self, tree: _ast.While):
+    self.ctx.append(Loop(self.get_temp_var('while'), bool(tree.orelse)))
+    parts = {
+        'condition': self.visit(tree.test),
+        'body': expression_block(self, tree.body),
+    }
+    self.ctx.pop()
     return self.node(
         tmp='while',
-        parts={
-            'condition': self.visit(tree.test),
-            'body': expression_block(self, tree.body),
-        }
+        parts=parts
     )
 
 @visitor
 def _for(self, tree: _ast.For):
     obj = self.visit(tree.iter)
+    self.ctx.append(Loop(self.get_temp_var('for'), bool(tree.orelse)))
     if (
         getattr(obj.parts.get('func'), 'parts', {}).get('name') == 'range'
         and 'c_like_for' in self.templates
@@ -193,12 +198,14 @@ def _for(self, tree: _ast.For):
         parts = {'obj': obj}
     var = self.visit(tree.target)
     self.new_var(var.own, _type)
+    parts = {
+        'var': var,
+        'body': expression_block(self, tree.body)
+    } | parts
+    self.ctx.pop()
     return self.node(
         tmp = tmp,
-        parts={
-            'var': var,
-            'body': expression_block(self, tree.body)
-        } | parts
+        parts=parts
     )
 
 def decorating(self, decorators):
