@@ -11,12 +11,17 @@ def c_for_with_continue():
             continue
         print(i)
 
-
-def c_for_with_else():
+def c_for_else():
     for i in range(4):
         print(i)
     else:
-        print("OK")
+        print('OK')
+    for i in range(4):
+        if i == 2:
+            break
+        print(i)
+    else:
+        print('NOT OK')
 
 def _foreach():
     for l in ['a', 'b', 'c']:
@@ -39,11 +44,23 @@ def while_with_continue():
             continue
         print(i)
 
+def while_else():
+    while True:
+        break
+    else:
+        print('NOT OK')
+    i = 0
+    while i < 5:
+        i += 1
+    else:
+        print('OK')
+
 def main():
     c_for_with_break()
     c_for_with_continue()
+    c_for_else()
     _foreach()
     while_with_break()
     while_with_continue()
-
+    while_else()
 main()

@@ -57,27 +57,36 @@ func: >-
 
 return: "return {{value}};"
 
-while: "while ({{condition}}) {{body}}"
+while:
+  meta: {"gen_else": yes}
+  tmp: "while ({{condition}}) {{body}}{{'\n' + '    ' * nl}}{{els}}"
 
-for: >-
-  for (let {{var}}
-  {{'in' if isinstance(obj.type, types.dict) else 'of'}}
-  {{obj}})
-  {{body}}
+for:
+  meta: {"gen_else": yes}
+  tmp: >-
+    for (let {{var}}
+    {{'in' if isinstance(obj.type, types.dict) else 'of'}}
+    {{obj}})
+    {{body}}{{'\n' + '    ' * nl}}{{els}}
 
-c_like_for: >-
-  for (let {{var}} = {{start}}; 
-  {%- if step < 0-%}
+c_like_for:
+  meta: {"gen_else": yes}
+  tmp: >-
+    for (let {{var}} = {{start}};
+    {%- if step < 0-%}
     {{var}} > {{finish}}
-  {%- elif step > 0 -%}
+    {%- elif step > 0 -%}
     {{var}} < {{finish}}
-  {%- else -%}
+    {%- else -%}
     ({{step}}<0?{{var}}>{{finish}}:{{var}}<{{finish}})
-  {%- endif -%};
-  {{var}} += {{step}})
-  {{body}}
+    {%- endif -%};
+    {{var}} += {{step}})
+    {{body}}{{'\n' + '    ' * nl}}{{els}}
 
-break: "break;"
+break:
+  meta: {"gen_else": yes}
+  tmp: "break;"
+
 continue: "continue;"
 
 class: "class {{name}} {{body}}"

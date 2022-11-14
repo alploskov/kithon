@@ -33,29 +33,38 @@ ternary: ~
 
 func: "func {{name}}({{args|join(', ')}}){%if ret_type.val != 'None'%} {{ret_type}}{%endif%} {{body}}"
 
-while: "for {{condition}} {{body}}"
+while:
+  meta: {"gen_else": yes}
+  tmp: "for {{condition}} {{body}}{{'\n' + '    ' * nl}}{{els}}"
 
-for: |-
-  {%- if obj.type == 'str' -%}
+for:
+  meta: {"gen_else": yes}
+  tmp: |-
+    {%- if obj.type == 'str' -%}
     {{- env.use('mod_strings') -}}
     for _, {{var}} := range strings.Split({{obj}}, "")
-  {%- elif isinstance(obj.type, types['dict']) -%}
+    {%- elif isinstance(obj.type, types['dict']) -%}
     for {{var}}, _ := range {{obj}}
-  {%- else -%}
+    {%- else -%}
     for _, {{var}} := range {{obj}}
-  {%- endif -%} {{body}}
+    {%- endif -%} {{body}}{{'\n' + '    ' * nl}}{{els}}
 
-c_like_for: >-
-  for {{var}} := {{start}};{{' '}}
-  {%- if step < 0 -%}
+c_like_for:
+  meta: {"gen_else": yes}
+  tmp:
+    for {{var}} := {{start}};{{' '}}
+    {%- if step < 0 -%}
     {{var}} > {{finish}};
-  {%- elif step >= 0 -%}
+    {%- elif step >= 0 -%}
     {{var}} < {{finish}};
-  {%- else -%}
+    {%- else -%}
     ({{step}} < 0 && {{var}} > {{finish}}) || ({{var}} < {{finish}});
-  {%- endif -%}
-  {{' '}}{{var}} += {{step}}
-  {{body}}
+    {%- endif -%}
+    {{' '}}{{var}} += {{step}}
+    {{body}}{{'\n' + '    ' * nl}}{{els}}
+
+break:
+  meta: {"gen_else": yes}
 
 types:
   list: "[]{{el_type}}"

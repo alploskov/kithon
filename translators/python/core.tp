@@ -49,9 +49,9 @@ func: "{{'\n'}}{%for d in decorators %}@{{d}}{{'\n'}}{%endfor%}def {{name}}({{ar
 lambda: 'lambda {{args|join(", ")}}: {{body}}'
 return: "return {{value}}"
 
-while: "while {{condition}} {{body}}"
+while: "while {{condition}}{{body}}{%if els %}{{'\n' + '    ' * nl}}else{{els}}{%endif%}"
 
-for: 'for {{var}} in {{obj}}{{body}}'
+for: "for {{var}} in {{obj}}{{body}}{%if els %}{{'\n' + '    ' * nl}}else{{els}}{%endif%}"
 
 break: 'break'
 continue: 'continue'

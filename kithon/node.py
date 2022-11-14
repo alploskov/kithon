@@ -86,7 +86,8 @@ class node:
                 'if', 'elif', 'else', 'func',
                 'return', 'while', 'for',
                 'c_like_for', 'class', 'init',
-                'method', 'attr', 'var_prototype'
+                'method', 'attr', 'var_prototype',
+                'break', 'continue'
         ] and self.code_before:
             before = _get_val(self.code_before[0]) + '\n'
             for part in self.code_before[1:]:

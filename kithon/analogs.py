@@ -97,3 +97,20 @@ def keyword(self, kw):
     return Template(self.templates['meta']['keyword_tmp']).render(
         keyword=kw
     )
+
+def loop_else(self, loop):
+    if not self.ctx[-1].els:
+        return loop
+    var_name = f"{self.ctx[-1].name}_broken"
+    loop.parts['els'] = self.node(
+        tmp='if',
+        parts={
+            'condition': self.visit(ast.UnaryOp(
+                op=ast.Not(),
+                operand=name(self, var_name)
+            )),
+            'body': loop.parts['els'],
+            'els': '',
+        },
+    )
+    return loop

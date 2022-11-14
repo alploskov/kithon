@@ -72,7 +72,7 @@ def assign(self, tree: _ast.Assign, _type=None):
 @visitor
 def var_prototype(self, tree: typing.Any, type='any'):
     if isinstance(tree, str):
-        set_var(self, self.visit(ast.Name(id=tree, ctx=ast.Store)), type)
+        set_var(self, self.visit(ast.Name(id=tree, ctx=ast.Store())), type)
     else:
         set_var(self, tree, type)
     default_val = None
@@ -163,15 +163,21 @@ def _else(self, tree: typing.Any):
 @visitor
 def _while(self, tree: _ast.While):
     self.ctx.append(Loop(self.get_temp_var('while'), bool(tree.orelse)))
-    parts = {
-        'condition': self.visit(tree.test),
-        'body': expression_block(self, tree.body),
-    }
-    self.ctx.pop()
-    return self.node(
+    loop = self.node(
+        code_before=[self.var_prototype(
+            f"{self.ctx[-1].name}_broken", type='bool'
+        )] if self.ctx[-1].els else [],
         tmp='while',
-        parts=parts
+        parts={
+            'condition': self.visit(tree.test),
+            'body': expression_block(self, tree.body),
+            'els': expression_block(self, tree.orelse) if tree.orelse else '',
+        }
     )
+    if self.templates['while']['meta'].get('gen_else'):
+        analogs.loop_else(self, loop)
+    self.ctx.pop()
+    return loop
 
 @visitor
 def _for(self, tree: _ast.For):
@@ -198,15 +204,21 @@ def _for(self, tree: _ast.For):
         parts = {'obj': obj}
     var = self.visit(tree.target)
     self.new_var(var.own, _type)
-    parts = {
-        'var': var,
-        'body': expression_block(self, tree.body)
-    } | parts
-    self.ctx.pop()
-    return self.node(
-        tmp = tmp,
-        parts=parts
+    loop = self.node(
+        code_before=[self.var_prototype(
+            f"{self.ctx[-1].name}_broken", type='bool'
+        )] if self.ctx[-1].els else [],
+        tmp=tmp,
+        parts={
+            'var': var,
+            'body': expression_block(self, tree.body),
+            'els': expression_block(self, tree.orelse) if tree.orelse else '',
+        } | parts
     )
+    if self.templates[tmp]['meta'].get('gen_else'):
+        analogs.loop_else(self, loop)
+    self.ctx.pop()
+    return loop
 
 def decorating(self, decorators):
     if len(decorators) == 0:
@@ -425,7 +437,15 @@ def _global(self, tree: _ast.Global):
 
 @visitor
 def _break(self, tree: _ast.Break):
-    return self.node(tmp='break')
+    code_before = []
+    if self.templates['break']['meta'].get('gen_else') and self.ctx[-1].els:
+        code_before = [
+            analogs.assign(self, f"{self.ctx[-1].name}_broken", True)
+        ]
+    return self.node(
+        tmp='break',
+        code_before=code_before
+    )
 
 @visitor
 def _continue(self, tree: _ast.Continue):
