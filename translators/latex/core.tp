@@ -19,8 +19,12 @@ any./.any:
   code: "\\frac{{'{'}}{{left}}{{'}{'}}{{right}}{{'}'}}"
 
 any.*.any:
-  code: "{{left}}{{right}}"
-
+  code: |-
+    {%-if left.is_const() and right.is_const() -%}
+    {{left}} \cdot {{right}}
+    {%-else-%}
+    {{left}}{{right}}
+    {%-endif-%}
 any.**.any:
   code: "{{left}}^{{'{'}}{{right}}{{'}'}}"
 

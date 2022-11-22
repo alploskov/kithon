@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "kithon"
 readme = "README.md"
-version = "0.5.0"
+version = "0.6.0"
 description = "transpiler python into other languages"
 authors = ["Aleksey Ploskov"]
 license = "MIT"
