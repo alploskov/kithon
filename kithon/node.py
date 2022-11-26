@@ -55,6 +55,8 @@ class node:
         else:
             type = _type
         for _name, part in self.parts.items():
+            if getattr(part, 'dont_render', None):
+                self.parts[_name] = part.node
             if self.name != 'type' and _name.endswith('type'):
                 self.parts[_name] = part = type_to_node(self.env, part)
             if isinstance(part, node):

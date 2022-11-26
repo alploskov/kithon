@@ -3,7 +3,7 @@ import typing
 import _ast
 from .types import types
 from .contexts import Loop
-from .core import visitor
+from .core import visitor, dont_render
 from . import analogs
 
 
@@ -330,15 +330,15 @@ def define_class(self, tree: _ast.ClassDef):
         parts={
             'name': tree.name,
             'body': body,
-            'init': next(filter(
+            'init': dont_render(next(filter(
                 lambda m: m.name == 'init',
                 body.parts['body']
-            ), ''),
+            ), '')),
             'attrs': attrs,
-            'methods': list(filter(
+            'methods': dont_render(list(filter(
                 lambda m: m.name == 'method',
                 body.parts['body']
-            )),
+            ))),
             'decorators': decorators
         }
     )

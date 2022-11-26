@@ -29,6 +29,11 @@ def visitor(func):
         Transpiler.elements[annotations] = func
     return func
 
+class dont_render:
+    def __init__(self, node):
+        self.dont_render = True
+        self.node = node
+
 class Transpiler:
     elements = {}
 
