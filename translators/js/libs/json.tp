@@ -1,11 +1,12 @@
 json:
   type: {module: [json]}
   alt_name: JSON
+  import_code: ''
 
   dumps:
     alt_name: stringify
-    ret_type: any
+    ret_type: str
 
   loads:
     alt_name: parse
-    ret_type: str
+    ret_type: any
