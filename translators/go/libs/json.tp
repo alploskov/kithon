@@ -1,0 +1,11 @@
+json:
+  type: {module: [json]}
+  import_code: "{{-env.use('mod_encoding/json')-}}"
+
+  dumps:
+    code: |-
+      {%- set res = env.get_temp_var('json_res') -%}
+      {{- node.add_code_before(env.var_prototype(res, '[]byte')) -}}
+      {{- node.add_code_before(res + ', _ = json.Marshal(' + args[0].val + ')') -}}
+      string({{res}})
+    ret_type: str
