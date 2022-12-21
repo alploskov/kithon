@@ -25,7 +25,7 @@ steped_slice:
   tmp: ~
 
 new_var: "{{var}} := {{value}}"
-var_prototype: "var {{name}} {{type}}"
+var_prototype: "var {{name}} {{type}}{%if isinstance(default_val.type, types['list'])%} = {{default_val}}{%endif%}"
 if: "if {{condition}} {{body}} {{els}}"
 elif: "else if {{condition}} {{body}} {{els}}"
 else: "else {{body}}"
