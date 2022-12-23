@@ -16,7 +16,8 @@ except ImportError:
 else:
     is_coconut_supported = True
 from jinja2 import Template
-from . import types, node as _node, __path__
+from .node import Node
+from . import types, __path__
 
 
 def visitor(func):
@@ -111,7 +112,7 @@ class Transpiler:
         return self.namespace[:self.namespace.rfind('.')]
 
     def node(self, **kwargs):
-        return _node.node(env=self, **kwargs)
+        return Node(env=self, **kwargs)
 
     def get_lang(self, lang):
         _dir = Path(__path__[0]).parent / 'translators' / lang
@@ -158,7 +159,7 @@ class Transpiler:
                     self.add_templ(f'{name}.{field}', value)
 
     def visit(self, tree, **kw):
-        if isinstance(tree, _node.node):
+        if isinstance(tree, Node):
             return tree
         if isinstance(tree, (int, str, float, bool)):
             tree = ast.Constant(value=tree)

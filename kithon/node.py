@@ -21,7 +21,7 @@ def type_to_node(env, _type):
         }
     )
 
-class node:
+class Node:
     def __init__(self, env=None, tmp='', name=None, parts={}, type=None, own=None, code_before=None):
         if tmp.startswith('type.'):
             self.name = 'type'
@@ -45,7 +45,7 @@ class node:
         self.code_before = code_before or []
 
     def render(self):
-        _get_val = lambda el: el.render() if isinstance(el, node) else el
+        _get_val = lambda el: el.render() if isinstance(el, Node) else el
         _type = self.env.variables.get(
             self.own, {}
         ).get('type', self.type)
@@ -59,13 +59,13 @@ class node:
                 self.parts[_name] = part.node
             if self.name != 'type' and _name.endswith('type'):
                 self.parts[_name] = part = type_to_node(self.env, part)
-            if isinstance(part, node):
+            if isinstance(part, Node):
                 part.parent = self
                 part.part_name = _name
                 part.render()
             elif isinstance(part, list):
                 for part_el in part:
-                    if isinstance(part_el, node):
+                    if isinstance(part_el, Node):
                         part_el.parent = self
                         part_el.part_name = _name
                         part_el.render()
@@ -124,7 +124,7 @@ class node:
         return self.render()
 
     def __eq__(self, other):
-        if isinstance(other, node):
+        if isinstance(other, Node):
             if self.is_const() and other.is_const():
                 return self.get_val() == other.get_val()
             return self.parts == other.parts
@@ -139,9 +139,9 @@ for op in (lt, le, ge, gt):
     def operation(op):
         def _(self, other):
             if self.is_const():
-                if isinstance(other, node) and other.is_const():
+                if isinstance(other, Node) and other.is_const():
                     return op(self.get_val(), other.get_val())
                 return op(self.get_val(), other)
             return False
         return _
-    setattr(node, f'__{op.__name__}__', operation(op))
+    setattr(Node, f'__{op.__name__}__', operation(op))
