@@ -1,5 +1,6 @@
 bool: "{{val|lower}}"
 str: "{%if '\n' in val%}`{{val}}`{%else%}\"{{val}}\"{%endif%}"
+ellipsis: "undefined"
 
 operators:
   "==": "==="
@@ -105,3 +106,6 @@ import: 'import * as {{alias}} from "./{{name}}";'
 import_from: 'import {{"{"}}{{name}}{%if alias != name%} as {{alias}}{%endif%}} from "./{{module|replace(".", "/")}}";'
 global: no
 nonlocal: no
+
+entry:
+  decorate: "{{body.parts.body|join('\n')}}"

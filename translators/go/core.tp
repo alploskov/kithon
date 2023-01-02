@@ -1,4 +1,5 @@
 bool: "{{val|lower}}"
+ellipsis: ""
 
 operators:
   "or": "||"
@@ -108,6 +109,9 @@ main: |-
   {%- endfor -%}{{'\n'}})
   {% endif %}
   {{body}}
+
+entry:
+  decorate: "func main() {{body}}"
 
 meta:
   run: "echo '{{code}}' > file1.go && go run file1.go && rm file1.go"

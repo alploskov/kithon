@@ -12,6 +12,7 @@ int: '{{val}}'
 float: '{{val}}'
 bool: '{{val}}'
 str: "\"{{val}}\""
+ellipsis: "..."
 
 bin_op: |-
   {%-if parent.name == "bin_op"-%}
@@ -71,7 +72,14 @@ global: 'global {{vars|join(", ")}}'
 nonlocal: 'nonlocal {{vars|join(", ")}}'
 import: 'import {{name}}{%if alias != name%} as {{alias}}{%endif%}'
 import_from: "from {{module}} import {{name}}{%if alias != name%} as {{alias}}{%endif%}"
+
 main: '{{body}}'
+
+entry:
+  decorate: |-
+    if __name__ == "__main__":{% for st in body.parts.body %}
+    {{'    '}}{{st}}{% endfor %}
+
 
 meta:
   repl:
