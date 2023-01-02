@@ -1,0 +1,6 @@
+func: "function {{name}}({{args|join(', ')}}){{body}}"
+
+body: |-
+  {% for st in body %}
+  {{'    '*nl}}{{st}}{% endfor %}
+  {{'    '*(nl-1)}}end
