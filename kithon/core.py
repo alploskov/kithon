@@ -196,10 +196,13 @@ class Transpiler:
                 )
             setup(target='sys')
             tree = ast.parse(parse(code, 'block')).body
-        for block in map(self.visit, tree):
-            if not block:
-                continue
-            self.strings.extend(block.render().split('\n'))
+        if mode == 'eval':
+            return self.visit(tree[0].value).render()
+        else:
+            for block in map(self.visit, tree):
+                if not block:
+                    continue
+                self.strings.extend(block.render().split('\n'))
         if mode != 'block':
             code = self.templates['main']['tmp'].render(
                 _body=self.strings,
