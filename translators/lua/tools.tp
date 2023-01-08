@@ -1,0 +1,5 @@
+meta:
+  repl:
+    name: "lua"
+    prompt: "> "
+  run: "lua -e '{{code}}'"

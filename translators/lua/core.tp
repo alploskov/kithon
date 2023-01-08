@@ -1,3 +1,74 @@
+bool: "{{val|lower}}"
+operators:
+  "**": "^"
+  "^": "⊻"
+  "or": "||"
+  "and": "&&"
+
+new_var: "local {{var}} = {{value}}"
+var_prototype: "local {{name}} = {{default_val}}"
+
+list: "{{'{'}}{{ls|join(', ')}}{{'}'}}"
+index: "{{obj}}[{{key}}]"
+
+list[any].__getitem__:
+  meta: {"gen_negative_indexes": yes}
+  code: "{{obj}}[{{key}}+1]"
+
+slice:
+  meta: {"gen_negative_indexes": yes}
+  tmp: ~
+
+steped_slice:
+  meta: {"gen_negative_indexes": yes}
+  tmp: ~
+
+if: |-
+  if {{condition}} then{% for st in body.parts.body %}
+  {{'    '*(nl + 1)}}{{st}}{% endfor %}
+  {%- if els -%}{{'\n'}}{{'    '*nl}}{{els}}{%- endif -%}
+  {{'\n'}}{{'    '*nl}}end
+
+elif: |-
+  elseif {{condition}} then{% for st in body.parts.body %}
+  {{'    '*(nl + 1)}}{{st}}{% endfor %}
+  {{'    '*nl}}{{els}}
+
+else: |-
+  else {% for st in body.parts.body %}
+  {{'    '*(nl + 1)}}{{st}}{% endfor %}
+
+ternary: ~
+
+break:
+  meta: {"gen_else": yes}
+
+c_like_for:
+  meta: {"gen_else": yes}
+  tmp: |-
+    {%- if step >= 0 -%}
+      for {{var}} = {{start}}, {{finish}} - 1, {{step}} do{{body}}
+    {%- elif step < 0 -%}
+      for {{var}} = {{start}}, {{finish}} + 1, {{step}} do{{body}}
+    {%- else -%}
+      for {{var}} = {{start}}, {{finish}} + ({{step}} >= 0 and 1 or -1), {{step}} do{{body}}
+    {%- endif -%}
+    {{'\n'}}{{els}}
+
+for:
+  meta: {"gen_else": yes}
+  tmp: |-
+    {%- if isinstance(obj.type, types.list)-%}
+      for _, {{var}} in pairs({{obj}}) do{{body}}
+    {%- else -%}
+      for {{var}} in {{obj}} do{{body}}
+    {%- endif -%}{{'\n'}}
+    {{els}}
+
+while:
+  meta: {"gen_else": yes}
+  tmp: "while {{condition}} do{{body}}{{\n}}{{els}}"
+
 func: "function {{name}}({{args|join(', ')}}){{body}}"
 
 body: |-

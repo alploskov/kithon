@@ -1,0 +1,8 @@
+int:
+  code: "math.floor(tonumber({{args|join(', ')}}))"
+
+float:
+  code: "tonumber({{args[0]}})"
+
+len:
+  code: "#{{args[0]}}"

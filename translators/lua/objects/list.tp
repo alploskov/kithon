@@ -1,0 +1,3 @@
+list[any]:
+  append:
+    code: "table.insert({{obj}}, {{args[0]}})"
