@@ -22,6 +22,10 @@ include = [
 	"translators/go/libs/*",
 	"translators/go/objects/*",
 
+	"translators/lua/*",
+	"translators/lua/libs/*",
+	"translators/lua/objects/*",
+
 	"translators/c-like/*.tp"
 ]
 
