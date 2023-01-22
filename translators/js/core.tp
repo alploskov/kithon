@@ -23,7 +23,7 @@ attr: |-
 index: "{{obj}}[{{key}}]"
 
 list[any].__getitem__:
-  meta: {"gen_negative_indexes": yes}
+  code: "{{obj}}.at({{key}})"
 
 dict[any].__getitem__:
   code: >-
