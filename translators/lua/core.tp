@@ -67,7 +67,7 @@ for:
 
 while:
   meta: {"gen_else": yes}
-  tmp: "while {{condition}} do{{body}}{{\n}}{{els}}"
+  tmp: "while {{condition}} do{{body}}{{'\n'}}{{els}}"
 
 func: "function {{name}}({{args|join(', ')}}){{body}}"
 
