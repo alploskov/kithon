@@ -44,9 +44,6 @@ ptpython = {version = "^3.0.20", optional = true}
 watchdog = {version = "^2.1.7", optional = true}
 
 packed = "^0.2"
-mkdocs = {version = ">=1.1.2,<2.0.0", optional = true}
-mkdocs-material = {version = ">=8.1.4,<9.0.0", optional = true}
-mdx-include = {version = ">=1.4.1,<2.0.0", optional = true}
 
 [tool.poetry.dev-dependencies]
 hy = {path = "deps/hy-1.0a4-py3-none-any.whl", optional = true}
@@ -65,13 +62,22 @@ all = [
      "coconut", "hy",
      "pexpect", "ptpython"
 ]
-doc = [
-    "mkdocs",
-    "mkdocs-material",
-    "mdx-include"
-]
 
+[tool.poetry.group.docs]
+optional = true
 
+[tool.poetry.group.docs.dependencies]
+mkdocs = {version = ">=1.1.2,<2.0.0", optional = true}
+mkdocs-material = {version = ">=8.1.4,<9.0.0", optional = true}
+mdx-include = {version = ">=1.4.1,<2.0.0", optional = true}
+
+[tool.poetry.group.test]
+optional = true
+
+[tool.poetry.group.test.dependencies]
+pytest = "*"
+PyExecJS = "^1.5"
+lupa = "*"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
