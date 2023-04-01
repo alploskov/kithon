@@ -28,4 +28,14 @@ It should be clear what to do. If not, ask us in our [Telegram chat](https://t.m
 How to Contribute
 -----------------
 
-First, install `python>=3.9`, `poetry`
+Follow these steps:
+
+install `python>=3.9`, `poetry`
+
+```
+poetry install -E all --with docs --with test
+```
+
+```
+pytest
+```
