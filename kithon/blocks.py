@@ -172,6 +172,7 @@ def _while(self, tree: _ast.While):
             'condition': self.visit(tree.test),
             'body': expression_block(self, tree.body),
             'els': expression_block(self, tree.orelse) if tree.orelse else '',
+            'loop': self.ctx[-1],
         }
     )
     if self.templates['while']['meta'].get('gen_else'):
@@ -213,6 +214,7 @@ def _for(self, tree: _ast.For):
             'var': var,
             'body': expression_block(self, tree.body),
             'els': expression_block(self, tree.orelse) if tree.orelse else '',
+            'loop': self.ctx[-1],
         } | parts
     )
     if self.templates[tmp]['meta'].get('gen_else'):
@@ -437,6 +439,7 @@ def _global(self, tree: _ast.Global):
 
 @visitor
 def _break(self, tree: _ast.Break):
+    self.ctx[-1] = self.ctx[-1]._replace(is_broken=True)
     code_before = []
     if self.templates['break']['meta'].get('gen_else') and self.ctx[-1].els:
         code_before = [
@@ -444,9 +447,14 @@ def _break(self, tree: _ast.Break):
         ]
     return self.node(
         tmp='break',
-        code_before=code_before
+        code_before=code_before,
+        parts={'loop': self.ctx[-1]}
     )
 
 @visitor
 def _continue(self, tree: _ast.Continue):
-    return self.node(tmp='continue')
+    self.ctx[-1] = self.ctx[-1]._replace(is_continuing=True)
+    return self.node(
+        tmp='continue',
+        parts={'loop': self.ctx[-1]}
+    )

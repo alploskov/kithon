@@ -43,17 +43,22 @@ ternary: ~
 break:
   meta: {"gen_else": yes}
 
+continue: "goto {{loop.name}}_end"
+
 c_like_for:
   meta: {"gen_else": yes}
   tmp: |-
     {%- if step >= 0 -%}
-      for {{var}} = {{start}}, {{finish}} - 1, {{step}} do{{body}}
+      for {{var}} = {{start}}, {{finish}} - 1, {{step}} do
     {%- elif step < 0 -%}
-      for {{var}} = {{start}}, {{finish}} + 1, {{step}} do{{body}}
+      for {{var}} = {{start}}, {{finish}} + 1, {{step}} do
     {%- else -%}
-      for {{var}} = {{start}}, {{finish}} + ({{step}} >= 0 and 1 or -1), {{step}} do{{body}}
-    {%- endif -%}
-    {{'\n'}}{{els}}
+      for {{var}} = {{start}}, {{finish}} + ({{step}} >= 0 and 1 or -1), {{step}} do
+    {%- endif -%}{% for st in body.parts.body %}
+    {{'    '*(nl+1)}}{{st}}{% endfor %}
+    {%- if loop.is_continuing -%}{{'\n' + '    '*(nl+1)}}::{{loop.name}}_end::{%- endif -%}
+    {{'\n' + '    '*nl}}end
+    {{els}}
 
 for:
   meta: {"gen_else": yes}
