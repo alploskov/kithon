@@ -47,7 +47,7 @@ def test_c_for():
     check_func(c_for, lambda d, l: d if l != 'lua' else list(d.values()))
     check_func(c_for_countdown, lambda d, l: d if l != 'lua' else list(d.values()))
     check_func(c_for_with_break, lambda d, l: d if l != 'lua' else list(d.values()))
-#    check_func(c_for_with_continue, lambda d, l: d if l != 'lua' else list(d.values()))
+    check_func(c_for_with_continue, lambda d, l: d if l != 'lua' else list(d.values()))
     check_func(c_for_else, lambda d, l: d if l != 'lua' else list(d.values()))
 
 
