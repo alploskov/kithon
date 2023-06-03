@@ -1,18 +1,16 @@
-from utils import check_func, check_exprs
+from utils import check_func, check_exprs, type_conversion
 
-
-def list_res(data, lang):
-    if lang == 'lua':
-        return list(data.values())
-    return data
 
 def test_defenition():
     exprs = [
         '[]',
         '[1]',
         '[1,2,3,4]',
+        '[[]]',
+        '[[1]]',
+        '[[1],[2]]',
     ]
-    check_exprs(exprs, list_res)
+    check_exprs(exprs)
 
 
 def index():
@@ -20,7 +18,7 @@ def index():
     return [arr[0], arr[1], arr[-1], arr[2]]
 
 def test_index():
-    check_func(index, list_res)
+    check_func(index)
 
 def test_lens():
     exprs = [
@@ -52,9 +50,4 @@ def slices():
     ]
 
 def test_slices():
-    def post_process(d, l):
-        if l != 'lua':
-            return d
-        print(d)
-        return [list(_d.values()) for _d in d.values()]
-    check_func(slices, post_process)
+    check_func(slices)

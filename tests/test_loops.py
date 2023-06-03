@@ -44,11 +44,11 @@ def c_for_else():
     return res
 
 def test_c_for():
-    check_func(c_for, lambda d, l: d if l != 'lua' else list(d.values()))
-    check_func(c_for_countdown, lambda d, l: d if l != 'lua' else list(d.values()))
-    check_func(c_for_with_break, lambda d, l: d if l != 'lua' else list(d.values()))
-    check_func(c_for_with_continue, lambda d, l: d if l != 'lua' else list(d.values()))
-    check_func(c_for_else, lambda d, l: d if l != 'lua' else list(d.values()))
+    check_func(c_for)
+    check_func(c_for_countdown)
+    check_func(c_for_with_break)
+    check_func(c_for_with_continue)
+    check_func(c_for_else)
 
 
 def foreach():
@@ -58,7 +58,7 @@ def foreach():
     return res
 
 def test_foreach():
-    check_func(foreach, lambda d, l: d if l != 'lua' else list(d.values()))
+    check_func(foreach)
 
 
 def while_with_break():
@@ -72,4 +72,4 @@ def while_with_break():
     return res
 
 def test_while():
-    check_func(while_with_break, lambda d, l: d if l != 'lua' else list(d.values()))
+    check_func(while_with_break)

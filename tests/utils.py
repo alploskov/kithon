@@ -6,6 +6,7 @@ from inspect import getsource
 import execjs
 from lupa import LuaRuntime
 from kithon import Transpiler, analogs
+from type_conversion import type_conversion
 
 
 transpilers = {
@@ -35,21 +36,21 @@ func_loaders = {
     'lua': lua.execute,
  }
 
-def check_exprs(exprs, post_processing = lambda d, l: d):
+def check_exprs(exprs):
     expected_results = list(map(eval, exprs))
     for lang, T in transpilers.items():
         for i, e in enumerate(exprs):
             checked_expr = T.generate(e, mode='eval')
-            fact_result = post_processing(executors[lang](checked_expr), lang)
+            fact_result = type_conversion(executors[lang](checked_expr), lang)
             assert expected_results[i] == fact_result, f'\n\tpython: {e} -> {expected_results[i]}\n\t{lang}: {checked_expr} -> {fact_result}'
             T.used.clear()
 
-def check_func(func, post_processing = lambda d, l: d):
+def check_func(func):
     expected_results = func()
     src = getsource(func)
     for lang, T in transpilers.items():
         target_src = T.generate(src, mode='block')
         func_loaders[lang](target_src)
-        fact_result = post_processing(executors[lang](analogs.call(T, func.__name__).render()), lang)
+        fact_result = type_conversion(executors[lang](analogs.call(T, func.__name__).render()), lang)
         assert expected_results == fact_result, f'\n\tpython:\n{src}\n\t\t--> {expected_results}\n\t{lang}:\n{target_src} \n\t\t--> {fact_result}'
         T.used.clear()
