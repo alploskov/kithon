@@ -1,4 +1,4 @@
-[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/alploskov/kithon/blob/master/LICENSE.txt) <a href="https://pypi.org/project/kithon" target="_blank"> <img src="https://img.shields.io/pypi/v/kithon?color=%2334D058&label=pypi%20package" alt="Package version"></a> ![lines of code](https://tokei.rs/b1/github/alploskov/kithon)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/alploskov/kithon/blob/master/LICENSE.txt) <a href="https://pypi.org/project/kithon" target="_blank"> <img src="https://img.shields.io/pypi/v/kithon?color=%2334D058&label=pypi%20package" alt="Package version"></a> ![lines of code](https://tokei.rs/b1/github/alploskov/kithon) [![Downloads](https://static.pepy.tech/badge/kithon)](https://pepy.tech/project/kithon)
 
 **Kithon** is universal python transpiler for speedup python programs and use python in other platform, such as browser or game engines, it focused on generating human readable code and integration with tools of target languages including cli and libraries
 
@@ -9,7 +9,7 @@ Quick start
 First, you install it:
 
 ```text
-$ pip install kithon[all]
+$ pip install kithon
 ```
 
 Then, you translate your code to target language, in this example JavaSctipt
