@@ -1,6 +1,7 @@
 import ast
 import os
 import sys
+from pathlib import Path
 from _ast import Import, ImportFrom
 from typing import Optional
 import typer
@@ -10,8 +11,9 @@ from .. import Transpiler
 from .watch import watch
 try:
     import packed
+    pyx = lambda code: packed.translate(code)
 except:
-    packed = None
+    pyx = lambda code: code
 
 
 def compilation_order(__dir__):
@@ -23,8 +25,8 @@ def compilation_order(__dir__):
         if ext in ['py', 'coco', 'hy', 'pyx', 'cocox']:
             name = os.path.split(_file)[1].removesuffix('.' + ext)
             code = open(os.path.join(__dir__, _file), 'r').read()
-            if ext.endswith('x') and packed != None:
-                code = packed.translate(code)
+            if ext.endswith('x'):
+                code = pyx(code)
             modules |= {name: {
                 'count_dependent': 0,
                 'code': code
@@ -91,10 +93,11 @@ def _gen(
     configurator.conf(
         transpiler, target or out.split('.')[-1], macro, templates
     )
-    if os.path.isdir(file_name):
+    path = Path(file_name)
+    if path.is_dir():
         _ext = transpiler.templates['meta'].get('ext')
         out_dir = out or file_name
-        if not os.path.isdir(out_dir):
+        if not Path(out_dir).is_dir():
             os.mkdir(out)
         def g():
             order, modules = compilation_order(file_name)
@@ -110,11 +113,11 @@ def _gen(
                     print(f'\033[31mFaile compile {m}\033[38m')
             print('----------')
     else:
-        ext = file_name.split('.')[-1]
+        ext = path.suffix[1:]
         def g():
             code = open(file_name, 'r').read()
-            if ext.endswith('x') and packed is not None:
-                code = packed.translate(code)
+            if ext.endswith('x'):
+                code = pyx(code)
             lang = input_lang or ext.removesuffix('x')
             _code = transpiler.generate(
                     code, lang=lang
