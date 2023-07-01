@@ -28,7 +28,6 @@ def test_lens():
     ]
     check_exprs(exprs)
     
-
 def slices():
     arr = [1, 2, 3, 4, 5, 6]
     b = 2
@@ -51,3 +50,16 @@ def slices():
 
 def test_slices():
     check_func(slices)
+
+def assignment():
+    arr = [1, 2, 3, 4]
+    i1 = 1
+    arr[0] = 100
+    arr[i1] = 200
+    arr[-2] = 300
+    i2 = -1
+    arr[i2] = 400
+    return arr
+
+def test_assignment():
+    check_func(assignment)

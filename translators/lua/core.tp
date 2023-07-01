@@ -15,6 +15,10 @@ list[any].__getitem__:
   meta: {"gen_negative_indexes": yes}
   code: "{{obj}}[{{key}}+1]"
 
+list[any].__setitem__:
+  meta: {"gen_negative_indexes": yes}
+  code: "{{obj}}[{{key}}+1]"
+
 slice:
   meta: {"gen_negative_indexes": yes}
   tmp: ~

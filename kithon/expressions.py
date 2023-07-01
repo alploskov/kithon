@@ -223,7 +223,7 @@ def index(self, tree: typing.Any = None, obj=None, key=None, ctx=None):
     macro, _ = self.get_macro(
             obj.own,
             obj.type,
-            selector='{_}.__getitem__'
+            selector=('{_}.__getitem__' if ctx == 'load' else '{_}.__setitem__')
     )
     key = self.visit(key)
     if (macro.get('meta', self.templates['index']['meta'])

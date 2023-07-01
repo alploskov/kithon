@@ -22,9 +22,6 @@ attr: |-
 
 index: "{{obj}}[{{key}}]"
 
-list[any].__getitem__:
-  code: "{{obj}}.at({{key}})"
-
 dict[any].__getitem__:
   code: >-
     {{obj}}[{%- if ctx == 'load' -%}

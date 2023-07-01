@@ -53,3 +53,10 @@ list[any].+.list[any]:
 any.in.list[any]:
   code: "{{right}}.includes({{left}})"
   type: bool
+
+list[any].__getitem__:
+  code: "{{obj}}.at({{key}})"
+
+list[any].__setitem__:
+  meta: {"gen_negative_indexes": yes}
+  code: "{{obj}}[{{key}}]"
