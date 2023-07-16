@@ -11,7 +11,7 @@ name: '{{name}}'
 int: '{{val}}'
 float: '{{val}}'
 bool: '{{val}}'
-str: "\"{{val}}\""
+str: "{% if '\n' in val %}\"\"\"{{val}}\"\"\"{% else %}\"{{val}}\"{% endif %}"
 ellipsis: "..."
 
 bin_op: |-
