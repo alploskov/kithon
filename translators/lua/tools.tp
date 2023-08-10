@@ -1,4 +1,5 @@
 meta:
+  name: lua
   repl:
     name: "lua"
     prompt: "> "

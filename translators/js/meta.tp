@@ -1,4 +1,5 @@
 meta:
+  name: js
   repl:
     name: "node"
     prompt: "> "

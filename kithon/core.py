@@ -11,7 +11,7 @@ else:
     is_hy_supported = True
 try:
     from coconut.convenience import parse, setup
-except ImportError:
+except:
     is_coconut_supported = False
 else:
     is_coconut_supported = True
@@ -39,6 +39,7 @@ class Transpiler:
     elements = {}
 
     def __init__(self, lang='', templs=''):
+        self.language_name = lang or 'python'
         self.templates = {}
         self.get_lang('python')
         if lang:
@@ -138,6 +139,7 @@ class Transpiler:
             self.templates[name] = template
         elif name == 'meta':
             self.templates['meta'].update(template)
+            self.language_name = self.templates['meta'].get('name', self.language_name)
         elif isinstance(template, str):
             self.templates[name].update({'tmp': Template(template)})
         elif isinstance(template, bool) and not template:

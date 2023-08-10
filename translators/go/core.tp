@@ -114,6 +114,7 @@ entry:
   decorate: "func main() {{body}}"
 
 meta:
+  name: go
   run: "echo '{{code}}' > file1.go && go run file1.go && rm file1.go"
   build: |-
     {%- if out -%}

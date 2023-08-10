@@ -387,6 +387,14 @@ def name(self, tree: _ast.Name):
 @visitor
 def const(self, tree: _ast.Constant):
     _val = tree.value
+    if isinstance(_val, str) and _val.startswith('[['):
+        if not _val.startswith(f'[[{self.language_name}]]'):
+            return self.node(tmp='src', type='code', parts={'src': ''})
+        return self.node(
+            tmp='src',
+            type='code',
+            parts={'src': _val.removeprefix(f'[[{self.language_name}]]')}
+        )
     if _val is None:
         return none(self, tree)
     _type = str(type(_val))[8:-2]

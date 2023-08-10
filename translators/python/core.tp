@@ -80,8 +80,10 @@ entry:
     if __name__ == "__main__":{% for st in body.parts.body %}
     {{'    '}}{{st}}{% endfor %}
 
+src: "{{src}}"
 
 meta:
+  name: python
   repl:
     name: python
     prompt: ">>> "

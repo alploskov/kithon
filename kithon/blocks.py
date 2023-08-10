@@ -9,10 +9,10 @@ from . import analogs
 
 @visitor
 def expr(self, tree: _ast.Expr):
-    return self.node(
-        tmp='expr',
-        parts={'value': self.visit(tree.value)}
-    )
+    e = self.visit(tree.value)
+    if e.type == 'code':
+        return e
+    return self.node(tmp='expr', parts={'value': e})
 
 def set_var(self, var, _type='any'):
     """
