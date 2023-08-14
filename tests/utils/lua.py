@@ -6,6 +6,7 @@ class Lua:
     def __init__(self):
         self.runtime = LuaRuntime(unpack_returned_tuples=True)
         self.generator = Transpiler(lang='lua')
+        self.NAME = 'lua'
 
     def load_func(self, func: str):
         self.runtime.execute(func)

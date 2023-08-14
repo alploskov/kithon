@@ -6,6 +6,7 @@ class Py:
     def __init__(self):
         self.runtime = None
         self.generator = Transpiler()
+        self.NAME = 'python'
 
     def load_func(self, func: str):
         exec(func, globals())

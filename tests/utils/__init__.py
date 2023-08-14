@@ -14,7 +14,7 @@ def check_exprs(exprs):
             checked_expr = lang.gen_expr(e)
             fact_result = type_conversion(lang.eval(checked_expr))
             lang.clear()
-            assert expected_results[i] == fact_result
+            assert expected_results[i] == fact_result, (e, lang.NAME)
 
 def check_func(func):
     expected_results = func()
@@ -24,4 +24,4 @@ def check_func(func):
         lang.load_func(target_src)
         fact_result = type_conversion(lang.call_func(func.__name__))
         lang.clear()
-        assert expected_results == fact_result
+        assert expected_results == fact_result, (func.__name__, lang.NAME)

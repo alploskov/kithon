@@ -6,6 +6,7 @@ class JS:
     def __init__(self):
         self.runtime = execjs.get()
         self.generator = Transpiler(lang='js')
+        self.NAME = 'js'
 
     def load_func(self, func: str):
         self.runtime = execjs.compile(func)
