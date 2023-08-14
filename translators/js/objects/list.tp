@@ -18,9 +18,8 @@ list[any]:
       {{obj}}
       {%- if args|length > 0 -%}
       .splice({{args[0]}}, 1)
-      {%- else -%}
-      .pop()
       {%- endif -%}
+      .pop()
     ret_type: "{{obj.type.el_type}}"
 
   clear:
