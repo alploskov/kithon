@@ -15,6 +15,21 @@ try:
 except:
     pyx = lambda code: code
 
+try:
+    from pygments import highlight
+    from pygments.lexers import get_lexer_by_name
+    from pygments.formatters import TerminalFormatter
+    from pygments.util import ClassNotFound
+    def highlight_output_code(lang, code):
+        try:
+            lexer = get_lexer_by_name(lang)
+            return highlight(code, lexer, TerminalFormatter())
+        except ClassNotFound:
+            return code
+except:
+    def highlight_output_code(lang, code):
+        return code
+
 
 def compilation_order(__dir__):
     modules = {}
@@ -119,13 +134,11 @@ def _gen(
             if ext.endswith('x'):
                 code = pyx(code)
             lang = input_lang or ext.removesuffix('x')
-            _code = transpiler.generate(
-                    code, lang=lang
-            )
-            print(
-                _code,
-                file=open(out, 'w') if out else sys.stdout
-            )
+            _code = transpiler.generate(code, lang=lang)
+            if out == '':
+                print(highlight_output_code(target, _code))
+            else:
+                print(_code, file=open(out, 'w'))
             if _build:
                 command = transpiler.templates['meta'].get('build')
             else:

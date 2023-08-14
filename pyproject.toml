@@ -43,6 +43,8 @@ ptpython = {version = "^3.0.20", optional = true}
 
 watchdog = {version = "^2.1.7", optional = true}
 
+pygments = {version = "*", optional = true}
+
 packed = "^0.2"
 
 [tool.poetry.dev-dependencies]
@@ -56,10 +58,12 @@ add-langs = ["coconut", "hy"]
 repl = ["pexpect", "ptpython"]
 watch = ["watchdog"]
 pyx = ["packed"]
+highlight = ["pygments"]
 all = [
      "packed", "watchdog",
      "coconut", "hy",
-     "pexpect", "ptpython"
+     "pexpect", "ptpython",
+     "pygments"
 ]
 
 [tool.poetry.group.docs]
