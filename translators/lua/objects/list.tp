@@ -1,3 +1,11 @@
 list[any]:
   append:
     code: "table.insert({{obj}}, {{args[0]}})"
+
+  extend:
+    code: |-
+      {%- if parent.name != 'expr' -%}(function(){{'\n' + '    ' * (nl + 1)}}{%- endif -%}
+      for i, item in pairs({{args[0]}}) do
+      {{'    ' * (nl + 1)}}    table.insert({{obj}}, item)
+      {{'    ' * (nl + 1)}}end
+      {%- if parent.name != 'expr' -%}{{'\n'}}{{'    ' * (nl + 1)}}return nil{{'\n'}}{{'    ' * nl}}end)(){%- endif -%}
