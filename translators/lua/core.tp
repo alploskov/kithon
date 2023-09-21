@@ -5,6 +5,8 @@ operators:
   "or": "||"
   "and": "&&"
 
+attr: "{{obj}}{{ ':' if parent.name == 'call' and not isinstance(obj.type, types.type) else '.'}}{{attr}}"
+
 new_var: "local {{var}} = {{value}}"
 var_prototype: "local {{name}} = {{default_val}}"
 
