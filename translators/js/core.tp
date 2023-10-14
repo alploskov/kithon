@@ -90,6 +90,7 @@ continue: "continue;"
 class: "class {{name}} {{body}}"
 init: "constructor({{(args[1:])|join(', ')}}) {{body}}"
 method: "{{name}} = {{(decorators + [''])|join('(')}}({{args[1:]|join(', ')}}) => {{body}}{{')' * decorators|length}};"
+static_method: "static {{name}} = {{(decorators + [''])|join('(')}}({{args[1:]|join(', ')}}) => {{body}}{{')' * decorators|length}};"
 self:
   alt_name: "this"
 static_attr: "static {{var}} = {{value}};"

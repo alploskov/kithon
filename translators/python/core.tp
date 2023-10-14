@@ -61,6 +61,7 @@ class: "{%for d in decorators%}@{{d}}{{'\n'}}{%endfor%}class {{name}}{{body}}"
 
 init: "{%for d in decorators%}@{{d}}{{'\n'}}{%endfor%}def __init__({{args|join(', ')}}){{body}}"
 method: "{%for d in decorators%}@{{d}}{{'\n'}}{%endfor%}def {{name}}({{args|join(', ')}}){{body}}"
+static_method: "{%for d in decorators%}@{{d}}{{'\n'}}{%endfor%}def {{name}}({{args|join(', ')}}){{body}}"
 static_attr: '{{var}} = {{value}}'
 new: "{{func}}({{args|join(', ')}})"
 

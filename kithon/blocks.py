@@ -270,6 +270,8 @@ def define_function(self, tree: _ast.FunctionDef):
         parts = {'class_name': self.namespace.split('.')[-1]}
         if tree.name == '__init__':
             tmp = 'init'
+        elif len(tree.args.args) == 0 or len(tree.args.args) > 0 and tree.args.args[0].arg != 'self':
+            tmp =  'static_method'
         else:
             tmp =  'method'
     else:
