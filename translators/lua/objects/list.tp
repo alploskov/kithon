@@ -9,3 +9,15 @@ list[any]:
       {{'    ' * (nl + 1)}}    table.insert({{obj}}, item)
       {{'    ' * (nl + 1)}}end
       {%- if parent.name != 'expr' -%}{{'\n'}}{{'    ' * (nl + 1)}}return nil{{'\n'}}{{'    ' * nl}}end)(){%- endif -%}
+
+  insert:
+    code: >-
+      table.insert({{obj}},
+      {%- if args[0] >= 0 -%}
+      {{args[0]}}
+      {%- elif args[0] < 0 -%}
+      #{{obj}} + {{args[0]}}
+      {%- else -%}
+      ({{args[0]}} < 0 and #{{obj}} + {{args[0]}} or {{args[0]}})
+      {%- endif -%} + 1,
+      {{args[1]}})
