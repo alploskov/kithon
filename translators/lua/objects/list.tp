@@ -21,3 +21,18 @@ list[any]:
       ({{args[0]}} < 0 and #{{obj}} + {{args[0]}} or {{args[0]}})
       {%- endif -%} + 1,
       {{args[1]}})
+
+  pop:
+    code: >-
+      {%- if args|length == 0 -%}
+      table.remove({{obj}}, #{{obj}})
+      {%- else -%}
+      table.remove({{obj}},
+      {%- if args[0] >= 0 -%}
+      {{args[0]}}
+      {%- elif args[0] < 0 -%}
+      #{{obj}} + {{args[0]}}
+      {%- else -%}
+      ({{args[0]}} < 0 and #{{obj}} + {{args[0]}} or {{args[0]}})
+      {%- endif -%} + 1)
+      {%- endif -%}
