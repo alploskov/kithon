@@ -53,3 +53,15 @@ list[any]:
       while #{{obj}} > 0 do
       {{'   ' * (nl + 1)}}table.remove({{obj}})
       {{'   ' * nl}}end
+
+  count:
+    code: |-
+      (function (array, value)
+      {{'   ' * nl}}    local res = 0
+      {{'   ' * nl}}    for i, v in ipairs(array) do
+      {{'   ' * nl}}        if v == value then
+      {{'   ' * nl}}            res = res + 1
+      {{'   ' * nl}}        end
+      {{'   ' * nl}}    end
+      {{'   ' * nl}}    return res
+      {{'   ' * nl}}end)({{obj}}, {{args[0]}})
