@@ -36,3 +36,9 @@ list[any]:
       ({{args[0]}} < 0 and #{{obj}} + {{args[0]}} or {{args[0]}})
       {%- endif -%} + 1)
       {%- endif -%}
+
+  clear:
+    code: |-
+      while #{{obj}} > 0 do
+      {{'   ' * (nl + 1)}}table.remove({{obj}})
+      {{'   ' * nl}}end
