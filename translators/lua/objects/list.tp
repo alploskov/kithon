@@ -22,6 +22,17 @@ list[any]:
       {%- endif -%} + 1,
       {{args[1]}})
 
+  index:
+    code: |-
+      (function (array, value)
+      {{'   ' * nl}}    for i, v in ipairs(array) do
+      {{'   ' * nl}}        if v == value then
+      {{'   ' * nl}}            return i - 1
+      {{'   ' * nl}}        end
+      {{'   ' * nl}}    end
+      {{'   ' * nl}}    error("ValueError: "..value.." is not in list")
+      {{'   ' * nl}}end)({{obj}}, {{args[0]}})
+
   pop:
     code: >-
       {%- if args|length == 0 -%}
