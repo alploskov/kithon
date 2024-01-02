@@ -1,7 +1,7 @@
 bool: "{{val|lower}}"
 operators:
   "**": "^"
-  "^": "⊻"
+  "^": "~"
 
 attr: "{{obj}}{{ ':' if parent.name == 'call' and not isinstance(obj.type, types.type) else '.'}}{{attr}}"
 
