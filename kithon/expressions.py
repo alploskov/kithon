@@ -100,7 +100,9 @@ def _bin_op(self, left, right, op):
         ),
         parts={
             'left': left,
+            'obj': left,
             'right': right,
+            'other': right,
             'op': self.templates['operators'].get(op, op)
         }
     )
