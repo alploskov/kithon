@@ -3,13 +3,17 @@ from .type_conversion import type_conversion
 from .js import JS
 from .lua import Lua
 from .py import Py
+from .go import Go
 
 
-langs = [Py(), JS(), Lua()]
+langs = [Py(), Go(), JS(), Lua()]
 
 def check_exprs(exprs):
     expected_results = list(map(eval, exprs))
     for lang in langs:
+        if hasattr(lang, 'eval_many'):
+            assert expected_results == lang.eval_many(exprs), ''
+            continue
         for i, e in enumerate(exprs):
             checked_expr = lang.gen_expr(e)
             fact_result = type_conversion(lang.eval(checked_expr))
