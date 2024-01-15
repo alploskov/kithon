@@ -17,6 +17,10 @@ class JS:
     def eval(self, expr: str):
         return self.runtime.eval(expr)
 
+    def eval_many(self, exprs: list[str]):
+        _exprs = list(map(self.gen_expr, exprs))
+        return self.runtime.eval(f'[{", ".join(_exprs)}]')
+
     def gen_func(self, src):
         return self.generator.generate(src, mode='block')
 
