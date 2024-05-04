@@ -38,7 +38,8 @@ operators:
   "and": "\\land"
 
 
-expr: "{{value}}\\\\"  
+expr: "{{value}}\\\\"
+assign: "{{var}} = {{value}}\\\\"
 func: "\\mathrm{{'{'}}{{name}}{{'}'}}({{args|join(', ')}})\\triangleq {{body.parts.body[0]}}\\\\"
 return: "{{value}}"
 
